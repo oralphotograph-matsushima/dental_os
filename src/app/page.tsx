@@ -585,11 +585,7 @@ export default function Home() {
                   <AlertTriangle className="w-4 h-4" /> 保存先未設定
                 </button>
               )
-            ) : (
-              <span className="flex items-center gap-1 text-amber-500" title="iPad/Safariでは直接保存・検索機能は利用できません">
-                <AlertTriangle className="w-4 h-4" /> PC専用機能制限あり
-              </span>
-            )}
+            ) : null}
           </div>
           <div className="flex items-center gap-3 border-l border-neutral-800 pl-6">
             <User className="w-4 h-4 text-neutral-500" />
