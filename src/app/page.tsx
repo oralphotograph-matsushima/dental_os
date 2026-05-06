@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard } from "lucide-react";
 import { get, set } from "idb-keyval";
 
 function generateDeviceId() {
@@ -46,6 +46,8 @@ export default function Home() {
   const [hasDirectory, setHasDirectory] = useState(false);
   const [directoryName, setDirectoryName] = useState("");
   const [isFSApiSupported, setIsFSApiSupported] = useState(true);
+  const [isIOS, setIsIOS] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -83,6 +85,11 @@ export default function Home() {
           setDirectoryName(handle.name);
         }
       });
+    }
+
+    const ua = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      setIsIOS(true);
     }
   }, []);
 
@@ -348,18 +355,27 @@ export default function Home() {
     }
   };
 
+  const displaySoapText = staffName.trim() && soapText ? `${soapText}\n\n---\n担当: ${staffName}` : soapText;
+
   const saveToObsidian = async () => {
     if (!soapText) return;
     setStatus("saving");
-    
-    const finalSoapText = staffName.trim() ? `${soapText}\n\n---\n担当: ${staffName}` : soapText;
     
     try {
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2); 
       const filename = `カルテ_${patientInfo}_${dateStr}.md`;
 
-      if (isFSApiSupported) {
+      if (isIOS) {
+        const filePath = encodeURIComponent(`カルテ/${filename}`);
+        const content = encodeURIComponent(displaySoapText);
+        const uri = `obsidian://new?file=${filePath}&content=${content}`;
+        window.location.href = uri;
+        
+        localStorage.setItem("dental_os_staff_name", staffName);
+        setStatus("saved");
+        setSavedPath(`Obsidianアプリへ転送完了`);
+      } else if (isFSApiSupported) {
         let dirHandle: any = await get("obsidianDirHandle");
         if (!dirHandle) {
           dirHandle = await (window as any).showDirectoryPicker({ mode: "readwrite" });
@@ -378,7 +394,7 @@ export default function Home() {
         const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ', { create: true });
         const fileHandle = await chartDirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
-        await writable.write(finalSoapText);
+        await writable.write(displaySoapText);
         await writable.close();
         
         localStorage.setItem("dental_os_staff_name", staffName);
@@ -400,7 +416,7 @@ export default function Home() {
         setStatus("saved");
         setSavedPath(`${dirHandle.name} / カルテ / ${filename} および ${patientFilename}`);
       } else {
-        const fallbackText = `患者ページ: [[${patientInfo}]]\n\n${finalSoapText}`;
+        const fallbackText = `患者ページ: [[${patientInfo}]]\n\n${displaySoapText}`;
         const blob = new Blob([fallbackText], { type: "text/markdown" });
         const url = URL.createObjectURL(blob);
         
@@ -608,16 +624,16 @@ export default function Home() {
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={status === "transcribing" || status === "formatting" || status === "saving"}
-                  className={`relative group flex items-center justify-center w-32 h-32 rounded-full transition-all duration-300 mt-4 ${
+                  className={`relative group flex items-center justify-center w-20 h-20 md:w-32 md:h-32 rounded-full transition-all duration-300 mt-4 ${
                     isRecording 
                       ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' 
                       : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 hover:scale-105'
                   } disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100`}
                 >
                   {isRecording && <div className="absolute inset-0 rounded-full border-4 border-red-500/30 animate-ping" />}
-                  {isRecording ? <Square className="w-10 h-10" fill="currentColor" /> : <Mic className="w-12 h-12" />}
+                  {isRecording ? <Square className="w-8 h-8 md:w-10 md:h-10" fill="currentColor" /> : <Mic className="w-10 h-10 md:w-12 md:h-12" />}
                 </button>
-                <p className="mt-6 text-sm text-neutral-400 font-medium">
+                <p className="mt-4 md:mt-6 text-xs md:text-sm text-neutral-400 font-medium">
                   {isRecording ? "タップして停止" : "タップして喋る (最大 1m 59s)"}
                 </p>
               </div>
@@ -642,29 +658,43 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-2 flex-shrink-0">
-                  <div className="text-xs text-neutral-500 truncate max-w-xs">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 flex-shrink-0 gap-4">
+                  <div className="text-xs text-neutral-500 truncate w-full sm:max-w-xs order-2 sm:order-1 text-center sm:text-left">
                     {status === "saved" && `保存先: ${savedPath}`}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-teal-500" />
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto order-1 sm:order-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <User className="w-4 h-4 text-teal-500 hidden sm:block" />
                       <input 
                         type="text" 
                         value={staffName}
                         onChange={e => setStaffName(e.target.value)}
                         placeholder="担当スタッフ名 (任意)"
-                        className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:border-teal-500 outline-none w-40"
+                        className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-3 sm:py-2 text-sm text-white focus:border-teal-500 outline-none w-full sm:w-40"
                       />
                     </div>
-                    <button
-                      onClick={saveToObsidian}
-                      disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
-                      className="flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                    >
-                      <Save className="w-5 h-5" />
-                      <span>{isFSApiSupported ? "データを保存" : "ファイルをダウンロード"}</span>
-                    </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(displaySoapText);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
+                        className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-3 sm:py-4 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Clipboard className="w-5 h-5" />}
+                        <span className="text-sm sm:text-base">{copied ? "コピー済" : "コピー"}</span>
+                      </button>
+                      <button
+                        onClick={saveToObsidian}
+                        disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
+                        className="flex-[2] sm:flex-none flex justify-center items-center gap-2 px-6 py-3 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        <Save className="w-5 h-5" />
+                        <span className="text-sm sm:text-base">{isIOS ? "Obsidianへ転送" : isFSApiSupported ? "データを保存" : "ダウンロード"}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
