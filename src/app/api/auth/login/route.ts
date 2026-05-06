@@ -18,14 +18,29 @@ export async function POST(request: Request) {
     // 2. Register Device and Enforce Limits
     registerDevice(email, plan, deviceId);
 
-    // 3. Webhook Simulation (Console Log for now)
-    // Here you can use fetch() to send a POST request to Make/Integromat or Zapier.
-    console.log("=========================================");
-    console.log("🔔 [WEBHOOK EVENT] Dental OS アクティベーション");
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${password} (Plan: ${plan})`);
-    console.log(`Device ID: ${deviceId}`);
-    console.log("=========================================");
+    // 3. Webhook / Email Notification
+    // Webhookを経由して oralphotograp@gmail.com へ通知を送る設定
+    const webhookUrl = process.env.WEBHOOK_URL;
+    if (webhookUrl) {
+      try {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "new_login",
+            email: email,
+            plan: plan,
+            deviceId: deviceId,
+            timestamp: new Date().toISOString(),
+            target_email: "oralphotograp@gmail.com"
+          })
+        });
+      } catch (e) {
+        console.error("Webhook failed:", e);
+      }
+    } else {
+      console.log("🔔 [Login Event] Email notification is ready, but WEBHOOK_URL is not set.");
+    }
 
     return NextResponse.json({ success: true, plan });
   } catch (error: any) {

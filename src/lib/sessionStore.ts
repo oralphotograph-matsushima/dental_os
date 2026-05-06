@@ -21,7 +21,7 @@ if (!globalStore.__sessionStore) {
 const store = globalStore.__sessionStore;
 
 export const PASSWORDS: Record<string, PlanType> = {
-  'solo_test': 'solo',
+  'test0001': 'solo',
   'clinic_test': 'clinic'
 };
 
