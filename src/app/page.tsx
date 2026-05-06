@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
+import SlideGenerator from "@/components/SlideGenerator";
 
 function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -20,7 +21,7 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr">("qr");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide">("qr");
 
   // Input Tab State
   const [isRecording, setIsRecording] = useState(false);
@@ -569,6 +570,15 @@ export default function Home() {
               <Search className="w-4 h-4" />
               カルテ検索
             </button>
+            <button
+              onClick={() => setActiveTab("slide")}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "slide" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              <Presentation className="w-4 h-4" />
+              スライド生成
+            </button>
           </div>
         </div>
         
@@ -944,6 +954,8 @@ export default function Home() {
               )}
             </div>
           )}
+
+          {activeTab === "slide" && <SlideGenerator />}
 
         </div>
       </div>
