@@ -1,4 +1,4 @@
-export type PlanType = 'solo' | 'clinic';
+export type PlanType = '1_device' | '2_devices' | 'unlimited';
 
 interface DeviceSession {
   deviceId: string;
@@ -21,11 +21,16 @@ if (!globalStore.__sessionStore) {
 const store = globalStore.__sessionStore;
 
 export const PASSWORDS: Record<string, PlanType> = {
-  'test0001': 'solo',
-  'clinic_test': 'clinic'
+  'test0001': '1_device',
+  'test0002': '2_devices',
+  'test1000': 'unlimited'
 };
 
-const getLimit = (plan: PlanType) => (plan === 'solo' ? 2 : 5);
+const getLimit = (plan: PlanType) => {
+  if (plan === '1_device') return 1;
+  if (plan === '2_devices') return 2;
+  return 9999; // unlimited
+};
 
 export const registerDevice = (email: string, plan: PlanType, deviceId: string) => {
   let account = store.get(email);
