@@ -18,6 +18,7 @@ export default function SlideGenerator() {
   const [facialImage, setFacialImage] = useState<ImageData | null>(null);
   
   const [selectedSwapIndex, setSelectedSwapIndex] = useState<number | null>(null);
+  const [uploadTargetIndex, setUploadTargetIndex] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fileInputRef9 = useRef<HTMLInputElement>(null);
@@ -26,12 +27,18 @@ export default function SlideGenerator() {
 
   // File handling
   const handleFiles = (files: FileList | null, type: "intraoral" | "pano" | "facial") => {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      setUploadTargetIndex(null);
+      return;
+    }
 
     if (type === "intraoral") {
       const newImages = [...intraoralImages];
       let fileIndex = 0;
-      for (let i = 0; i < 9; i++) {
+      
+      const startIndex = uploadTargetIndex !== null ? uploadTargetIndex : 0;
+      
+      for (let i = startIndex; i < 9; i++) {
         if (!newImages[i] && fileIndex < files.length) {
           const file = files[fileIndex++];
           newImages[i] = {
@@ -43,7 +50,23 @@ export default function SlideGenerator() {
           };
         }
       }
+      
+      // If we still have files left, wrap around to fill empty slots from the beginning
+      for (let i = 0; i < startIndex; i++) {
+        if (!newImages[i] && fileIndex < files.length) {
+          const file = files[fileIndex++];
+          newImages[i] = {
+            id: Math.random().toString(36).substring(7),
+            file,
+            previewUrl: URL.createObjectURL(file),
+            flipH: false,
+            flipV: false,
+          };
+        }
+      }
+
       setIntraoralImages(newImages);
+      setUploadTargetIndex(null);
     } else if (type === "pano") {
       const file = files[0];
       setPanoImage({
@@ -78,9 +101,12 @@ export default function SlideGenerator() {
   // Swap logic
   const handleGridClick = (index: number) => {
     if (selectedSwapIndex === null) {
-      // Select first item to swap
+      // Select first item to swap or open file picker if empty
       if (intraoralImages[index]) {
         setSelectedSwapIndex(index);
+      } else {
+        setUploadTargetIndex(index);
+        fileInputRef9.current?.click();
       }
     } else {
       // Swap with second item
