@@ -251,9 +251,45 @@ export default function SlideGenerator() {
         });
       };
 
+      // Function to get original image dimensions
+      const getImageDimensions = (base64: string): Promise<{width: number, height: number}> => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ width: img.width, height: img.height });
+          img.src = base64;
+        });
+      };
+
+      // Function to calculate perfect fit (contain) dimensions to prevent Keynote stretching
+      const calculateContainFit = (imgW: number, imgH: number, boxX: number, boxY: number, boxW: number, boxH: number, rotate: number) => {
+        const isRotated = rotate === 90 || rotate === 270;
+        const actualImgW = isRotated ? imgH : imgW;
+        const actualImgH = isRotated ? imgW : imgH;
+        
+        const imgRatio = actualImgW / actualImgH;
+        const boxRatio = boxW / boxH;
+        
+        let finalW = boxW;
+        let finalH = boxH;
+        
+        if (imgRatio > boxRatio) {
+          finalH = boxW / imgRatio;
+        } else {
+          finalW = boxH * imgRatio;
+        }
+        
+        const outputW = isRotated ? finalH : finalW;
+        const outputH = isRotated ? finalW : finalH;
+        
+        const cx = boxX + boxW / 2;
+        const cy = boxY + boxH / 2;
+        const outputX = cx - outputW / 2;
+        const outputY = cy - outputH / 2;
+
+        return { x: outputX, y: outputY, w: outputW, h: outputH };
+      };
+
       // Slide 1: 9 Intraoral photos
-      // Layout 3x3 on 10x5.625 inch slide
-      // Let's make each image roughly 3x1.8 inches
       const intraoralSlide = pptx.addSlide();
       const marginX = 0.5;
       const marginY = 0.2;
@@ -267,14 +303,16 @@ export default function SlideGenerator() {
         if (imgData) {
           const col = i % 3;
           const row = Math.floor(i / 3);
-          const x = marginX + col * (w + gapX);
-          const y = marginY + row * (h + gapY);
+          const boxX = marginX + col * (w + gapX);
+          const boxY = marginY + row * (h + gapY);
           
           const base64 = await fileToBase64(imgData.file);
+          const dims = await getImageDimensions(base64);
+          const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, w, h, imgData.rotate);
+          
           intraoralSlide.addImage({
             data: base64,
-            x, y, w, h,
-            sizing: { type: "cover", w, h },
+            x: fit.x, y: fit.y, w: fit.w, h: fit.h,
             flipH: imgData.flipH,
             flipV: imgData.flipV,
             rotate: imgData.rotate,
@@ -286,10 +324,12 @@ export default function SlideGenerator() {
       if (panoImage) {
         const panoSlide = pptx.addSlide();
         const base64 = await fileToBase64(panoImage.file);
+        const dims = await getImageDimensions(base64);
+        const fit = calculateContainFit(dims.width, dims.height, 0.5, 1, 9, 3.6, panoImage.rotate);
+        
         panoSlide.addImage({
           data: base64,
-          x: 0.5, y: 1, w: 9, h: 3.6,
-          sizing: { type: "cover", w: 9, h: 3.6 },
+          x: fit.x, y: fit.y, w: fit.w, h: fit.h,
           flipH: panoImage.flipH,
           flipV: panoImage.flipV,
           rotate: panoImage.rotate,
@@ -308,13 +348,15 @@ export default function SlideGenerator() {
         for (let i = 0; i < 3; i++) {
           const imgData = facialImages[i];
           if (imgData) {
-            const x = fMarginX + i * (fW + fGap);
-            const y = 0.8;
+            const boxX = fMarginX + i * (fW + fGap);
+            const boxY = 0.8;
             const base64 = await fileToBase64(imgData.file);
+            const dims = await getImageDimensions(base64);
+            const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, fW, fH, imgData.rotate);
+            
             facialSlide.addImage({
               data: base64,
-              x, y, w: fW, h: fH,
-              sizing: { type: "cover", w: fW, h: fH },
+              x: fit.x, y: fit.y, w: fit.w, h: fit.h,
               flipH: imgData.flipH,
               flipV: imgData.flipV,
               rotate: imgData.rotate,
