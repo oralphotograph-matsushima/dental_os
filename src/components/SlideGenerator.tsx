@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, Trash2, Move } from "lucide-react";
+import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Move } from "lucide-react";
 import pptxgen from "pptxgenjs";
 
 interface ImageData {
@@ -10,6 +10,7 @@ interface ImageData {
   previewUrl: string;
   flipH: boolean;
   flipV: boolean;
+  rotate: number;
 }
 
 export default function SlideGenerator() {
@@ -49,6 +50,7 @@ export default function SlideGenerator() {
             previewUrl: URL.createObjectURL(file),
             flipH: false,
             flipV: false,
+            rotate: 0,
           };
         }
       }
@@ -63,6 +65,7 @@ export default function SlideGenerator() {
             previewUrl: URL.createObjectURL(file),
             flipH: false,
             flipV: false,
+            rotate: 0,
           };
         }
       }
@@ -77,6 +80,7 @@ export default function SlideGenerator() {
         previewUrl: URL.createObjectURL(file),
         flipH: false,
         flipV: false,
+        rotate: 0,
       });
     } else if (type === "facial") {
       const newImages = [...facialImages];
@@ -93,6 +97,7 @@ export default function SlideGenerator() {
             previewUrl: URL.createObjectURL(file),
             flipH: false,
             flipV: false,
+            rotate: 0,
           };
         }
       }
@@ -106,6 +111,7 @@ export default function SlideGenerator() {
             previewUrl: URL.createObjectURL(file),
             flipH: false,
             flipV: false,
+            rotate: 0,
           };
         }
       }
@@ -193,6 +199,27 @@ export default function SlideGenerator() {
     }
   };
 
+  const rotateImage = (type: "intraoral" | "pano" | "facial", index: number | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (type === "intraoral" && index !== null) {
+      const newImages = [...intraoralImages];
+      const img = newImages[index];
+      if (img) {
+        newImages[index] = { ...img, rotate: (img.rotate + 90) % 360 };
+        setIntraoralImages(newImages);
+      }
+    } else if (type === "pano" && panoImage) {
+      setPanoImage({ ...panoImage, rotate: (panoImage.rotate + 90) % 360 });
+    } else if (type === "facial" && index !== null) {
+      const newImages = [...facialImages];
+      const img = newImages[index];
+      if (img) {
+        newImages[index] = { ...img, rotate: (img.rotate + 90) % 360 };
+        setFacialImages(newImages);
+      }
+    }
+  };
+
   const removeImage = (type: "intraoral" | "pano" | "facial", index: number | null, e: React.MouseEvent) => {
     e.stopPropagation();
     if (type === "intraoral" && index !== null) {
@@ -250,6 +277,7 @@ export default function SlideGenerator() {
             sizing: { type: "contain", w, h },
             flipH: imgData.flipH,
             flipV: imgData.flipV,
+            rotate: imgData.rotate,
           });
         }
       }
@@ -264,6 +292,7 @@ export default function SlideGenerator() {
           sizing: { type: "contain", w: 9, h: 3.6 },
           flipH: panoImage.flipH,
           flipV: panoImage.flipV,
+          rotate: panoImage.rotate,
         });
       }
 
@@ -288,6 +317,7 @@ export default function SlideGenerator() {
               sizing: { type: "contain", w: fW, h: fH },
               flipH: imgData.flipH,
               flipV: imgData.flipV,
+              rotate: imgData.rotate,
             });
           }
         }
@@ -359,10 +389,13 @@ export default function SlideGenerator() {
                       alt={`Intraoral ${idx}`}
                       className="absolute inset-0 w-full h-full object-cover"
                       style={{ 
-                        transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1})` 
+                        transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` 
                       }}
                     />
                     <div className="absolute top-1 right-1 flex gap-1">
+                      <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="90度回転">
+                        <RotateCw className="w-3 h-3" />
+                      </button>
                       <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="左右反転">
                         <FlipHorizontal className="w-3 h-3" />
                       </button>
@@ -403,9 +436,12 @@ export default function SlideGenerator() {
                     src={panoImage.previewUrl} 
                     alt="Panoramic"
                     className="absolute inset-0 w-full h-full object-contain"
-                    style={{ transform: `scaleX(${panoImage.flipH ? -1 : 1}) scaleY(${panoImage.flipV ? -1 : 1})` }}
+                    style={{ transform: `scaleX(${panoImage.flipH ? -1 : 1}) scaleY(${panoImage.flipV ? -1 : 1}) rotate(${panoImage.rotate}deg)` }}
                   />
                   <div className="absolute top-2 right-2 flex gap-2">
+                    <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="90度回転">
+                      <RotateCw className="w-4 h-4" />
+                    </button>
                     <button onClick={(e) => toggleFlip("pano", null, "H", e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="左右反転">
                       <FlipHorizontal className="w-4 h-4" />
                     </button>
@@ -460,9 +496,12 @@ export default function SlideGenerator() {
                         src={img.previewUrl} 
                         alt={`Facial ${idx}`}
                         className="absolute inset-0 w-full h-full object-cover"
-                        style={{ transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1})` }}
+                        style={{ transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` }}
                       />
                       <div className="absolute top-1 right-1 flex gap-1">
+                        <button onClick={(e) => rotateImage("facial", idx, e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="90度回転">
+                          <RotateCw className="w-3 h-3" />
+                        </button>
                         <button onClick={(e) => toggleFlip("facial", idx, "H", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="左右反転">
                           <FlipHorizontal className="w-3 h-3" />
                         </button>
