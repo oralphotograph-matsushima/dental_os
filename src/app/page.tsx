@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera } from "lucide-react";
+import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 
 function generateDeviceId() {
@@ -19,7 +20,7 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search">("input");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr">("qr");
 
   // Input Tab State
   const [isRecording, setIsRecording] = useState(false);
@@ -36,6 +37,9 @@ export default function Home() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [patientHistory, setPatientHistory] = useState<{date: string, soap: string, filename?: string}[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // QR Tab State
+  const [qrPatientId, setQrPatientId] = useState("");
 
   // Append State
   const [appendingChart, setAppendingChart] = useState<string | null>(null);
@@ -94,10 +98,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "search" && isFSApiSupported && hasDirectory && !selectedPatient) {
+    if ((activeTab === "search" || activeTab === "qr") && isFSApiSupported && hasDirectory && patientsList.length === 0) {
       loadPatients();
     }
-  }, [activeTab, hasDirectory, selectedPatient]);
+  }, [activeTab, hasDirectory, patientsList.length]);
 
   // --- Authentication Logic ---
   const handleLogin = async (e: React.FormEvent) => {
@@ -537,7 +541,16 @@ export default function Home() {
               Dental OS
             </h1>
           </div>
-          <div className="flex bg-neutral-950 rounded-xl p-1 border border-neutral-800">
+          <div className="flex bg-neutral-900/50 p-1 rounded-xl border border-neutral-800">
+            <button
+              onClick={() => setActiveTab("qr")}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "qr" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              撮影QR
+            </button>
             <button
               onClick={() => setActiveTab("input")}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -594,6 +607,80 @@ export default function Home() {
           {errorMessage && (
             <div className="p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
               {errorMessage}
+            </div>
+          )}
+
+          {/* === QR TAB === */}
+          {activeTab === "qr" && (
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] flex flex-col items-center justify-center p-8">
+              <div className="w-full max-w-md space-y-8 flex flex-col items-center text-center">
+                
+                <div className="w-full space-y-2">
+                  <label className="text-sm font-bold text-neutral-400">患者ID（カルテ番号）を入力・選択</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={qrPatientId}
+                      onChange={(e) => setQrPatientId(e.target.value.toUpperCase())}
+                      placeholder="例: S1000"
+                      className="w-full bg-neutral-950 border-2 border-neutral-800 rounded-xl px-6 py-4 text-3xl font-bold text-center text-white focus:border-teal-500 outline-none uppercase tracking-wider"
+                    />
+                    {isFSApiSupported && patientsList.length > 0 && (
+                      <select 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-neutral-800 text-white border-none rounded-lg p-2 text-sm outline-none cursor-pointer max-w-[120px]"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const idMatch = val.split('_')[0];
+                            setQrPatientId(idMatch || val);
+                            setPatientInfo(val);
+                          }
+                        }}
+                        value=""
+                      >
+                        <option value="" disabled>リストから選択</option>
+                        {patientsList.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white p-8 rounded-3xl shadow-2xl transition-all hover:scale-105 duration-300">
+                  {qrPatientId ? (
+                    <QRCodeSVG 
+                      value={qrPatientId} 
+                      size={256} 
+                      level={"H"}
+                      includeMargin={false}
+                    />
+                  ) : (
+                    <div className="w-[256px] h-[256px] flex flex-col items-center justify-center border-4 border-dashed border-neutral-200 rounded-xl text-neutral-400">
+                      <Camera className="w-16 h-16 mb-4 opacity-50" />
+                      <p className="font-bold">IDを入力</p>
+                    </div>
+                  )}
+                </div>
+
+                {qrPatientId && (
+                  <div className="text-5xl font-black text-teal-400 tracking-widest mt-4">
+                    {qrPatientId}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    if (!patientInfo || !patientInfo.startsWith(qrPatientId)) {
+                      setPatientInfo(qrPatientId);
+                    }
+                    setActiveTab("input");
+                  }}
+                  disabled={!qrPatientId}
+                  className="w-full mt-12 py-5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xl font-bold rounded-2xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex justify-center items-center gap-3"
+                >
+                  <Mic className="w-6 h-6" />
+                  この患者のカルテ入力へ
+                </button>
+              </div>
             </div>
           )}
 
