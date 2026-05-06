@@ -25,7 +25,7 @@ export const PASSWORDS: Record<string, PlanType> = {
   'clinic_test': 'clinic'
 };
 
-const getLimit = (plan: PlanType) => (plan === 'solo' ? 1 : 5);
+const getLimit = (plan: PlanType) => (plan === 'solo' ? 2 : 5);
 
 export const registerDevice = (email: string, plan: PlanType, deviceId: string) => {
   let account = store.get(email);
