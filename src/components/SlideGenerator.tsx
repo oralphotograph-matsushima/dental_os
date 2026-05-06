@@ -375,30 +375,30 @@ export default function SlideGenerator() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-4 md:py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="max-w-5xl mx-auto py-2 md:py-8 mb-20 md:mb-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 px-2 md:px-0">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">プレゼン自動生成（スライド）</h2>
-          <p className="text-neutral-400">画像を入れて「出力」を押すだけで.pptxファイルが作成されます。</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2">プレゼン自動生成</h2>
+          <p className="text-xs md:text-sm text-neutral-400">画像を配置して「出力」を押すだけで.pptxが作成されます。</p>
         </div>
         <button
           onClick={generateSlide}
           disabled={isGenerating}
-          className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full md:w-auto bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95"
         >
           {isGenerating ? <Move className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
           スライド（.pptx）を出力
         </button>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8 px-2 md:px-0">
         {/* 9-shots Grid */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
-            <h3 className="text-lg font-semibold text-white">口腔内9枚法</h3>
+        <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+            <h3 className="text-base md:text-lg font-semibold text-white">口腔内9枚法</h3>
             <button 
               onClick={() => fileInputRef9.current?.click()}
-              className="text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded"
+              className="text-xs md:text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-3 md:py-2 rounded-lg w-full sm:w-auto border border-white/10"
             >
               画像を追加 (複数可)
             </button>
@@ -408,12 +408,12 @@ export default function SlideGenerator() {
             />
           </div>
           
-          <div className="text-xs text-amber-500 mb-4 bg-amber-500/10 p-2 rounded">
+          <div className="text-[10px] md:text-xs text-amber-500 mb-4 bg-amber-500/10 p-2 md:p-3 rounded-lg border border-amber-500/20">
             💡 ヒント：画像をタップして、別の画像（または空枠）をタップすると場所を入れ替えられます。
           </div>
 
           <div 
-            className="grid grid-cols-3 gap-2 bg-neutral-950 p-2 rounded-lg"
+            className="grid grid-cols-3 gap-1.5 md:gap-2 bg-black/40 p-1.5 md:p-3 rounded-xl border border-white/5 shadow-inner"
             onDrop={(e) => handleDrop(e, "intraoral")}
             onDragOver={handleDragOver}
           >
@@ -421,8 +421,8 @@ export default function SlideGenerator() {
               <div 
                 key={idx}
                 onClick={() => handleGridClick(idx)}
-                className={`relative aspect-[4/3] rounded border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
-                  ${selectedSwapIndex === idx ? 'border-blue-500 bg-blue-500/20' : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'}`}
+                className={`relative aspect-[4/3] rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
+                  ${selectedSwapIndex === idx ? 'border-teal-500 bg-teal-500/20 scale-95' : 'border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}
               >
                 {img ? (
                   <>
@@ -434,39 +434,36 @@ export default function SlideGenerator() {
                         transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` 
                       }}
                     />
-                    <div className="absolute top-1 right-1 flex gap-1">
-                      <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="90度回転">
-                        <RotateCw className="w-3 h-3" />
+                    <div className="absolute top-1 right-1 flex flex-col md:flex-row gap-1">
+                      <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
+                        <RotateCw className="w-3 h-3 md:w-3 md:h-3" />
                       </button>
-                      <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="左右反転">
-                        <FlipHorizontal className="w-3 h-3" />
+                      <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="左右反転">
+                        <FlipHorizontal className="w-3 h-3 md:w-3 md:h-3" />
                       </button>
-                      <button onClick={(e) => toggleFlip("intraoral", idx, "V", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="上下反転">
-                        <FlipVertical className="w-3 h-3" />
-                      </button>
-                      <button onClick={(e) => removeImage("intraoral", idx, e)} className="p-1 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white" title="削除">
-                        <Trash2 className="w-3 h-3" />
+                      <button onClick={(e) => removeImage("intraoral", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-red-400 hover:bg-red-600 hover:text-white active:scale-90 transition-transform" title="削除">
+                        <Trash2 className="w-3 h-3 md:w-3 md:h-3" />
                       </button>
                     </div>
                   </>
                 ) : (
-                  <span className="text-neutral-600 text-sm">枠 {idx + 1}</span>
+                  <span className="text-neutral-600 text-[10px] md:text-sm font-medium">枠 {idx + 1}</span>
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Panoramic */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">パノラマレントゲン</h3>
+          <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
+            <h3 className="text-base md:text-lg font-semibold text-white mb-4">パノラマレントゲン</h3>
             <div 
               onClick={() => !panoImage && fileInputRefPano.current?.click()}
               onDrop={(e) => handleDrop(e, "pano")}
               onDragOver={handleDragOver}
-              className={`relative aspect-[2.5/1] rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
-                ${panoImage ? 'border-neutral-700 bg-black' : 'border-neutral-700 hover:border-neutral-500 bg-neutral-950'}`}
+              className={`relative aspect-[2.5/1] rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
+                ${panoImage ? 'border-neutral-700 bg-black/50' : 'border-neutral-700 hover:border-neutral-500 bg-black/20 shadow-inner'}`}
             >
               <input 
                 type="file" accept="image/*" className="hidden" ref={fileInputRefPano}
@@ -481,16 +478,13 @@ export default function SlideGenerator() {
                     style={{ transform: `scaleX(${panoImage.flipH ? -1 : 1}) scaleY(${panoImage.flipV ? -1 : 1}) rotate(${panoImage.rotate}deg)` }}
                   />
                   <div className="absolute top-2 right-2 flex gap-2">
-                    <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="90度回転">
+                    <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 md:p-2 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
                       <RotateCw className="w-4 h-4" />
                     </button>
-                    <button onClick={(e) => toggleFlip("pano", null, "H", e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="左右反転">
+                    <button onClick={(e) => toggleFlip("pano", null, "H", e)} className="p-2 md:p-2 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-blue-600 active:scale-90 transition-transform" title="左右反転">
                       <FlipHorizontal className="w-4 h-4" />
                     </button>
-                    <button onClick={(e) => toggleFlip("pano", null, "V", e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="上下反転">
-                      <FlipVertical className="w-4 h-4" />
-                    </button>
-                    <button onClick={(e) => removeImage("pano", null, e)} className="p-2 bg-black/70 rounded text-red-400 hover:bg-red-600 hover:text-white" title="削除">
+                    <button onClick={(e) => removeImage("pano", null, e)} className="p-2 md:p-2 bg-black/70 backdrop-blur-sm rounded-lg text-red-400 hover:bg-red-600 hover:text-white active:scale-90 transition-transform" title="削除">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -498,19 +492,19 @@ export default function SlideGenerator() {
               ) : (
                 <>
                   <UploadCloud className="w-8 h-8 text-neutral-500 mb-2" />
-                  <span className="text-neutral-400 text-sm">ドラッグ＆ドロップまたはクリック</span>
+                  <span className="text-neutral-500 text-xs md:text-sm">タップしてアップロード</span>
                 </>
               )}
             </div>
           </div>
 
           {/* Facial */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
-              <h3 className="text-lg font-semibold text-white">顔貌写真 (3枚)</h3>
+          <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-white">顔貌写真 (3枚)</h3>
               <button 
                 onClick={() => fileInputRefFacial.current?.click()}
-                className="text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded"
+                className="text-xs md:text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-3 md:py-2 rounded-lg w-full sm:w-auto border border-white/10"
               >
                 画像を追加
               </button>
@@ -521,7 +515,7 @@ export default function SlideGenerator() {
             </div>
             
             <div 
-              className="grid grid-cols-3 gap-2 bg-neutral-950 p-2 rounded-lg"
+              className="grid grid-cols-3 gap-1.5 md:gap-2 bg-black/40 p-1.5 md:p-3 rounded-xl border border-white/5 shadow-inner"
               onDrop={(e) => handleDrop(e, "facial")}
               onDragOver={handleDragOver}
             >
@@ -529,8 +523,8 @@ export default function SlideGenerator() {
                 <div 
                   key={idx}
                   onClick={() => handleFacialGridClick(idx)}
-                  className={`relative aspect-[3/4] rounded border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
-                    ${facialSwapIndex === idx ? 'border-blue-500 bg-blue-500/20' : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'}`}
+                  className={`relative aspect-[3/4] rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
+                    ${facialSwapIndex === idx ? 'border-teal-500 bg-teal-500/20 scale-95' : 'border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}
                 >
                   {img ? (
                     <>
@@ -540,23 +534,20 @@ export default function SlideGenerator() {
                         className="absolute inset-0 w-full h-full object-cover"
                         style={{ transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` }}
                       />
-                      <div className="absolute top-1 right-1 flex gap-1">
-                        <button onClick={(e) => rotateImage("facial", idx, e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="90度回転">
+                      <div className="absolute top-1 right-1 flex flex-col gap-1">
+                        <button onClick={(e) => rotateImage("facial", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
                           <RotateCw className="w-3 h-3" />
                         </button>
-                        <button onClick={(e) => toggleFlip("facial", idx, "H", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="左右反転">
+                        <button onClick={(e) => toggleFlip("facial", idx, "H", e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="左右反転">
                           <FlipHorizontal className="w-3 h-3" />
                         </button>
-                        <button onClick={(e) => toggleFlip("facial", idx, "V", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="上下反転">
-                          <FlipVertical className="w-3 h-3" />
-                        </button>
-                        <button onClick={(e) => removeImage("facial", idx, e)} className="p-1 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white" title="削除">
+                        <button onClick={(e) => removeImage("facial", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-red-400 hover:bg-red-600 hover:text-white active:scale-90 transition-transform" title="削除">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </>
                   ) : (
-                    <span className="text-neutral-600 text-sm">枠 {idx + 1}</span>
+                    <span className="text-neutral-600 text-[10px] md:text-sm font-medium">枠 {idx + 1}</span>
                   )}
                 </div>
               ))}

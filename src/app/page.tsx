@@ -38,6 +38,7 @@ export default function Home() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [patientHistory, setPatientHistory] = useState<{date: string, soap: string, filename?: string}[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
 
   // QR Tab State
   const [qrPatientId, setQrPatientId] = useState("");
@@ -202,6 +203,7 @@ export default function Home() {
     setSelectedPatient(patientName);
     setIsSearching(true);
     setPatientHistory([]);
+    setShowMobileDetail(true);
     try {
       const dirHandle: any = await get("obsidianDirHandle");
       const patientFileHandle = await dirHandle.getFileHandle(`${patientName}.md`);
@@ -530,23 +532,23 @@ export default function Home() {
   const filteredPatients = patientsList.filter(p => p.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30 flex flex-col">
-      {/* Top Navigation */}
-      <nav className="bg-neutral-900 border-b border-neutral-800 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+    <div className="h-[100dvh] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-950/30 via-neutral-950 to-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30 flex flex-col overflow-hidden">
+      {/* Top Navigation (Desktop/iPad) */}
+      <nav className="hidden md:flex bg-neutral-900/60 backdrop-blur-xl border-b border-white/5 px-6 py-4 items-center justify-between z-10 shadow-2xl">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 mr-4">
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/20">
+            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50 border border-teal-400/20">
               <FileText className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
               Dental OS
             </h1>
           </div>
-          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide bg-neutral-900/50 p-1 rounded-xl border border-neutral-800 shrink-0">
+          <div className="grid grid-cols-2 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
               onClick={() => setActiveTab("qr")}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
-                activeTab === "qr" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "qr" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
               <Camera className="w-4 h-4" />
@@ -554,8 +556,8 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("input")}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
-                activeTab === "input" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "input" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
               <Mic className="w-4 h-4" />
@@ -563,8 +565,8 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("search")}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
-                activeTab === "search" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "search" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
               <Search className="w-4 h-4" />
@@ -572,8 +574,8 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("slide")}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
-                activeTab === "slide" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "slide" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
               <Presentation className="w-4 h-4" />
@@ -692,8 +694,8 @@ export default function Home() {
 
           {/* === INPUT TAB === */}
           {activeTab === "input" && (
-            <div className="grid md:grid-cols-12 gap-8">
-              <div className="md:col-span-4 flex flex-col items-center justify-center p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative h-[600px]">
+            <div className="flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-8 min-h-[calc(100dvh-200px)] md:h-[600px]">
+              <div className="md:col-span-4 flex flex-col items-center justify-center p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative flex-shrink-0 order-1">
                 <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-950/50 border border-neutral-800 text-xs font-medium">
                   {status === "idle" && <span className="text-neutral-400">準備完了</span>}
                   {status === "recording" && (
@@ -717,56 +719,56 @@ export default function Home() {
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={status === "transcribing" || status === "formatting" || status === "saving"}
-                  className={`relative group flex items-center justify-center w-20 h-20 md:w-32 md:h-32 rounded-full transition-all duration-300 mt-4 ${
+                  className={`relative group flex items-center justify-center w-28 h-28 md:w-32 md:h-32 rounded-full transition-all duration-300 mt-4 shadow-2xl ${
                     isRecording 
-                      ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' 
-                      : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 hover:scale-105'
+                      ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border-2 border-red-500/50' 
+                      : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 hover:scale-105 border border-teal-500/20'
                   } disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100`}
                 >
                   {isRecording && <div className="absolute inset-0 rounded-full border-4 border-red-500/30 animate-ping" />}
-                  {isRecording ? <Square className="w-8 h-8 md:w-10 md:h-10" fill="currentColor" /> : <Mic className="w-10 h-10 md:w-12 md:h-12" />}
+                  {isRecording ? <Square className="w-10 h-10 md:w-10 md:h-10" fill="currentColor" /> : <Mic className="w-12 h-12 md:w-12 md:h-12" />}
                 </button>
-                <p className="mt-4 md:mt-6 text-xs md:text-sm text-neutral-400 font-medium">
+                <p className="mt-6 text-sm text-neutral-400 font-medium">
                   {isRecording ? "タップして停止" : "タップして喋る (最大 1m 59s)"}
                 </p>
               </div>
 
-              <div className="md:col-span-8 space-y-6 h-[600px] flex flex-col">
+              <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
                 <div className="space-y-2 flex-shrink-0">
-                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">生の文字起こし</label>
-                  <div className="w-full h-24 p-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-sm text-neutral-300 overflow-y-auto leading-relaxed">
+                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2">生の文字起こし</label>
+                  <div className="w-full h-24 p-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-sm text-neutral-300 overflow-y-auto leading-relaxed shadow-inner">
                     {transcribedText ? transcribedText : <span className="text-neutral-600 italic">ここに文字起こし結果が表示されます...</span>}
                   </div>
                 </div>
 
-                <div className="space-y-2 flex-1 flex flex-col">
-                  <label className="text-xs font-semibold text-purple-400/80 uppercase tracking-wider flex items-center justify-between">
+                <div className="space-y-2 flex-1 flex flex-col min-h-[250px]">
+                  <label className="text-xs font-semibold text-purple-400/80 uppercase tracking-wider flex items-center justify-between pl-2">
                     <span>AI カルテ生成 (SOAP)</span>
                   </label>
                   <textarea
                     value={soapText}
                     onChange={(e) => setSoapText(e.target.value)}
                     placeholder="ここにSOAP形式に整形されたカルテが表示されます。修正も可能です。"
-                    className="flex-1 w-full p-4 bg-neutral-900 border border-neutral-700/50 focus:border-purple-500/50 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono"
+                    className="flex-1 w-full p-4 bg-neutral-900 border border-neutral-700/50 focus:border-purple-500/50 rounded-2xl text-base md:text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono shadow-inner"
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 flex-shrink-0 gap-4">
-                  <div className="text-xs text-neutral-500 truncate w-full sm:max-w-xs order-2 sm:order-1 text-center sm:text-left">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between pt-2 flex-shrink-0 gap-4 mb-4 md:mb-0">
+                  <div className="text-xs text-neutral-500 truncate w-full md:max-w-xs text-center md:text-left order-2 md:order-1">
                     {status === "saved" && `保存先: ${savedPath}`}
                   </div>
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto order-1 sm:order-2">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <User className="w-4 h-4 text-teal-500 hidden sm:block" />
+                  <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      <User className="w-4 h-4 text-teal-500 hidden md:block" />
                       <input 
                         type="text" 
                         value={staffName}
                         onChange={e => setStaffName(e.target.value)}
                         placeholder="担当スタッフ名 (任意)"
-                        className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-3 sm:py-2 text-sm text-white focus:border-teal-500 outline-none w-full sm:w-40"
+                        className="bg-neutral-950 border border-neutral-700 rounded-xl px-4 py-3 md:py-2 text-base md:text-sm text-white focus:border-teal-500 outline-none w-full md:w-40"
                       />
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex w-full md:w-auto gap-2">
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(displaySoapText);
@@ -774,18 +776,18 @@ export default function Home() {
                           setTimeout(() => setCopied(false), 2000);
                         }}
                         disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
-                        className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-3 sm:py-4 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                        className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-4 md:py-3 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Clipboard className="w-5 h-5" />}
-                        <span className="text-sm sm:text-base">{copied ? "コピー済" : "コピー"}</span>
+                        <span className="text-base md:text-sm">{copied ? "コピー済" : "コピー"}</span>
                       </button>
                       <button
                         onClick={saveToObsidian}
                         disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
-                        className="flex-[2] sm:flex-none flex justify-center items-center gap-2 px-6 py-3 sm:py-4 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                        className="flex-[2] md:flex-none flex justify-center items-center gap-2 px-6 py-4 md:py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         <Save className="w-5 h-5" />
-                        <span className="text-sm sm:text-base">{isIOS ? "Obsidianへ転送" : isFSApiSupported ? "データを保存" : "ダウンロード"}</span>
+                        <span className="text-base md:text-sm">{isIOS ? "Obsidianへ転送" : isFSApiSupported ? "データを保存" : "ダウンロード"}</span>
                       </button>
                     </div>
                   </div>
@@ -817,138 +819,149 @@ export default function Home() {
                 </div>
               ) : (
                 <>
-                  {/* Left Sidebar: Patient List */}
-                  <div className="w-80 border-r border-neutral-800 bg-neutral-950/50 flex flex-col">
-                    <div className="p-4 border-b border-neutral-800">
-                      <div className="relative">
-                        <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="text" 
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          placeholder="患者名やIDで検索..."
-                          className="w-full bg-neutral-900 border border-neutral-700 rounded-lg pl-9 pr-4 py-2 text-sm text-neutral-200 focus:outline-none focus:border-teal-500"
-                        />
+                  {/* Master-Detail Wrapper */}
+                  <div className="flex-1 flex overflow-hidden">
+                    {/* Left Sidebar: Patient List */}
+                    <div className={`w-full md:w-80 border-r border-neutral-800 bg-neutral-950/50 flex-col ${showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
+                      <div className="p-4 border-b border-neutral-800">
+                        <div className="relative">
+                          <Search className="w-5 h-5 md:w-4 md:h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="患者名やIDで検索..."
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg pl-10 md:pl-9 pr-4 py-3 md:py-2 text-base md:text-sm text-neutral-200 focus:outline-none focus:border-teal-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-2">
+                        {filteredPatients.length === 0 ? (
+                          <div className="text-center text-sm text-neutral-500 mt-10">患者が見つかりません</div>
+                        ) : (
+                          filteredPatients.map(p => (
+                            <button
+                              key={p}
+                              onClick={() => selectPatient(p)}
+                              className={`w-full text-left px-4 py-4 md:py-3 rounded-xl transition-colors mb-1 ${
+                                selectedPatient === p ? "bg-teal-500/20 text-teal-300" : "text-neutral-300 hover:bg-neutral-800"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <User className="w-5 h-5 md:w-4 md:h-4 opacity-70" />
+                                <span className="truncate text-base md:text-sm font-bold md:font-medium">{p}</span>
+                              </div>
+                            </button>
+                          ))
+                        )}
                       </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-2">
-                      {filteredPatients.length === 0 ? (
-                        <div className="text-center text-sm text-neutral-500 mt-10">患者が見つかりません</div>
+
+                    {/* Right Content: Patient History */}
+                    <div className={`flex-1 bg-neutral-900/30 flex-col ${!showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
+                      {!selectedPatient ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 p-8 text-center">
+                          <User className="w-16 h-16 opacity-20 mb-4" />
+                          <p>リストから患者を選択してください</p>
+                        </div>
+                      ) : isSearching ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-neutral-500">
+                          <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-4" />
+                          <p>カルテ履歴を読み込み中...</p>
+                        </div>
                       ) : (
-                        filteredPatients.map(p => (
-                          <button
-                            key={p}
-                            onClick={() => selectPatient(p)}
-                            className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-1 ${
-                              selectedPatient === p ? "bg-teal-500/20 text-teal-300" : "text-neutral-300 hover:bg-neutral-800"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <User className="w-4 h-4 opacity-70" />
-                              <span className="truncate">{p}</span>
-                            </div>
-                          </button>
-                        ))
+                        <div className="flex-1 overflow-y-auto relative">
+                          <div className="sticky top-0 bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800 px-6 py-4 md:px-8 md:py-6 z-10">
+                            <button 
+                              onClick={() => setShowMobileDetail(false)} 
+                              className="md:hidden flex items-center gap-1 text-teal-400 font-bold mb-4 py-1 px-2 -ml-2 rounded-lg hover:bg-teal-900/30 active:bg-teal-900/50 transition-colors"
+                            >
+                              <ChevronLeft className="w-5 h-5" /> 戻る
+                            </button>
+                            <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
+                              <User className="w-6 h-6 text-teal-500" />
+                              {selectedPatient}
+                            </h2>
+                            <p className="text-sm text-neutral-400 mt-1">{patientHistory.length} 件の診療記録</p>
+                          </div>
+                          
+                          <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
+                            {patientHistory.length === 0 ? (
+                              <div className="text-center text-neutral-500 py-10 bg-neutral-900 rounded-2xl border border-neutral-800 border-dashed">
+                                診療記録が見つかりません
+                              </div>
+                            ) : (
+                              <div className="relative border-l-2 border-neutral-800 ml-4 space-y-12 pb-24 md:pb-12">
+                                {patientHistory.map((record, idx) => (
+                                  <div key={idx} className="relative pl-6 md:pl-8">
+                                    {/* Timeline Dot */}
+                                    <div className="absolute w-4 h-4 bg-teal-500 rounded-full -left-[9px] top-1 ring-4 ring-neutral-950" />
+                                    
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <Clock className="w-4 h-4 text-teal-500" />
+                                      <h3 className="text-lg font-bold text-teal-400">{record.date}</h3>
+                                    </div>
+                                    
+                                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-6 shadow-xl relative group">
+                                      <pre className="whitespace-pre-wrap font-mono text-sm text-neutral-300 leading-relaxed font-medium">
+                                        {record.soap}
+                                      </pre>
+                                      
+                                      {appendingChart === record.filename ? (
+                                        <div className="mt-6 pt-6 border-t border-neutral-800">
+                                          <div className="mb-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <User className="w-4 h-4 text-teal-500" />
+                                              <input 
+                                                type="text" 
+                                                value={staffName}
+                                                onChange={e => setStaffName(e.target.value)}
+                                                placeholder="担当スタッフ名"
+                                                className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:border-teal-500 outline-none w-full md:w-48"
+                                              />
+                                            </div>
+                                          </div>
+                                          <textarea
+                                            value={appendContent}
+                                            onChange={e => setAppendContent(e.target.value)}
+                                            placeholder="※追記内容を入力してください。元の記録は上書きされず、末尾に追記されます。"
+                                            className="w-full h-24 bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-sm text-white focus:border-teal-500 outline-none resize-none mb-3 font-mono leading-relaxed"
+                                          />
+                                          <div className="flex flex-col-reverse md:flex-row gap-2 justify-end">
+                                            <button 
+                                              onClick={() => setAppendingChart(null)}
+                                              className="px-4 py-3 md:py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors font-bold"
+                                            >
+                                              キャンセル
+                                            </button>
+                                            <button 
+                                              onClick={() => record.filename && handleAppendSave(record.filename)}
+                                              className="px-6 py-3 md:py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                            >
+                                              <Save className="w-4 h-4" /> 追記を保存
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <button 
+                                          onClick={() => {
+                                            setAppendingChart(record.filename || null);
+                                            setAppendContent("");
+                                          }}
+                                          className="mt-4 md:absolute md:top-4 md:right-4 md:mt-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-neutral-800 hover:bg-neutral-700 text-neutral-300 w-full md:w-auto px-4 py-3 md:px-3 md:py-1.5 rounded-xl md:rounded-lg text-sm md:text-xs font-bold md:font-medium flex items-center justify-center gap-2 border border-neutral-700"
+                                        >
+                                          <FileText className="w-4 h-4 md:w-3 md:h-3" /> 追記する
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-
-                  {/* Right Content: Patient History */}
-                  <div className="flex-1 bg-neutral-900/30 flex flex-col">
-                    {!selectedPatient ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-neutral-500">
-                        <User className="w-16 h-16 opacity-20 mb-4" />
-                        <p>左のリストから患者を選択してください</p>
-                      </div>
-                    ) : isSearching ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-neutral-500">
-                        <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-4" />
-                        <p>カルテ履歴を読み込み中...</p>
-                      </div>
-                    ) : (
-                      <div className="flex-1 overflow-y-auto">
-                        <div className="sticky top-0 bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800 px-8 py-6 z-10">
-                          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                            <User className="w-6 h-6 text-teal-500" />
-                            {selectedPatient}
-                          </h2>
-                          <p className="text-sm text-neutral-400 mt-1">{patientHistory.length} 件の診療記録</p>
-                        </div>
-                        
-                        <div className="p-8 max-w-4xl mx-auto space-y-8">
-                          {patientHistory.length === 0 ? (
-                            <div className="text-center text-neutral-500 py-10 bg-neutral-900 rounded-2xl border border-neutral-800 border-dashed">
-                              診療記録が見つかりません
-                            </div>
-                          ) : (
-                            <div className="relative border-l-2 border-neutral-800 ml-4 space-y-12 pb-12">
-                              {patientHistory.map((record, idx) => (
-                                <div key={idx} className="relative pl-8">
-                                  {/* Timeline Dot */}
-                                  <div className="absolute w-4 h-4 bg-teal-500 rounded-full -left-[9px] top-1 ring-4 ring-neutral-950" />
-                                  
-                                  <div className="flex items-center gap-2 mb-4">
-                                    <Clock className="w-4 h-4 text-teal-500" />
-                                    <h3 className="text-lg font-bold text-teal-400">{record.date}</h3>
-                                  </div>
-                                  
-                                  <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl relative group">
-                                    <pre className="whitespace-pre-wrap font-mono text-sm text-neutral-300 leading-relaxed font-medium">
-                                      {record.soap}
-                                    </pre>
-                                    
-                                    {appendingChart === record.filename ? (
-                                      <div className="mt-6 pt-6 border-t border-neutral-800">
-                                        <div className="mb-3 flex items-center gap-2">
-                                          <User className="w-4 h-4 text-teal-500" />
-                                          <input 
-                                            type="text" 
-                                            value={staffName}
-                                            onChange={e => setStaffName(e.target.value)}
-                                            placeholder="担当スタッフ名"
-                                            className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm text-white focus:border-teal-500 outline-none w-48"
-                                          />
-                                        </div>
-                                        <textarea
-                                          value={appendContent}
-                                          onChange={e => setAppendContent(e.target.value)}
-                                          placeholder="※追記内容を入力してください。元の記録は上書きされず、末尾に追記されます。"
-                                          className="w-full h-24 bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-sm text-white focus:border-teal-500 outline-none resize-none mb-3 font-mono leading-relaxed"
-                                        />
-                                        <div className="flex gap-2 justify-end">
-                                          <button 
-                                            onClick={() => setAppendingChart(null)}
-                                            className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors"
-                                          >
-                                            キャンセル
-                                          </button>
-                                          <button 
-                                            onClick={() => record.filename && handleAppendSave(record.filename)}
-                                            className="px-6 py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
-                                          >
-                                            <Save className="w-4 h-4" /> 追記を保存
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <button 
-                                        onClick={() => {
-                                          setAppendingChart(record.filename || null);
-                                          setAppendContent("");
-                                        }}
-                                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 border border-neutral-700"
-                                      >
-                                        <FileText className="w-3 h-3" /> 追記する
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </>
               )}
@@ -959,6 +972,49 @@ export default function Home() {
 
         </div>
       </div>
+
+      {/* Bottom Navigation (Mobile Only) */}
+      <nav className="md:hidden flex bg-neutral-900/80 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-2 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] mt-auto">
+        <button
+          onClick={() => setActiveTab("qr")}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+            activeTab === "qr" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Camera className="w-6 h-6" />
+          <span className="text-[10px] font-bold">撮影QR</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("input")}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+            activeTab === "input" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Mic className="w-6 h-6" />
+          <span className="text-[10px] font-bold">AI入力</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("search");
+            setShowMobileDetail(false);
+          }}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+            activeTab === "search" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Search className="w-6 h-6" />
+          <span className="text-[10px] font-bold">検索</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("slide")}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+            activeTab === "slide" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Presentation className="w-6 h-6" />
+          <span className="text-[10px] font-bold">スライド</span>
+        </button>
+      </nav>
     </div>
   );
 }
