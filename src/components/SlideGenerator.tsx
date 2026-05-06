@@ -15,10 +15,12 @@ interface ImageData {
 export default function SlideGenerator() {
   const [intraoralImages, setIntraoralImages] = useState<(ImageData | null)[]>(Array(9).fill(null));
   const [panoImage, setPanoImage] = useState<ImageData | null>(null);
-  const [facialImage, setFacialImage] = useState<ImageData | null>(null);
+  const [facialImages, setFacialImages] = useState<(ImageData | null)[]>(Array(3).fill(null));
   
   const [selectedSwapIndex, setSelectedSwapIndex] = useState<number | null>(null);
   const [uploadTargetIndex, setUploadTargetIndex] = useState<number | null>(null);
+  const [facialSwapIndex, setFacialSwapIndex] = useState<number | null>(null);
+  const [facialUploadIndex, setFacialUploadIndex] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fileInputRef9 = useRef<HTMLInputElement>(null);
@@ -77,14 +79,39 @@ export default function SlideGenerator() {
         flipV: false,
       });
     } else if (type === "facial") {
-      const file = files[0];
-      setFacialImage({
-        id: Math.random().toString(36).substring(7),
-        file,
-        previewUrl: URL.createObjectURL(file),
-        flipH: false,
-        flipV: false,
-      });
+      const newImages = [...facialImages];
+      let fileIndex = 0;
+      
+      const startIndex = facialUploadIndex !== null ? facialUploadIndex : 0;
+      
+      for (let i = startIndex; i < 3; i++) {
+        if (!newImages[i] && fileIndex < files.length) {
+          const file = files[fileIndex++];
+          newImages[i] = {
+            id: Math.random().toString(36).substring(7),
+            file,
+            previewUrl: URL.createObjectURL(file),
+            flipH: false,
+            flipV: false,
+          };
+        }
+      }
+      
+      for (let i = 0; i < startIndex; i++) {
+        if (!newImages[i] && fileIndex < files.length) {
+          const file = files[fileIndex++];
+          newImages[i] = {
+            id: Math.random().toString(36).substring(7),
+            file,
+            previewUrl: URL.createObjectURL(file),
+            flipH: false,
+            flipV: false,
+          };
+        }
+      }
+
+      setFacialImages(newImages);
+      setFacialUploadIndex(null);
     }
   };
 
@@ -123,6 +150,28 @@ export default function SlideGenerator() {
     }
   };
 
+  const handleFacialGridClick = (index: number) => {
+    if (facialSwapIndex === null) {
+      if (facialImages[index]) {
+        setFacialSwapIndex(index);
+      } else {
+        setFacialUploadIndex(index);
+        fileInputRefFacial.current?.click();
+      }
+    } else {
+      if (facialSwapIndex === index) {
+        setFacialSwapIndex(null);
+        return;
+      }
+      const newImages = [...facialImages];
+      const temp = newImages[facialSwapIndex];
+      newImages[facialSwapIndex] = newImages[index];
+      newImages[index] = temp;
+      setFacialImages(newImages);
+      setFacialSwapIndex(null);
+    }
+  };
+
   const toggleFlip = (type: "intraoral" | "pano" | "facial", index: number | null, direction: "H" | "V", e: React.MouseEvent) => {
     e.stopPropagation();
     if (type === "intraoral" && index !== null) {
@@ -134,8 +183,13 @@ export default function SlideGenerator() {
       }
     } else if (type === "pano" && panoImage) {
       setPanoImage({ ...panoImage, [direction === "H" ? "flipH" : "flipV"]: !panoImage[direction === "H" ? "flipH" : "flipV"] });
-    } else if (type === "facial" && facialImage) {
-      setFacialImage({ ...facialImage, [direction === "H" ? "flipH" : "flipV"]: !facialImage[direction === "H" ? "flipH" : "flipV"] });
+    } else if (type === "facial" && index !== null) {
+      const newImages = [...facialImages];
+      const img = newImages[index];
+      if (img) {
+        newImages[index] = { ...img, [direction === "H" ? "flipH" : "flipV"]: !img[direction === "H" ? "flipH" : "flipV"] };
+        setFacialImages(newImages);
+      }
     }
   };
 
@@ -147,8 +201,10 @@ export default function SlideGenerator() {
       setIntraoralImages(newImages);
     } else if (type === "pano") {
       setPanoImage(null);
-    } else if (type === "facial") {
-      setFacialImage(null);
+    } else if (type === "facial" && index !== null) {
+      const newImages = [...facialImages];
+      newImages[index] = null;
+      setFacialImages(newImages);
     }
   };
 
@@ -211,17 +267,30 @@ export default function SlideGenerator() {
         });
       }
 
-      // Slide 3: Facial
-      if (facialImage) {
+      // Slide 3: Facial (3 images side by side)
+      const hasFacial = facialImages.some(img => img !== null);
+      if (hasFacial) {
         const facialSlide = pptx.addSlide();
-        const base64 = await fileToBase64(facialImage.file);
-        facialSlide.addImage({
-          data: base64,
-          x: 2.5, y: 0.5, w: 5, h: 4.6,
-          sizing: { type: "contain", w: 5, h: 4.6 },
-          flipH: facialImage.flipH,
-          flipV: facialImage.flipV,
-        });
+        const fMarginX = 0.5;
+        const fW = 2.8;
+        const fH = 3.73; // approx 3:4 ratio
+        const fGap = 0.2;
+        
+        for (let i = 0; i < 3; i++) {
+          const imgData = facialImages[i];
+          if (imgData) {
+            const x = fMarginX + i * (fW + fGap);
+            const y = 0.8;
+            const base64 = await fileToBase64(imgData.file);
+            facialSlide.addImage({
+              data: base64,
+              x, y, w: fW, h: fH,
+              sizing: { type: "contain", w: fW, h: fH },
+              flipH: imgData.flipH,
+              flipV: imgData.flipV,
+            });
+          }
+        }
       }
 
       await pptx.writeFile({ fileName: "Dental_Presentation.pptx" });
@@ -359,44 +428,57 @@ export default function SlideGenerator() {
 
           {/* Facial */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">顔貌写真</h3>
-            <div 
-              onClick={() => !facialImage && fileInputRefFacial.current?.click()}
-              onDrop={(e) => handleDrop(e, "facial")}
-              onDragOver={handleDragOver}
-              className={`relative aspect-[3/4] max-h-48 mx-auto rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
-                ${facialImage ? 'border-neutral-700 bg-black' : 'border-neutral-700 hover:border-neutral-500 bg-neutral-950'}`}
-            >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-white">顔貌写真 (3枚)</h3>
+              <button 
+                onClick={() => fileInputRefFacial.current?.click()}
+                className="text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded"
+              >
+                画像を追加
+              </button>
               <input 
-                type="file" accept="image/*" className="hidden" ref={fileInputRefFacial}
+                type="file" multiple accept="image/*" className="hidden" ref={fileInputRefFacial}
                 onChange={(e) => handleFiles(e.target.files, "facial")}
               />
-              {facialImage ? (
-                <>
-                  <img 
-                    src={facialImage.previewUrl} 
-                    alt="Facial"
-                    className="absolute inset-0 w-full h-full object-contain"
-                    style={{ transform: `scaleX(${facialImage.flipH ? -1 : 1}) scaleY(${facialImage.flipV ? -1 : 1})` }}
-                  />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <button onClick={(e) => toggleFlip("facial", null, "H", e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="左右反転">
-                      <FlipHorizontal className="w-4 h-4" />
-                    </button>
-                    <button onClick={(e) => toggleFlip("facial", null, "V", e)} className="p-2 bg-black/70 rounded text-white hover:bg-blue-600" title="上下反転">
-                      <FlipVertical className="w-4 h-4" />
-                    </button>
-                    <button onClick={(e) => removeImage("facial", null, e)} className="p-2 bg-black/70 rounded text-red-400 hover:bg-red-600 hover:text-white" title="削除">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-8 h-8 text-neutral-500 mb-2" />
-                  <span className="text-neutral-400 text-sm text-center">ドロップして追加</span>
-                </>
-              )}
+            </div>
+            
+            <div 
+              className="grid grid-cols-3 gap-2 bg-neutral-950 p-2 rounded-lg"
+              onDrop={(e) => handleDrop(e, "facial")}
+              onDragOver={handleDragOver}
+            >
+              {facialImages.map((img, idx) => (
+                <div 
+                  key={idx}
+                  onClick={() => handleFacialGridClick(idx)}
+                  className={`relative aspect-[3/4] rounded border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all
+                    ${facialSwapIndex === idx ? 'border-blue-500 bg-blue-500/20' : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'}`}
+                >
+                  {img ? (
+                    <>
+                      <img 
+                        src={img.previewUrl} 
+                        alt={`Facial ${idx}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1})` }}
+                      />
+                      <div className="absolute top-1 right-1 flex gap-1">
+                        <button onClick={(e) => toggleFlip("facial", idx, "H", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="左右反転">
+                          <FlipHorizontal className="w-3 h-3" />
+                        </button>
+                        <button onClick={(e) => toggleFlip("facial", idx, "V", e)} className="p-1 bg-black/60 rounded text-white hover:bg-blue-600" title="上下反転">
+                          <FlipVertical className="w-3 h-3" />
+                        </button>
+                        <button onClick={(e) => removeImage("facial", idx, e)} className="p-1 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white" title="削除">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-neutral-600 text-sm">枠 {idx + 1}</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
