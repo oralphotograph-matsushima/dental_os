@@ -542,10 +542,10 @@ export default function Home() {
               Dental OS
             </h1>
           </div>
-          <div className="flex bg-neutral-900/50 p-1 rounded-xl border border-neutral-800">
+          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide bg-neutral-900/50 p-1 rounded-xl border border-neutral-800 shrink-0">
             <button
               onClick={() => setActiveTab("qr")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 activeTab === "qr" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
@@ -554,7 +554,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("input")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 activeTab === "input" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
@@ -563,7 +563,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("search")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 activeTab === "search" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
@@ -572,7 +572,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("slide")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 activeTab === "slide" ? "bg-neutral-800 text-white shadow" : "text-neutral-500 hover:text-neutral-300"
               }`}
             >

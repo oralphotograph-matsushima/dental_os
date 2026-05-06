@@ -274,7 +274,7 @@ export default function SlideGenerator() {
           intraoralSlide.addImage({
             data: base64,
             x, y, w, h,
-            sizing: { type: "contain", w, h },
+            sizing: { type: "cover", w, h },
             flipH: imgData.flipH,
             flipV: imgData.flipV,
             rotate: imgData.rotate,
@@ -289,7 +289,7 @@ export default function SlideGenerator() {
         panoSlide.addImage({
           data: base64,
           x: 0.5, y: 1, w: 9, h: 3.6,
-          sizing: { type: "contain", w: 9, h: 3.6 },
+          sizing: { type: "cover", w: 9, h: 3.6 },
           flipH: panoImage.flipH,
           flipV: panoImage.flipV,
           rotate: panoImage.rotate,
@@ -314,7 +314,7 @@ export default function SlideGenerator() {
             facialSlide.addImage({
               data: base64,
               x, y, w: fW, h: fH,
-              sizing: { type: "contain", w: fW, h: fH },
+              sizing: { type: "cover", w: fW, h: fH },
               flipH: imgData.flipH,
               flipV: imgData.flipV,
               rotate: imgData.rotate,
@@ -333,8 +333,8 @@ export default function SlideGenerator() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-5xl mx-auto py-4 md:py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">プレゼン自動生成（スライド）</h2>
           <p className="text-neutral-400">画像を入れて「出力」を押すだけで.pptxファイルが作成されます。</p>
@@ -342,7 +342,7 @@ export default function SlideGenerator() {
         <button
           onClick={generateSlide}
           disabled={isGenerating}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
+          className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isGenerating ? <Move className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
           スライド（.pptx）を出力
@@ -352,7 +352,7 @@ export default function SlideGenerator() {
       <div className="space-y-8">
         {/* 9-shots Grid */}
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
             <h3 className="text-lg font-semibold text-white">口腔内9枚法</h3>
             <button 
               onClick={() => fileInputRef9.current?.click()}
@@ -415,7 +415,7 @@ export default function SlideGenerator() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
           {/* Panoramic */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-white mb-4">パノラマレントゲン</h3>
@@ -464,7 +464,7 @@ export default function SlideGenerator() {
 
           {/* Facial */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
               <h3 className="text-lg font-semibold text-white">顔貌写真 (3枚)</h3>
               <button 
                 onClick={() => fileInputRefFacial.current?.click()}
