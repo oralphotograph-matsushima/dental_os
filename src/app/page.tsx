@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -21,7 +21,7 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide">("qr");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "settings">("qr");
 
   // Input Tab State
   const [isRecording, setIsRecording] = useState(false);
@@ -47,6 +47,7 @@ export default function Home() {
   const [appendingChart, setAppendingChart] = useState<string | null>(null);
   const [appendContent, setAppendContent] = useState("");
   const [staffName, setStaffName] = useState("");
+  const [defaultStaffName, setDefaultStaffName] = useState("");
 
   // Folder settings
   const [hasDirectory, setHasDirectory] = useState(false);
@@ -80,7 +81,10 @@ export default function Home() {
     }
 
     const storedStaff = localStorage.getItem("dental_os_staff_name");
-    if (storedStaff) setStaffName(storedStaff);
+    if (storedStaff) {
+      setStaffName(storedStaff);
+      setDefaultStaffName(storedStaff);
+    }
 
     if (!('showDirectoryPicker' in window)) {
       setIsFSApiSupported(false);
@@ -585,20 +589,15 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3 text-sm text-neutral-400">
-            {isFSApiSupported ? (
-              hasDirectory ? (
-                <div className="flex items-center gap-2 cursor-pointer hover:text-neutral-200" onClick={pickDirectory}>
-                  <FolderOpen className="w-4 h-4 text-teal-500" />
-                  <span className="truncate max-w-[150px]">{directoryName}</span>
-                </div>
-              ) : (
-                <button onClick={pickDirectory} className="text-amber-500 hover:underline flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" /> 保存先未設定
-                </button>
-              )
-            ) : null}
-          </div>
+          <button 
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+              activeTab === "settings" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            設定
+          </button>
           <div className="flex items-center gap-3 border-l border-neutral-800 pl-6">
             <User className="w-4 h-4 text-neutral-500" />
             <div className="text-xs text-neutral-400 truncate max-w-[120px]">{authEmail}</div>
@@ -970,6 +969,85 @@ export default function Home() {
 
           {activeTab === "slide" && <SlideGenerator />}
 
+          {/* === SETTINGS TAB === */}
+          {activeTab === "settings" && (
+            <div className="max-w-4xl mx-auto py-4 md:py-8 mb-20 md:mb-0 space-y-6 md:space-y-8 px-2 md:px-0">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">設定 (Settings)</h2>
+                <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
+              </div>
+
+              {/* Data Connection */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <FolderOpen className="w-5 h-5 text-teal-500" />
+                  データ保存・連携設定
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div>
+                      <div className="font-semibold text-neutral-200 mb-1">Obsidian保存先フォルダ</div>
+                      <div className="text-xs md:text-sm text-neutral-400">カルテや画像を保存するローカルフォルダを指定します。</div>
+                      {!isFSApiSupported && (
+                        <div className="mt-2 text-[10px] md:text-xs text-amber-500 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          ご利用のブラウザ・端末ではフォルダ連携機能がサポートされていません。
+                        </div>
+                      )}
+                    </div>
+                    {isFSApiSupported && (
+                      <div className="flex-shrink-0 w-full md:w-auto">
+                        {hasDirectory ? (
+                          <div className="flex items-center justify-between md:justify-end gap-3 w-full">
+                            <span className="text-sm text-teal-400 font-medium truncate max-w-[150px]">{directoryName}</span>
+                            <button onClick={pickDirectory} className="px-4 py-3 md:py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-semibold rounded-xl md:rounded-lg transition-colors border border-white/10 active:scale-95">
+                              変更する
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={pickDirectory} className="w-full md:w-auto px-6 py-3 md:py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold rounded-xl md:rounded-lg transition-colors shadow-lg active:scale-95">
+                            フォルダを選択
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* User Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-500" />
+                  ユーザー・クリニック情報
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">デフォルト担当スタッフ名</div>
+                      <div className="text-xs md:text-sm text-neutral-400">カルテ入力時に自動的にセットされるスタッフ名です。</div>
+                    </div>
+                    <div className="flex-shrink-0 w-full md:w-auto">
+                      <input 
+                        type="text" 
+                        value={defaultStaffName}
+                        onChange={(e) => {
+                          setDefaultStaffName(e.target.value);
+                          setStaffName(e.target.value);
+                          localStorage.setItem("dental_os_staff_name", e.target.value);
+                        }}
+                        placeholder="例: 山田 太郎"
+                        className="w-full md:w-64 bg-neutral-950 border border-neutral-700 focus:border-blue-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -1013,6 +1091,15 @@ export default function Home() {
         >
           <Presentation className="w-6 h-6" />
           <span className="text-[10px] font-bold">スライド</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+            activeTab === "settings" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Settings className="w-6 h-6" />
+          <span className="text-[10px] font-bold">設定</span>
         </button>
       </nav>
     </div>
