@@ -367,6 +367,47 @@ export default function Home() {
     }
   };
 
+  const handleToothClick = (number: number, quadrant: 'UR' | 'UL' | 'LR' | 'LL') => {
+    const symbols = { UR: '┘', UL: '└', LR: '┐', LL: '┌' };
+    const symbol = symbols[quadrant];
+    const textToAdd = `${number}${symbol} `;
+    setTranscribedText(prev => prev + textToAdd);
+  };
+
+  const renderToothRow = (numbers: number[], quadrant: 'UR' | 'UL' | 'LR' | 'LL') => (
+    numbers.map(n => (
+      <button 
+        key={`${quadrant}-${n}`} 
+        onClick={() => handleToothClick(n, quadrant)} 
+        className="w-6 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-neutral-800 hover:bg-teal-600 text-neutral-300 rounded active:scale-95 transition-transform"
+      >
+        {n}
+      </button>
+    ))
+  );
+
+  const generateSOAP = async (text: string) => {
+    setStatus("formatting");
+    const termsString = customTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
+    try {
+      const soapRes = await fetch("/api/soap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, customTerms: termsString }),
+      });
+      const soapData = await soapRes.json();
+      if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
+
+      setSoapText(soapData.soap);
+      setPatientInfo(soapData.patientInfo || "不明");
+      setStatus("idle");
+    } catch (err: any) {
+      console.error(err);
+      setStatus("error");
+      setErrorMessage(err.message || "エラーが発生しました。");
+    }
+  };
+
   const processAudio = async () => {
     setStatus("transcribing");
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
@@ -382,19 +423,12 @@ export default function Home() {
       const text = transcribeData.text;
       setTranscribedText(text);
 
-      setStatus("formatting");
-      const soapRes = await fetch("/api/soap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, customTerms: termsString }),
-      });
-      const soapData = await soapRes.json();
-      if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
-
-      setSoapText(soapData.soap);
-      setPatientInfo(soapData.patientInfo || "不明");
-      setStatus("idle");
+      await generateSOAP(text);
     } catch (err: any) {
+      console.error(err);
+      setStatus("error");
+      setErrorMessage(err.message || "エラーが発生しました。");
+    }
       console.error(err);
       setStatus("error");
       setErrorMessage(err.message || "エラーが発生しました。");
@@ -771,10 +805,43 @@ export default function Home() {
 
               <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
                 <div className="space-y-2 flex-shrink-0">
-                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2">生の文字起こし</label>
-                  <div className="w-full h-24 p-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-sm text-neutral-300 overflow-y-auto leading-relaxed shadow-inner">
-                    {transcribedText ? transcribedText : <span className="text-neutral-600 italic">ここに文字起こし結果が表示されます...</span>}
+                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2">メモ入力 / 音声文字起こし</label>
+                  
+                  {/* Tooth Selector UI */}
+                  <div className="flex flex-col items-center font-mono text-sm gap-1 bg-black/40 p-2 sm:p-3 rounded-xl border border-white/5 mb-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    <div className="flex items-center min-w-max">
+                      <div className="flex gap-1 pr-1 border-r-2 border-neutral-600">
+                        {renderToothRow([8,7,6,5,4,3,2,1], 'UR')}
+                      </div>
+                      <div className="flex gap-1 pl-1 border-b-2 border-transparent">
+                        {renderToothRow([1,2,3,4,5,6,7,8], 'UL')}
+                      </div>
+                    </div>
+                    <div className="w-full h-[2px] bg-neutral-600 min-w-max" />
+                    <div className="flex items-center min-w-max">
+                      <div className="flex gap-1 pr-1 border-r-2 border-neutral-600">
+                        {renderToothRow([8,7,6,5,4,3,2,1], 'LR')}
+                      </div>
+                      <div className="flex gap-1 pl-1">
+                        {renderToothRow([1,2,3,4,5,6,7,8], 'LL')}
+                      </div>
+                    </div>
                   </div>
+
+                  <textarea
+                    value={transcribedText}
+                    onChange={(e) => setTranscribedText(e.target.value)}
+                    placeholder="ここにメモを入力するか、マイクで録音してください... (例: CR充填)"
+                    className="w-full h-24 p-4 bg-neutral-900 border border-neutral-700/50 focus:border-teal-500/50 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors shadow-inner"
+                  />
+                  <button
+                    onClick={() => generateSOAP(transcribedText)}
+                    disabled={!transcribedText || status === "formatting" || status === "transcribing" || status === "saving"}
+                    className="w-full mt-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <FileText className="w-5 h-5" />
+                    🪄 AIカルテ生成 (SOAP化)
+                  </button>
                 </div>
 
                 <div className="space-y-2 flex-1 flex flex-col min-h-[250px]">
