@@ -37,12 +37,16 @@ export async function POST(request: Request) {
       
       const subscriptions = await stripe.subscriptions.list({
         customer: customers.data[0].id,
-        status: 'active',
-        limit: 1
+        status: 'all',
+        limit: 10
       });
 
-      if (subscriptions.data.length === 0) {
-        return NextResponse.json({ error: "有効なサブスクリプションがありません。決済ページからご利用登録をお願いします。" }, { status: 401 });
+      const hasValidSubscription = subscriptions.data.some(sub => 
+        sub.status === 'active' || sub.status === 'trialing'
+      );
+
+      if (!hasValidSubscription) {
+        return NextResponse.json({ error: "有効なサブスクリプション（または無料トライアル）が見つかりません。決済ページからご利用登録をお願いします。" }, { status: 401 });
       }
     }
 
