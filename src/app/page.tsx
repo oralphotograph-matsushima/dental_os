@@ -137,22 +137,26 @@ export default function Home() {
   // --- Authentication Logic ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError("");
     setIsLoggingIn(true);
+    setAuthError("");
 
     try {
+      if (!deviceIdRef.current) deviceIdRef.current = generateDeviceId();
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: authEmail, password: authPassword, deviceId: deviceIdRef.current }),
+        body: JSON.stringify({ emailOrPassword: authPassword, deviceId: deviceIdRef.current }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error || "ログインに失敗しました");
 
-      localStorage.setItem("dental_os_email", authEmail);
+      setAuthEmail(data.email);
+      localStorage.setItem("dental_os_email", data.email);
       localStorage.setItem("dental_os_password", authPassword);
       setIsAuthenticated(true);
+      setShowUnlockModal(false);
     } catch (err: any) {
       setAuthError(err.message);
     } finally {
@@ -608,27 +612,16 @@ export default function Home() {
               </p>
             </div>
 
-            <form onSubmit={(e) => { handleLogin(e); if(authEmail && authPassword) setShowUnlockModal(false); }} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">メールアドレス</label>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">ライセンスキー（Stripe決済時のメールアドレス または マスターパスワード）</label>
                 <input
-                  type="email"
-                  required
-                  value={authEmail}
-                  onChange={e => setAuthEmail(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
-                  placeholder="doctor@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">パスワード（ライセンスキー）</label>
-                <input
-                  type="password"
+                  type="text"
                   required
                   value={authPassword}
                   onChange={e => setAuthPassword(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
-                  placeholder="••••••••"
+                  placeholder="doctor@example.com または パスワード"
                 />
               </div>
               {authError && <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">{authError}</div>}
@@ -639,6 +632,12 @@ export default function Home() {
               >
                 {isLoggingIn ? <Loader2 className="w-5 h-5 animate-spin" /> : "ロックを解除して全機能を使う"}
               </button>
+              
+              <div className="pt-4 mt-4 border-t border-neutral-800 text-center">
+                <a href="/lp#pricing" onClick={() => setShowUnlockModal(false)} className="text-teal-400 text-sm font-semibold hover:text-teal-300">
+                  まだライセンスをお持ちでない方はこちら
+                </a>
+              </div>
             </form>
           </div>
         </div>

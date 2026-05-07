@@ -1,25 +1,55 @@
 import { NextResponse } from "next/server";
-import { PASSWORDS, registerDevice } from "@/lib/sessionStore";
+import { registerDevice } from "@/lib/sessionStore";
+import Stripe from 'stripe';
+
+// Initialize Stripe with the Secret Key
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2023-10-16" as any,
+});
+
+const MASTER_PASSWORD = process.env.MASTER_PASSWORD || "nostalgista2026";
 
 export async function POST(request: Request) {
   try {
-    const { password, email, deviceId } = await request.json();
+    const { emailOrPassword, deviceId } = await request.json();
 
-    if (!password || !email || !deviceId) {
+    if (!emailOrPassword || !deviceId) {
       return NextResponse.json({ error: "必要な情報が不足しています" }, { status: 400 });
     }
 
-    // 1. Validate Password
-    const plan = PASSWORDS[password];
-    if (!plan) {
-      return NextResponse.json({ error: "パスワードが間違っています" }, { status: 401 });
+    let plan = "premium";
+    let userEmail = emailOrPassword;
+
+    // 1. Check Master Password
+    if (emailOrPassword === MASTER_PASSWORD) {
+      userEmail = "admin@nostalgista.co.jp";
+      plan = "master";
+    } else {
+      // 2. Check Stripe Subscription
+      if (!process.env.STRIPE_SECRET_KEY) {
+         return NextResponse.json({ error: "Stripe APIキーがサーバーに設定されていません" }, { status: 500 });
+      }
+      
+      const customers = await stripe.customers.list({ email: emailOrPassword, limit: 1 });
+      if (customers.data.length === 0) {
+        return NextResponse.json({ error: "このメールアドレスの決済記録が見つかりません。入力に間違いがないかご確認ください。" }, { status: 401 });
+      }
+      
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customers.data[0].id,
+        status: 'active',
+        limit: 1
+      });
+
+      if (subscriptions.data.length === 0) {
+        return NextResponse.json({ error: "有効なサブスクリプションがありません。決済ページからご利用登録をお願いします。" }, { status: 401 });
+      }
     }
 
-    // 2. Register Device and Enforce Limits
-    registerDevice(email, plan, deviceId);
+    // 3. Register Device Session (in-memory validation)
+    registerDevice(userEmail, plan, deviceId);
 
-    // 3. Webhook / Email Notification
-    // Webhookを経由して oralphotograp@gmail.com へ通知を送る設定
+    // 4. Webhook Notification (Optional)
     const webhookUrl = process.env.WEBHOOK_URL;
     if (webhookUrl) {
       try {
@@ -28,23 +58,20 @@ export async function POST(request: Request) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             event: "new_login",
-            email: email,
+            email: userEmail,
             plan: plan,
             deviceId: deviceId,
             timestamp: new Date().toISOString(),
-            target_email: "oralphotograp@gmail.com"
           })
         });
       } catch (e) {
         console.error("Webhook failed:", e);
       }
-    } else {
-      console.log("🔔 [Login Event] Email notification is ready, but WEBHOOK_URL is not set.");
     }
 
-    return NextResponse.json({ success: true, plan });
+    return NextResponse.json({ success: true, plan, email: userEmail });
   } catch (error: any) {
     console.error("Login Error:", error);
-    return NextResponse.json({ error: "ログイン処理中にエラーが発生しました" }, { status: 500 });
+    return NextResponse.json({ error: "ログイン処理中にエラーが発生しました。しばらく経ってから再度お試しください。" }, { status: 500 });
   }
 }
