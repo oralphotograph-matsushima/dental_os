@@ -10,6 +10,12 @@ function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
+interface CustomTerm {
+  id: string;
+  reading: string;
+  term: string;
+}
+
 export default function Home() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,7 +54,9 @@ export default function Home() {
   const [appendContent, setAppendContent] = useState("");
   const [staffName, setStaffName] = useState("");
   const [defaultStaffName, setDefaultStaffName] = useState("");
-  const [customTerms, setCustomTerms] = useState("");
+  const [customTerms, setCustomTerms] = useState<CustomTerm[]>([]);
+  const [newTermReading, setNewTermReading] = useState("");
+  const [newTermNotation, setNewTermNotation] = useState("");
 
   // Folder settings
   const [hasDirectory, setHasDirectory] = useState(false);
@@ -88,7 +96,13 @@ export default function Home() {
     }
 
     const storedTerms = localStorage.getItem("dental_os_custom_terms");
-    if (storedTerms) setCustomTerms(storedTerms);
+    if (storedTerms) {
+      try {
+        setCustomTerms(JSON.parse(storedTerms));
+      } catch (e) {
+        setCustomTerms([{ id: "old", reading: "以前のメモ", term: storedTerms }]);
+      }
+    }
 
     if (!('showDirectoryPicker' in window)) {
       setIsFSApiSupported(false);
@@ -358,7 +372,8 @@ export default function Home() {
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("file", audioBlob, "recording.webm");
-    if (customTerms) formData.append("customTerms", customTerms);
+    const termsString = customTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
+    if (termsString) formData.append("customTerms", termsString);
 
     try {
       const transcribeRes = await fetch("/api/transcribe", { method: "POST", body: formData });
@@ -371,7 +386,7 @@ export default function Home() {
       const soapRes = await fetch("/api/soap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, customTerms }),
+        body: JSON.stringify({ text, customTerms: termsString }),
       });
       const soapData = await soapRes.json();
       if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
@@ -425,7 +440,8 @@ export default function Home() {
         const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ', { create: true });
         const fileHandle = await chartDirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
-        await writable.write(displaySoapText);
+        const doctorInfo = staffName ? `**担当医:** ${staffName}\n\n` : "";
+        await writable.write(doctorInfo + displaySoapText);
         await writable.close();
         
         localStorage.setItem("dental_os_staff_name", staffName);
@@ -447,7 +463,8 @@ export default function Home() {
         setStatus("saved");
         setSavedPath(`${dirHandle.name} / カルテ / ${filename} および ${patientFilename}`);
       } else {
-        const fallbackText = `患者ページ: [[${patientInfo}]]\n\n${displaySoapText}`;
+        const doctorInfo = staffName ? `**担当医:** ${staffName}\n\n` : "";
+        const fallbackText = `患者ページ: [[${patientInfo}]]\n\n${doctorInfo}${displaySoapText}`;
         const blob = new Blob([fallbackText], { type: "text/markdown" });
         const url = URL.createObjectURL(blob);
         
@@ -1044,20 +1061,72 @@ export default function Home() {
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex flex-col gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
-                    <div className="flex-1">
+                  <div className="p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="mb-4">
                       <div className="font-semibold text-neutral-200 mb-1">よく使う略語・専門用語</div>
-                      <div className="text-xs md:text-sm text-neutral-400">AIの文字起こしやカルテ化の精度を上げるための用語や独自のルールを登録します。（例：「ポンティック」「インビザ」など）</div>
+                      <div className="text-xs md:text-sm text-neutral-400">「よみ」と「表記」をセットで登録することで、AIの文字起こし精度が向上します。</div>
                     </div>
-                    <textarea 
-                      value={customTerms}
-                      onChange={(e) => {
-                        setCustomTerms(e.target.value);
-                        localStorage.setItem("dental_os_custom_terms", e.target.value);
-                      }}
-                      placeholder="用語や略語をカンマ区切り、または箇条書きで入力..."
-                      className="w-full bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-xl md:rounded-lg px-4 py-3 min-h-[100px] text-sm text-white outline-none transition-colors resize-y"
-                    />
+                    
+                    {/* Add new term */}
+                    <div className="flex flex-col md:flex-row gap-3 mb-6 bg-neutral-900/80 p-3 rounded-xl border border-neutral-800">
+                      <input 
+                        type="text" 
+                        value={newTermReading}
+                        onChange={(e) => setNewTermReading(e.target.value)}
+                        placeholder="よみ（例: いんびざ）"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
+                      />
+                      <input 
+                        type="text" 
+                        value={newTermNotation}
+                        onChange={(e) => setNewTermNotation(e.target.value)}
+                        placeholder="表記（例: インビザライン）"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
+                      />
+                      <button 
+                        onClick={() => {
+                          if (!newTermReading || !newTermNotation) return;
+                          const newTerms = [...customTerms, { id: Math.random().toString(36).substr(2, 9), reading: newTermReading, term: newTermNotation }];
+                          setCustomTerms(newTerms);
+                          localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                          setNewTermReading("");
+                          setNewTermNotation("");
+                        }}
+                        className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        追加
+                      </button>
+                    </div>
+
+                    {/* List of terms */}
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                      {customTerms.length === 0 ? (
+                        <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
+                          登録されている用語はありません
+                        </div>
+                      ) : (
+                        customTerms.map(t => (
+                          <div key={t.id} className="flex items-center justify-between bg-neutral-800/50 p-3 rounded-lg border border-neutral-700/50 hover:border-neutral-600 transition-colors">
+                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
+                              <span className="text-xs text-neutral-400 min-w-[80px]">よみ: <span className="text-neutral-300">{t.reading}</span></span>
+                              <span className="text-sm font-bold text-teal-400">表記: {t.term}</span>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                const newTerms = customTerms.filter(item => item.id !== t.id);
+                                setCustomTerms(newTerms);
+                                localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                              }}
+                              className="text-neutral-500 hover:text-red-400 p-2 transition-colors ml-2"
+                              title="削除"
+                            >
+                              <Square className="w-4 h-4 hidden" /> {/* Hidden icon to keep alignment if needed, using custom text or another icon */}
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
