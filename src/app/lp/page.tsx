@@ -15,8 +15,9 @@ export default function LandingPage() {
             <span className="text-xl font-bold tracking-tight text-white">Dental OS</span>
           </div>
           <div>
-            <a href="#pricing" className="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all">
-              はじめる
+            <a href="/" className="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all flex items-center gap-1 shadow-lg shadow-teal-500/20">
+              無料で試す
+              <ChevronRight className="w-4 h-4" />
             </a>
           </div>
         </div>
@@ -44,9 +45,12 @@ export default function LandingPage() {
             最新のAI処理を内部に完全統合。音声と手打ちを組み合わせ、毎日のカルテ業務とスライド作成を劇的に効率化します。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-neutral-200 transition-all flex items-center justify-center gap-2">
-              今すぐ導入する
+            <a href="/" className="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+              無料で5回試してみる
               <ChevronRight className="w-5 h-5" />
+            </a>
+            <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700 transition-all flex items-center justify-center gap-2">
+              料金プランを見る
             </a>
           </div>
         </div>
