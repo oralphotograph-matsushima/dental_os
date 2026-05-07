@@ -194,9 +194,15 @@ export default function LandingPage() {
             <FileText className="w-5 h-5 text-neutral-500" />
             <span className="text-neutral-400 font-bold">Dental OS</span>
           </div>
-          <p className="text-sm text-neutral-600">
-            © {new Date().getFullYear()} 株式会社 Nostalgista All Rights Reserved.
-          </p>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-4 text-sm text-neutral-500">
+              <a href="/tokushoho" className="hover:text-white transition-colors">特定商取引法に基づく表記</a>
+              <a href="/lp" className="hover:text-white transition-colors">利用規約</a>
+            </div>
+            <p className="text-sm text-neutral-600">
+              © {new Date().getFullYear()} 株式会社 Nostalgista All Rights Reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
