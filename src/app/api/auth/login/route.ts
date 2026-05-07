@@ -17,13 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "必要な情報が不足しています" }, { status: 400 });
     }
 
-    let plan = "premium";
+    let plan: any = "unlimited";
     let userEmail = emailOrPassword;
 
     // 1. Check Master Password
     if (emailOrPassword === MASTER_PASSWORD) {
       userEmail = "admin@nostalgista.co.jp";
-      plan = "master";
+      plan = "unlimited";
     } else {
       // 2. Check Stripe Subscription
       if (!process.env.STRIPE_SECRET_KEY) {
