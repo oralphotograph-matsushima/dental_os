@@ -429,10 +429,6 @@ export default function Home() {
       setStatus("error");
       setErrorMessage(err.message || "エラーが発生しました。");
     }
-      console.error(err);
-      setStatus("error");
-      setErrorMessage(err.message || "エラーが発生しました。");
-    }
   };
 
   const displaySoapText = staffName.trim() && soapText ? `${soapText}\n\n---\n担当: ${staffName}` : soapText;
