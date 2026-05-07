@@ -57,13 +57,13 @@ export const registerDevice = (email: string, plan: PlanType, deviceId: string) 
 
 export const isDeviceValid = (email: string, deviceId: string) => {
   const account = store.get(email);
-  if (!account) return false;
+  if (!account) return 'not_found';
 
   const device = account.devices.find(d => d.deviceId === deviceId);
   if (device) {
     // Update last active time to prevent being kicked out easily if tracking inactivity later
     device.lastActive = Date.now();
-    return true;
+    return 'valid';
   }
-  return false;
+  return 'invalid';
 };

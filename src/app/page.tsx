@@ -48,6 +48,7 @@ export default function Home() {
   const [appendContent, setAppendContent] = useState("");
   const [staffName, setStaffName] = useState("");
   const [defaultStaffName, setDefaultStaffName] = useState("");
+  const [customTerms, setCustomTerms] = useState("");
 
   // Folder settings
   const [hasDirectory, setHasDirectory] = useState(false);
@@ -85,6 +86,9 @@ export default function Home() {
       setStaffName(storedStaff);
       setDefaultStaffName(storedStaff);
     }
+
+    const storedTerms = localStorage.getItem("dental_os_custom_terms");
+    if (storedTerms) setCustomTerms(storedTerms);
 
     if (!('showDirectoryPicker' in window)) {
       setIsFSApiSupported(false);
@@ -126,6 +130,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "ログインに失敗しました");
 
       localStorage.setItem("dental_os_email", authEmail);
+      localStorage.setItem("dental_os_password", authPassword);
       setIsAuthenticated(true);
     } catch (err: any) {
       setAuthError(err.message);
@@ -142,7 +147,21 @@ export default function Home() {
         body: JSON.stringify({ email, deviceId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "セッションが無効です");
+      if (!res.ok) {
+        if (data.reason === 'not_found') {
+          // Auto re-login silently
+          const savedPass = localStorage.getItem("dental_os_password");
+          if (savedPass) {
+            const loginRes = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password: savedPass, deviceId }),
+            });
+            if (loginRes.ok) return true;
+          }
+        }
+        throw new Error(data.error || "セッションが無効です");
+      }
       return true;
     } catch (err: any) {
       handleLogout(err.message);
@@ -339,6 +358,7 @@ export default function Home() {
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("file", audioBlob, "recording.webm");
+    if (customTerms) formData.append("customTerms", customTerms);
 
     try {
       const transcribeRes = await fetch("/api/transcribe", { method: "POST", body: formData });
@@ -351,7 +371,7 @@ export default function Home() {
       const soapRes = await fetch("/api/soap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, customTerms }),
       });
       const soapData = await soapRes.json();
       if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
@@ -1012,6 +1032,32 @@ export default function Home() {
                         )}
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dictionary Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-500" />
+                  カスタム辞書・専門用語ルール
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">よく使う略語・専門用語</div>
+                      <div className="text-xs md:text-sm text-neutral-400">AIの文字起こしやカルテ化の精度を上げるための用語や独自のルールを登録します。（例：「ポンティック」「インビザ」など）</div>
+                    </div>
+                    <textarea 
+                      value={customTerms}
+                      onChange={(e) => {
+                        setCustomTerms(e.target.value);
+                        localStorage.setItem("dental_os_custom_terms", e.target.value);
+                      }}
+                      placeholder="用語や略語をカンマ区切り、または箇条書きで入力..."
+                      className="w-full bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-xl md:rounded-lg px-4 py-3 min-h-[100px] text-sm text-white outline-none transition-colors resize-y"
+                    />
                   </div>
                 </div>
               </div>

@@ -9,11 +9,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "必要な情報が不足しています" }, { status: 400 });
     }
 
-    const valid = isDeviceValid(email, deviceId);
+    const status = isDeviceValid(email, deviceId);
 
-    if (!valid) {
+    if (status === 'not_found') {
+      return NextResponse.json({ valid: false, reason: 'not_found' }, { status: 401 });
+    }
+
+    if (status === 'invalid') {
       return NextResponse.json({ 
         valid: false, 
+        reason: 'kicked_out',
         error: "別の端末でログインされたため、この端末から自動的にログアウトされました。" 
       }, { status: 401 });
     }
