@@ -27,7 +27,14 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "settings">("qr");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "settings">("input");
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [trialCount, setTrialCount] = useState(0);
+
+  useEffect(() => {
+    const savedCount = localStorage.getItem("dental_os_trial_count");
+    if (savedCount) setTrialCount(parseInt(savedCount, 10));
+  }, []);
 
   // Input Tab State
   const [isRecording, setIsRecording] = useState(false);
@@ -387,6 +394,16 @@ export default function Home() {
   );
 
   const generateSOAP = async (text: string) => {
+    if (!isAuthenticated) {
+      if (trialCount >= 5) {
+        setShowUnlockModal(true);
+        return;
+      }
+      const newCount = trialCount + 1;
+      setTrialCount(newCount);
+      localStorage.setItem("dental_os_trial_count", newCount.toString());
+    }
+
     setStatus("formatting");
     const termsString = customTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
     try {
@@ -409,6 +426,11 @@ export default function Home() {
   };
 
   const processAudio = async () => {
+    if (!isAuthenticated && trialCount >= 5) {
+      setShowUnlockModal(true);
+      return;
+    }
+    
     setStatus("transcribing");
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
@@ -434,6 +456,11 @@ export default function Home() {
   const displaySoapText = staffName.trim() && soapText ? `${soapText}\n\n---\n担当: ${staffName}` : soapText;
 
   const saveToObsidian = async () => {
+    if (!isAuthenticated) {
+      setShowUnlockModal(true);
+      return;
+    }
+
     if (!soapText) return;
     setStatus("saving");
     
@@ -521,55 +548,16 @@ export default function Home() {
     }
   };
 
-  // --- Renders ---
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 font-sans selection:bg-teal-500/30">
-        <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl">
-          <div className="flex flex-col items-center mb-8">
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Dental OS</h1>
-            <p className="text-sm text-neutral-400">ログインして利用を開始</p>
-          </div>
+  const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "settings") => {
+    if (!isAuthenticated && tab !== "input") {
+      setShowUnlockModal(true);
+      return;
+    }
+    setActiveTab(tab);
+    setShowMobileDetail(false);
+  };
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">メールアドレス</label>
-              <input
-                type="email"
-                required
-                value={authEmail}
-                onChange={e => setAuthEmail(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
-                placeholder="doctor@example.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-1">クリニック用パスワード</label>
-              <input
-                type="password"
-                required
-                value={authPassword}
-                onChange={e => setAuthPassword(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-            {authError && <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">{authError}</div>}
-            <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full bg-white text-black font-bold rounded-xl py-4 mt-4 hover:bg-neutral-200 transition-colors flex items-center justify-center disabled:opacity-50"
-            >
-              {isLoggingIn ? <Loader2 className="w-5 h-5 animate-spin" /> : "ロックを解除"}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  // --- Renders ---
 
   if (isAuthenticated && !hasAgreedDisclaimer) {
     return (
@@ -604,6 +592,58 @@ export default function Home() {
 
   return (
     <div className="h-[100dvh] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-950/30 via-neutral-950 to-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30 flex flex-col overflow-hidden">
+      
+      {/* Unlock Modal Overlay */}
+      {showUnlockModal && !isAuthenticated && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onClick={() => setShowUnlockModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
+            <div className="flex flex-col items-center mb-6">
+              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+                <Lock className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 text-center">ライセンスキーが必要です</h2>
+              <p className="text-sm text-neutral-400 text-center leading-relaxed">
+                無料体験（5回）が終了しました。<br/>これ以降のカルテ生成や、他の機能を利用するにはパスワードを入力してください。
+              </p>
+            </div>
+
+            <form onSubmit={(e) => { handleLogin(e); if(authEmail && authPassword) setShowUnlockModal(false); }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">メールアドレス</label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
+                  placeholder="doctor@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">パスワード（ライセンスキー）</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+              {authError && <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">{authError}</div>}
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full bg-white text-black font-bold rounded-xl py-4 mt-4 hover:bg-neutral-200 transition-colors flex items-center justify-center disabled:opacity-50"
+              >
+                {isLoggingIn ? <Loader2 className="w-5 h-5 animate-spin" /> : "ロックを解除して全機能を使う"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation (Desktop/iPad) */}
       <nav className="hidden md:flex bg-neutral-900/60 backdrop-blur-xl border-b border-white/5 px-6 py-4 items-center justify-between z-10 shadow-2xl">
         <div className="flex items-center gap-8">
@@ -615,9 +655,9 @@ export default function Home() {
               Dental OS
             </h1>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+          <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
-              onClick={() => setActiveTab("qr")}
+              onClick={() => handleTabChange("qr")}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "qr" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
@@ -626,7 +666,7 @@ export default function Home() {
               撮影QR
             </button>
             <button
-              onClick={() => setActiveTab("input")}
+              onClick={() => handleTabChange("input")}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "input" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
@@ -635,7 +675,7 @@ export default function Home() {
               AIカルテ入力
             </button>
             <button
-              onClick={() => setActiveTab("search")}
+              onClick={() => handleTabChange("search")}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "search" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
@@ -644,7 +684,7 @@ export default function Home() {
               カルテ検索
             </button>
             <button
-              onClick={() => setActiveTab("slide")}
+              onClick={() => handleTabChange("slide")}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "slide" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
@@ -657,7 +697,7 @@ export default function Home() {
         
         <div className="flex items-center gap-6">
           <button 
-            onClick={() => setActiveTab("settings")}
+            onClick={() => handleTabChange("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
               activeTab === "settings" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
             }`}
@@ -665,13 +705,15 @@ export default function Home() {
             <Settings className="w-4 h-4" />
             設定
           </button>
-          <div className="flex items-center gap-3 border-l border-neutral-800 pl-6">
-            <User className="w-4 h-4 text-neutral-500" />
-            <div className="text-xs text-neutral-400 truncate max-w-[120px]">{authEmail}</div>
-            <button onClick={() => handleLogout()} className="text-xs text-red-400 hover:text-red-300 ml-2">
-              ログアウト
-            </button>
-          </div>
+          {isAuthenticated && (
+            <div className="flex items-center gap-3 border-l border-neutral-800 pl-6">
+              <User className="w-4 h-4 text-neutral-500" />
+              <div className="text-xs text-neutral-400 truncate max-w-[120px]">{authEmail}</div>
+              <button onClick={() => handleLogout()} className="text-xs text-red-400 hover:text-red-300 ml-2">
+                ログアウト
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -799,7 +841,10 @@ export default function Home() {
 
               <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
                 <div className="space-y-2 flex-shrink-0">
-                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2">メモ入力 / 音声文字起こし</label>
+                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2 flex justify-between w-full pr-2">
+                    <span>メモ入力 / 音声文字起こし</span>
+                    {!isAuthenticated && <span className="text-teal-500">無料体験: 残り {Math.max(0, 5 - trialCount)}回</span>}
+                  </label>
                   
                   {/* Tooth Selector UI */}
                   <div className="flex flex-col items-center font-mono text-sm gap-[2px] bg-black/40 p-2 sm:p-3 rounded-xl border border-white/5 mb-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
@@ -1181,7 +1226,6 @@ export default function Home() {
                               className="text-neutral-500 hover:text-red-400 p-2 transition-colors ml-2"
                               title="削除"
                             >
-                              <Square className="w-4 h-4 hidden" /> {/* Hidden icon to keep alignment if needed, using custom text or another icon */}
                               ✕
                             </button>
                           </div>
@@ -1228,10 +1272,10 @@ export default function Home() {
       </div>
 
       {/* Bottom Navigation (Mobile Only) */}
-      <nav className="md:hidden flex bg-neutral-900/80 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-2 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] mt-auto">
+      <nav className="md:hidden flex bg-neutral-900/80 backdrop-blur-xl border-t border-white/5 pb-safe z-50">
         <button
-          onClick={() => setActiveTab("qr")}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+          onClick={() => handleTabChange("qr")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
             activeTab === "qr" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
@@ -1239,8 +1283,8 @@ export default function Home() {
           <span className="text-[10px] font-bold">撮影QR</span>
         </button>
         <button
-          onClick={() => setActiveTab("input")}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+          onClick={() => handleTabChange("input")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
             activeTab === "input" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
@@ -1248,11 +1292,8 @@ export default function Home() {
           <span className="text-[10px] font-bold">AI入力</span>
         </button>
         <button
-          onClick={() => {
-            setActiveTab("search");
-            setShowMobileDetail(false);
-          }}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+          onClick={() => handleTabChange("search")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
             activeTab === "search" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
@@ -1260,8 +1301,8 @@ export default function Home() {
           <span className="text-[10px] font-bold">検索</span>
         </button>
         <button
-          onClick={() => setActiveTab("slide")}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+          onClick={() => handleTabChange("slide")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
             activeTab === "slide" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
@@ -1269,8 +1310,8 @@ export default function Home() {
           <span className="text-[10px] font-bold">スライド</span>
         </button>
         <button
-          onClick={() => setActiveTab("settings")}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors ${
+          onClick={() => handleTabChange("settings")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
             activeTab === "settings" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
