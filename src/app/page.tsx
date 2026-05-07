@@ -379,7 +379,7 @@ export default function Home() {
       <button 
         key={`${quadrant}-${n}`} 
         onClick={() => handleToothClick(n, quadrant)} 
-        className="w-6 h-8 sm:w-7 sm:h-7 flex items-center justify-center bg-neutral-800 hover:bg-teal-600 text-neutral-300 rounded active:scale-95 transition-transform"
+        className="w-[22px] h-7 sm:w-7 sm:h-8 flex items-center justify-center bg-neutral-800 hover:bg-teal-600 text-neutral-300 rounded active:scale-95 transition-transform text-[11px] sm:text-sm font-bold"
       >
         {n}
       </button>
@@ -761,7 +761,7 @@ export default function Home() {
           {/* === INPUT TAB === */}
           {activeTab === "input" && (
             <div className="flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-8 min-h-[calc(100dvh-200px)] md:h-[600px]">
-              <div className="md:col-span-4 flex flex-col items-center justify-center p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative flex-shrink-0 order-1">
+              <div className="md:col-span-4 flex flex-col items-center justify-center p-6 md:p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative flex-shrink-0 order-1">
                 <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-950/50 border border-neutral-800 text-xs font-medium">
                   {status === "idle" && <span className="text-neutral-400">準備完了</span>}
                   {status === "recording" && (
@@ -785,18 +785,16 @@ export default function Home() {
                 <button
                   onClick={isRecording ? stopRecording : startRecording}
                   disabled={status === "transcribing" || status === "formatting" || status === "saving"}
-                  className={`relative group flex items-center justify-center w-28 h-28 md:w-32 md:h-32 rounded-full transition-all duration-300 mt-4 shadow-2xl ${
+                  className={`relative group flex items-center justify-center w-[200px] h-16 md:w-[240px] md:h-20 rounded-3xl transition-all duration-300 mt-6 shadow-2xl gap-3 ${
                     isRecording 
                       ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border-2 border-red-500/50' 
                       : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 hover:scale-105 border border-teal-500/20'
                   } disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100`}
                 >
-                  {isRecording && <div className="absolute inset-0 rounded-full border-4 border-red-500/30 animate-ping" />}
-                  {isRecording ? <Square className="w-10 h-10 md:w-10 md:h-10" fill="currentColor" /> : <Mic className="w-12 h-12 md:w-12 md:h-12" />}
+                  {isRecording && <div className="absolute inset-0 rounded-3xl border-4 border-red-500/30 animate-ping" />}
+                  {isRecording ? <Square className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" /> : <Mic className="w-6 h-6 md:w-8 md:h-8" />}
+                  <span className="font-bold text-sm md:text-base">{isRecording ? "タップして停止" : "タップして録音"}</span>
                 </button>
-                <p className="mt-6 text-sm text-neutral-400 font-medium">
-                  {isRecording ? "タップして停止" : "タップして喋る (最大 1m 59s)"}
-                </p>
               </div>
 
               <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
@@ -804,21 +802,21 @@ export default function Home() {
                   <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2">メモ入力 / 音声文字起こし</label>
                   
                   {/* Tooth Selector UI */}
-                  <div className="flex flex-col items-center font-mono text-sm gap-1 bg-black/40 p-2 sm:p-3 rounded-xl border border-white/5 mb-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                  <div className="flex flex-col items-center font-mono text-sm gap-[2px] bg-black/40 p-2 sm:p-3 rounded-xl border border-white/5 mb-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <div className="flex items-center min-w-max">
-                      <div className="flex gap-1 pr-1 border-r-2 border-neutral-600">
+                      <div className="flex gap-[2px] sm:gap-1 pr-1 border-r-2 border-neutral-600">
                         {renderToothRow([8,7,6,5,4,3,2,1], 'UR')}
                       </div>
-                      <div className="flex gap-1 pl-1 border-b-2 border-transparent">
+                      <div className="flex gap-[2px] sm:gap-1 pl-1 border-b-2 border-transparent">
                         {renderToothRow([1,2,3,4,5,6,7,8], 'UL')}
                       </div>
                     </div>
                     <div className="w-full h-[2px] bg-neutral-600 min-w-max" />
                     <div className="flex items-center min-w-max">
-                      <div className="flex gap-1 pr-1 border-r-2 border-neutral-600">
+                      <div className="flex gap-[2px] sm:gap-1 pr-1 border-r-2 border-neutral-600">
                         {renderToothRow([8,7,6,5,4,3,2,1], 'LR')}
                       </div>
-                      <div className="flex gap-1 pl-1">
+                      <div className="flex gap-[2px] sm:gap-1 pl-1">
                         {renderToothRow([1,2,3,4,5,6,7,8], 'LL')}
                       </div>
                     </div>
