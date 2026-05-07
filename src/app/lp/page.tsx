@@ -52,6 +52,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Concept Image Section */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group bg-neutral-900">
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent z-10" />
+            <img 
+              src="/concept-voice.png" 
+              alt="Hands-free AI Charting Concept" 
+              className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 aspect-video md:aspect-[21/9]"
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-20">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                手が塞がっていても、<br className="hidden md:block" />声だけで完了。
+              </h2>
+              <p className="text-lg md:text-xl text-neutral-300 max-w-2xl text-shadow">
+                グローブを外す必要も、キーボードを叩く必要もありません。治療しながら、あるいは治療直後に喋るだけで、AIが瞬時に構造化されたカルテ（SOAP形式）を書き上げます。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-24 bg-neutral-900/30 border-y border-white/5">
         <div className="max-w-6xl mx-auto px-6">
