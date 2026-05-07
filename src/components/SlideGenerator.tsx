@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Move } from "lucide-react";
+import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Move, Sliders } from "lucide-react";
 import pptxgen from "pptxgenjs";
 
 interface ImageData {
@@ -11,6 +11,7 @@ interface ImageData {
   flipH: boolean;
   flipV: boolean;
   rotate: number;
+  zoom?: number;
 }
 
 export default function SlideGenerator() {
@@ -23,6 +24,11 @@ export default function SlideGenerator() {
   const [facialSwapIndex, setFacialSwapIndex] = useState<number | null>(null);
   const [facialUploadIndex, setFacialUploadIndex] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [editingImage, setEditingImage] = useState<{
+    type: "intraoral" | "pano" | "facial";
+    index: number | null;
+    img: ImageData;
+  } | null>(null);
 
   const fileInputRef9 = useRef<HTMLInputElement>(null);
   const fileInputRefPano = useRef<HTMLInputElement>(null);
@@ -241,13 +247,32 @@ export default function SlideGenerator() {
       const pptx = new pptxgen();
       pptx.layout = "LAYOUT_16x9";
 
-      // Function to read file to base64
-      const fileToBase64 = (file: File): Promise<string> => {
+      // Function to bake transforms into a final image
+      const bakeImage = async (imgData: ImageData): Promise<string> => {
         return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            // Swap width and height if rotated 90 or 270 degrees
+            const isRightAngle = Math.abs(imgData.rotate) % 180 === 90;
+            canvas.width = isRightAngle ? img.height : img.width;
+            canvas.height = isRightAngle ? img.width : img.height;
+            
+            const ctx = canvas.getContext("2d")!;
+            ctx.fillStyle = "#000000"; // Fill background just in case
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(imgData.flipH ? -1 : 1, imgData.flipV ? -1 : 1);
+            ctx.rotate((imgData.rotate || 0) * Math.PI / 180);
+            const z = imgData.zoom || 1.0;
+            ctx.scale(z, z);
+            
+            ctx.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.9));
+          };
+          img.onerror = reject;
+          img.src = imgData.previewUrl;
         });
       };
 
@@ -306,16 +331,13 @@ export default function SlideGenerator() {
           const boxX = marginX + col * (w + gapX);
           const boxY = marginY + row * (h + gapY);
           
-          const base64 = await fileToBase64(imgData.file);
+          const base64 = await bakeImage(imgData);
           const dims = await getImageDimensions(base64);
-          const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, w, h, imgData.rotate);
+          const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, w, h, 0);
           
           intraoralSlide.addImage({
             data: base64,
             x: fit.x, y: fit.y, w: fit.w, h: fit.h,
-            flipH: imgData.flipH,
-            flipV: imgData.flipV,
-            rotate: imgData.rotate,
           });
         }
       }
@@ -323,16 +345,13 @@ export default function SlideGenerator() {
       // Slide 2: Pano
       if (panoImage) {
         const panoSlide = pptx.addSlide();
-        const base64 = await fileToBase64(panoImage.file);
+        const base64 = await bakeImage(panoImage);
         const dims = await getImageDimensions(base64);
-        const fit = calculateContainFit(dims.width, dims.height, 0.5, 1, 9, 3.6, panoImage.rotate);
+        const fit = calculateContainFit(dims.width, dims.height, 0.5, 1, 9, 3.6, 0);
         
         panoSlide.addImage({
           data: base64,
           x: fit.x, y: fit.y, w: fit.w, h: fit.h,
-          flipH: panoImage.flipH,
-          flipV: panoImage.flipV,
-          rotate: panoImage.rotate,
         });
       }
 
@@ -350,16 +369,13 @@ export default function SlideGenerator() {
           if (imgData) {
             const boxX = fMarginX + i * (fW + fGap);
             const boxY = 0.8;
-            const base64 = await fileToBase64(imgData.file);
+            const base64 = await bakeImage(imgData);
             const dims = await getImageDimensions(base64);
-            const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, fW, fH, imgData.rotate);
+            const fit = calculateContainFit(dims.width, dims.height, boxX, boxY, fW, fH, 0);
             
             facialSlide.addImage({
               data: base64,
               x: fit.x, y: fit.y, w: fit.w, h: fit.h,
-              flipH: imgData.flipH,
-              flipV: imgData.flipV,
-              rotate: imgData.rotate,
             });
           }
         }
@@ -431,10 +447,13 @@ export default function SlideGenerator() {
                       alt={`Intraoral ${idx}`}
                       className="absolute inset-0 w-full h-full object-cover"
                       style={{ 
-                        transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` 
+                        transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` 
                       }}
                     />
                     <div className="absolute top-1 right-1 flex flex-col md:flex-row gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "intraoral", index: idx, img }); }} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-teal-600 active:scale-90 transition-transform" title="詳細調整">
+                        <Sliders className="w-3 h-3 md:w-3 md:h-3" />
+                      </button>
                       <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
                         <RotateCw className="w-3 h-3 md:w-3 md:h-3" />
                       </button>
@@ -474,11 +493,16 @@ export default function SlideGenerator() {
                   <img 
                     src={panoImage.previewUrl} 
                     alt="Panoramic"
-                    className="absolute inset-0 w-full h-full object-contain"
-                    style={{ transform: `scaleX(${panoImage.flipH ? -1 : 1}) scaleY(${panoImage.flipV ? -1 : 1}) rotate(${panoImage.rotate}deg)` }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ 
+                      transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg)` 
+                    }}
                   />
                   <div className="absolute top-2 right-2 flex gap-2">
-                    <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 md:p-2 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
+                    <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "pano", index: null, img: panoImage }); }} className="p-2 bg-black/60 backdrop-blur-sm rounded-lg text-white hover:bg-teal-600 active:scale-90 transition-transform" title="詳細調整">
+                      <Sliders className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                    <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 bg-black/60 backdrop-blur-sm rounded-lg text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
                       <RotateCw className="w-4 h-4" />
                     </button>
                     <button onClick={(e) => toggleFlip("pano", null, "H", e)} className="p-2 md:p-2 bg-black/70 backdrop-blur-sm rounded-lg text-white hover:bg-blue-600 active:scale-90 transition-transform" title="左右反転">
@@ -532,9 +556,14 @@ export default function SlideGenerator() {
                         src={img.previewUrl} 
                         alt={`Facial ${idx}`}
                         className="absolute inset-0 w-full h-full object-cover"
-                        style={{ transform: `scaleX(${img.flipH ? -1 : 1}) scaleY(${img.flipV ? -1 : 1}) rotate(${img.rotate}deg)` }}
+                        style={{ 
+                          transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` 
+                        }}
                       />
                       <div className="absolute top-1 right-1 flex flex-col gap-1">
+                        <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "facial", index: idx, img }); }} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-teal-600 active:scale-90 transition-transform" title="詳細調整">
+                          <Sliders className="w-3 h-3 md:w-3 md:h-3" />
+                        </button>
                         <button onClick={(e) => rotateImage("facial", idx, e)} className="p-1.5 md:p-1 bg-black/60 backdrop-blur-sm rounded text-white hover:bg-blue-600 active:scale-90 transition-transform" title="90度回転">
                           <RotateCw className="w-3 h-3" />
                         </button>
@@ -555,6 +584,88 @@ export default function SlideGenerator() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingImage && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-neutral-900 border border-neutral-800 rounded-3xl p-6 shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">画像の詳細調整</h3>
+              <button onClick={() => setEditingImage(null)} className="text-neutral-400 hover:text-white p-2">✕</button>
+            </div>
+            
+            <div className="relative w-full aspect-video bg-black/50 rounded-xl overflow-hidden mb-8 border border-white/10 flex items-center justify-center">
+              <img 
+                src={editingImage.img.previewUrl} 
+                className="max-w-full max-h-full object-contain"
+                style={{ 
+                  transform: `scaleX(${editingImage.img.flipH ? -1 : 1}) scaleY(${editingImage.img.flipV ? -1 : 1}) rotate(${editingImage.img.rotate}deg) scale(${editingImage.img.zoom || 1})`,
+                  transition: 'transform 0.1s ease-out'
+                }}
+                alt="Preview"
+              />
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-semibold text-neutral-300">角度 (Rotate)</label>
+                  <span className="text-sm text-teal-400">{editingImage.img.rotate}°</span>
+                </div>
+                <input 
+                  type="range" min="-180" max="180" step="1" 
+                  value={editingImage.img.rotate}
+                  onChange={(e) => {
+                    const newImg = { ...editingImage.img, rotate: parseInt(e.target.value) };
+                    setEditingImage({ ...editingImage, img: newImg });
+                  }}
+                  className="w-full accent-teal-500"
+                />
+              </div>
+              
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-semibold text-neutral-300">拡大 (Zoom)</label>
+                  <span className="text-sm text-teal-400">{(editingImage.img.zoom || 1).toFixed(2)}x</span>
+                </div>
+                <input 
+                  type="range" min="1" max="3" step="0.01" 
+                  value={editingImage.img.zoom || 1}
+                  onChange={(e) => {
+                    const newImg = { ...editingImage.img, zoom: parseFloat(e.target.value) };
+                    setEditingImage({ ...editingImage, img: newImg });
+                  }}
+                  className="w-full accent-teal-500"
+                />
+              </div>
+            </div>
+            
+            <div className="mt-8 flex gap-4">
+              <button onClick={() => setEditingImage(null)} className="flex-1 bg-neutral-800 text-white font-bold py-3 rounded-xl hover:bg-neutral-700 transition-colors">キャンセル</button>
+              <button 
+                onClick={() => {
+                  // Save changes back to state
+                  if (editingImage.type === "intraoral" && editingImage.index !== null) {
+                    const newImages = [...intraoralImages];
+                    newImages[editingImage.index] = editingImage.img;
+                    setIntraoralImages(newImages);
+                  } else if (editingImage.type === "pano") {
+                    setPanoImage(editingImage.img);
+                  } else if (editingImage.type === "facial" && editingImage.index !== null) {
+                    const newImages = [...facialImages];
+                    newImages[editingImage.index] = editingImage.img;
+                    setFacialImages(newImages);
+                  }
+                  setEditingImage(null);
+                }} 
+                className="flex-1 bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-500 transition-colors"
+              >
+                保存する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
