@@ -662,7 +662,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote AI
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.0 (Build 0509)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.1 (Build 0509)</span>
             </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1176,7 +1176,7 @@ export default function Home() {
                     <FileText className="w-5 h-5 text-amber-500" />
                     カスタム辞書・専門用語ルール
                   </h3>
-                  <span className="text-[10px] text-neutral-500 font-mono">v1.3.0 (Build 0509)</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">v1.3.1 (Build 0509)</span>
                 </div>
                 
                 <div className="space-y-4">

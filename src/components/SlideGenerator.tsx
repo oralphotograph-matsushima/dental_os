@@ -240,7 +240,7 @@ export default function SlideGenerator() {
         const slide = pptx.addSlide();
         slide.addImage({ 
           data: panoImage.previewUrl, 
-          x: 0.25, y: 0.3125, w: 9.5, h: 5, 
+          x: 0.25, y: 0.3125, 
           sizing: { type: 'contain', w: 9.5, h: 5 },
           rotate: panoImage.rotate || 0,
           flipH: panoImage.flipH || false,
@@ -265,8 +265,6 @@ export default function SlideGenerator() {
               data: img.previewUrl,
               x: startX + col * (cellW + gapX), 
               y: startY + row * (cellH + gapY), 
-              w: cellW, 
-              h: cellH,
               sizing: { type: 'contain', w: cellW, h: cellH },
               rotate: img.rotate || 0,
               flipH: img.flipH || false,
@@ -290,8 +288,6 @@ export default function SlideGenerator() {
               data: img.previewUrl,
               x: startX + i * (cellW + gapX), 
               y: startY, 
-              w: cellW, 
-              h: cellH,
               sizing: { type: 'contain', w: cellW, h: cellH },
               rotate: img.rotate || 0,
               flipH: img.flipH || false,
