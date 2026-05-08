@@ -56,21 +56,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Concept Image Section */}
+      {/* Concept Image Section 1: Voice Charting */}
       <section className="py-12 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group bg-neutral-900">
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent z-10" />
-            <img 
-              src="/concept-voice.png" 
-              alt="Hands-free AI Charting Concept" 
-              className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 aspect-video md:aspect-[21/9]"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-20">
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                手が塞がっていても、<br className="hidden md:block" />声だけで完了。
+          <div className="flex flex-col md:flex-row items-stretch bg-neutral-900 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden group">
+            <div className="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px]">
+              <img 
+                src="/voice-chart-concept.png" 
+                alt="Hands-free AI Charting Concept" 
+                className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-neutral-900" />
+            </div>
+            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                手が塞がっていても、<br />声だけで完了。
               </h2>
-              <p className="text-lg md:text-xl text-neutral-300 max-w-2xl text-shadow">
+              <p className="text-lg md:text-xl text-neutral-300 leading-relaxed">
                 グローブを外す必要も、キーボードを叩く必要もありません。治療しながら、あるいは治療直後に喋るだけで、AIが瞬時に構造化されたカルテ（SOAP形式）を書き上げます。
               </p>
             </div>
@@ -78,44 +80,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Slide Concept Section */}
+      {/* Slide Concept Section 2: Slide Generation */}
       <section className="pb-12 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group bg-neutral-900">
-            {/* Animated Abstract Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-purple-900/20 to-neutral-950 z-0" />
-            
-            {/* Visual UI Element */}
-            <div className="w-full aspect-video md:aspect-[21/9] flex items-center justify-center relative z-10 px-8 py-16 md:py-0">
-              <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 transform group-hover:scale-105 transition-transform duration-700 pb-20 md:pb-0">
-                 {/* 5 Photos Grid */}
-                 <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-800/80 backdrop-blur-sm rounded-xl border border-white/10 shadow-2xl">
-                   <div className="w-16 h-12 md:w-24 md:h-16 bg-neutral-700 rounded-md border border-neutral-600 flex items-center justify-center"><div className="w-6 h-4 bg-neutral-500 rounded-sm opacity-50"/></div>
-                   <div className="w-16 h-12 md:w-24 md:h-16 bg-neutral-700 rounded-md border border-neutral-600 flex items-center justify-center"><div className="w-6 h-4 bg-neutral-500 rounded-sm opacity-50"/></div>
-                   <div className="w-16 h-12 md:w-24 md:h-16 bg-neutral-700 rounded-md border border-neutral-600 flex items-center justify-center"><div className="w-6 h-4 bg-neutral-500 rounded-sm opacity-50"/></div>
-                   <div className="col-span-3 h-12 md:h-16 bg-neutral-700 rounded-md border border-neutral-600 flex items-center justify-center"><div className="w-16 h-4 bg-neutral-500 rounded-sm opacity-50"/></div>
-                 </div>
-                 
-                 {/* Arrow */}
-                 <div className="bg-blue-500/20 p-3 rounded-full hidden md:block">
-                   <ChevronRight className="w-8 h-8 text-blue-400" />
-                 </div>
-                 
-                 {/* PowerPoint Result */}
-                 <div className="w-48 h-32 md:w-64 md:h-44 bg-white rounded-xl shadow-[0_0_40px_rgba(59,130,246,0.3)] flex items-center justify-center border-4 border-blue-100 relative overflow-hidden">
-                   <div className="absolute top-0 inset-x-0 h-4 bg-orange-600" />
-                   <Presentation className="w-16 h-16 text-orange-600 opacity-90" />
-                 </div>
-              </div>
+          <div className="flex flex-col md:flex-row-reverse items-stretch bg-neutral-900 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden group">
+            <div className="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px]">
+              {/* Note: Change this to /real-slide.jpg if you upload your own image to the public folder! */}
+              <img 
+                src="/slide-gen-concept.png"
+                alt="Automatic PowerPoint Generation" 
+                className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-l md:from-transparent md:via-transparent md:to-neutral-900" />
             </div>
-            
-            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent z-20 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-30">
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                カルテのついでに、<br className="hidden md:block" />スライドも一瞬で完成。
+            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                カルテのついでに、<br />スライドも一瞬で完成。
               </h2>
-              <p className="text-lg md:text-xl text-neutral-300 max-w-2xl text-shadow">
-                写真をドラッグ＆ドロップするだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「声で素早くカルテを終わらせ、そのままスライドを作って即座に患者さんへ説明する」という全く新しい診療スタイルを実現します。
+              <p className="text-lg md:text-xl text-neutral-300 leading-relaxed">
+                写真をアップロードするだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「声で素早くカルテを終わらせ、そのままスライドを作って即座に患者さんへ説明する」という全く新しい診療スタイルを実現します。
               </p>
             </div>
           </div>

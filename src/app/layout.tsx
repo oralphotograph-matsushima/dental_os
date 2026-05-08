@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     siteName: "OralNote AI",
     images: [
       {
-        url: "/DentalOS_Banner.png",
+        url: "/OralNoteAI_Banner.png",
         width: 1024,
         height: 1024,
       },
