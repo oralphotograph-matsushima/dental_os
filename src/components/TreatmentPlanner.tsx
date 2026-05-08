@@ -157,28 +157,7 @@ export default function TreatmentPlanner() {
       const pptx = new pptxgen();
       pptx.layout = 'LAYOUT_16x9';
 
-      // Function to add a slide with image and annotations
-      const addAnnotatedSlide = (img: ImageData, title: string) => {
-        const slide = pptx.addSlide();
-        slide.addText(title, { x: 0.5, y: 0.5, fontSize: 18, color: '363636', bold: true });
-
-        // Add base image (assuming 16:9 bounds for simplicity)
-        // In a real app, we'd calculate aspect ratios exactly
-        const imgX = 1;
-        const imgY = 1.5;
-        const imgW = 8;
-        const imgH = 4.5;
-        
-        slide.addImage({ 
-          data: img.previewUrl, 
-          x: imgX, 
-          y: imgY, 
-          w: imgW, 
-          h: imgH,
-          sizing: { type: 'contain', w: imgW, h: imgH }
-        });
-
-        // Add Annotations as native PPT shapes
+      const drawAnnotations = (slide: any, img: ImageData, imgX: number, imgY: number, imgW: number, imgH: number) => {
         img.annotations.forEach(a => {
           // Convert percentage (0-100) to inches relative to image bounds
           const x = imgX + (a.x / 100) * imgW;
@@ -200,29 +179,63 @@ export default function TreatmentPlanner() {
               slide.addShape(pptx.ShapeType.ellipse, { x: x - size, y: y - size, w: size*2, h: size*2, rotate: rot, fill: { color: '008080', transparency: 50 } });
               break;
             case 'implant':
-              // Using a cylinder shape to represent an implant
               slide.addShape(pptx.ShapeType.can, { x: x - 0.15 * (a.size || 1), y: y - 0.3 * (a.size || 1), w: 0.3 * (a.size || 1), h: 0.6 * (a.size || 1), rotate: rot, fill: { color: 'A0A0A0' }, line: { color: '404040' } });
               break;
             case 'rotation':
               slide.addShape(pptx.ShapeType.curvedDownArrow, { x: x - size/2, y: y - size/2, w: size, h: size, rotate: rot, fill: { color: 'FFA500' } });
               break;
             case 'polygon':
-              // Native PPTX freeform polygons are complex, so we represent the area roughly as a semitransparent rectangle for now.
               slide.addShape(pptx.ShapeType.rect, { x: x - size, y: y - size, w: size*2, h: size*2, rotate: rot, fill: { color: '008080', transparency: 70 } });
               break;
           }
         });
       };
 
-      if (panoImage) addAnnotatedSlide(panoImage, "パノラマX線");
-      
-      intraoralImages.forEach((img, i) => {
-        if (img) addAnnotatedSlide(img, `口腔内写真 ${i + 1}`);
-      });
+      // Slide 1: Pano
+      if (panoImage) {
+        const slide = pptx.addSlide();
+        slide.addText("パノラマX線", { x: 0.5, y: 0.3, fontSize: 18, color: '363636', bold: true });
+        const x = 1, y = 1, w = 8, h = 4.5;
+        slide.addImage({ data: panoImage.previewUrl, x, y, w, h, sizing: { type: 'contain', w, h } });
+        drawAnnotations(slide, panoImage, x, y, w, h);
+      }
 
-      facialImages.forEach((img, i) => {
-        if (img) addAnnotatedSlide(img, `顔貌写真 ${i + 1}`);
-      });
+      // Slide 2: Intraoral Grid (9 photos)
+      const hasIntraoral = intraoralImages.some(img => img !== null);
+      if (hasIntraoral) {
+        const slide = pptx.addSlide();
+        slide.addText("口腔内写真", { x: 0.5, y: 0.3, fontSize: 18, color: '363636', bold: true });
+        const marginX = 0.5, marginY = 0.8, w = 2.8, h = 1.5, gapX = 0.2, gapY = 0.2;
+        
+        for (let i = 0; i < 9; i++) {
+          const img = intraoralImages[i];
+          if (img) {
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            const x = marginX + col * (w + gapX);
+            const y = marginY + row * (h + gapY);
+            slide.addImage({ data: img.previewUrl, x, y, w, h, sizing: { type: 'contain', w, h } });
+            drawAnnotations(slide, img, x, y, w, h);
+          }
+        }
+      }
+
+      // Slide 3: Facial Grid (3 photos)
+      const hasFacial = facialImages.some(img => img !== null);
+      if (hasFacial) {
+        const slide = pptx.addSlide();
+        slide.addText("顔貌写真", { x: 0.5, y: 0.3, fontSize: 18, color: '363636', bold: true });
+        const fMarginX = 0.5, fW = 2.8, fH = 3.73, fGap = 0.2;
+        for (let i = 0; i < 3; i++) {
+          const img = facialImages[i];
+          if (img) {
+            const x = fMarginX + i * (fW + fGap);
+            const y = 0.8;
+            slide.addImage({ data: img.previewUrl, x, y, w: fW, h: fH, sizing: { type: 'contain', w: fW, h: fH } });
+            drawAnnotations(slide, img, x, y, fW, fH);
+          }
+        }
+      }
 
       await pptx.writeFile({ fileName: `TreatmentPlan_${new Date().getTime()}.pptx` });
     } catch (err) {
@@ -522,7 +535,7 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
               <div className="space-y-2">
                 <p className="text-xs text-neutral-400 font-bold">回転</p>
                 <input 
-                  type="range" min="0" max="360" step="1" 
+                  type="range" min="-180" max="180" step="1" 
                   value={image.annotations.find(a => a.id === selectedId)?.rotate || 0}
                   onChange={(e) => handleUpdateRotate(parseInt(e.target.value))}
                   className="w-full accent-orange-500"
@@ -643,7 +656,7 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
             {image.annotations.map(a => (
               <div 
                 key={a.id} 
-                className={`absolute transition-all ${
+                className={`absolute ${draggingId === a.id ? '' : 'transition-all'} ${
                   a.type === 'polygon' ? 'inset-0' : 'cursor-move'
                 } ${selectedId === a.id ? 'ring-2 ring-teal-500 ring-offset-2 ring-offset-black' : ''}`}
                 style={a.type === 'polygon' ? { zIndex: 10 } : { 

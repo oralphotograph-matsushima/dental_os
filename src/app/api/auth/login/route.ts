@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 
 // Initialize Stripe with the Secret Key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-04-10",
+  apiVersion: "2026-04-22.dahlia",
 });
 
 const MASTER_PASSWORD = "Oral0000";
