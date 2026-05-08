@@ -662,7 +662,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote AI
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.1 (Build 0509)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.2 (Build 0509)</span>
             </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1125,9 +1125,14 @@ export default function Home() {
           {/* === SETTINGS TAB === */}
           {activeTab === "settings" && (
             <div className="max-w-4xl mx-auto py-4 md:py-8 mb-20 md:mb-0 space-y-6 md:space-y-8 px-2 md:px-0">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">設定 (Settings)</h2>
-                <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2">設定 (Settings)</h2>
+                  <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
+                </div>
+                <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
+                  v1.3.2 (Build 0509)
+                </div>
               </div>
 
               {/* Data Connection */}
@@ -1171,12 +1176,11 @@ export default function Home() {
 
               {/* Dictionary Settings */}
               <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4">
                   <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
                     <FileText className="w-5 h-5 text-amber-500" />
                     カスタム辞書・専門用語ルール
                   </h3>
-                  <span className="text-[10px] text-neutral-500 font-mono">v1.3.1 (Build 0509)</span>
                 </div>
                 
                 <div className="space-y-4">
