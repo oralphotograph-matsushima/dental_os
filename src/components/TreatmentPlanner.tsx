@@ -16,6 +16,7 @@ export interface Annotation {
   x: number; // Percentage 0-100 relative to image container width
   y: number; // Percentage 0-100 relative to image container height
   size?: number; // Scaling factor (default 1.0)
+  rotate?: number; // Rotation in degrees (default 0)
   points?: Point[]; // For polygons
 }
 
@@ -35,21 +36,33 @@ export const MarkerIcon = ({ type, className = "", points, isStatic = false }: {
   switch (type) {
     case 'implant':
       return (
-        <img 
-          src="/implant.png" 
-          alt="implant"
-          className={`object-contain mix-blend-multiply ${className}`}
-          style={isStatic ? {} : { width: '100%', height: '100%' }}
-        />
+        <svg viewBox="0 0 60 180" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} drop-shadow-md`} style={isStatic ? {} : { width: '100%', height: '100%' }}>
+          {/* Collar */}
+          <rect x="15" y="10" width="30" height="20" fill="url(#metalGrad)" stroke="#374151" strokeWidth="1.5" />
+          <rect x="10" y="30" width="40" height="15" fill="url(#metalGrad)" stroke="#374151" strokeWidth="1.5" rx="2" />
+          {/* Body */}
+          <path d="M15 45 L45 45 L40 160 Q30 180 20 160 Z" fill="url(#metalGrad)" stroke="#374151" strokeWidth="1.5" />
+          {/* Threads */}
+          <path d="M14 60 L46 65 M13 75 L47 80 M12 90 L48 95 M12 105 L48 110 M14 120 L46 125 M15 135 L45 140 M17 150 L43 155" stroke="#374151" strokeWidth="3" strokeLinecap="round" />
+          <defs>
+            <linearGradient id="metalGrad" x1="0" y1="0" x2="60" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#9CA3AF" />
+              <stop offset="30%" stopColor="#F3F4F6" />
+              <stop offset="50%" stopColor="#D1D5DB" />
+              <stop offset="80%" stopColor="#6B7280" />
+              <stop offset="100%" stopColor="#4B5563" />
+            </linearGradient>
+          </defs>
+        </svg>
       );
     case 'arrow_mesial': // Red arrow pointing left
-      return <MoveLeft className={`text-red-500 stroke-[3] ${className}`} />;
+      return <MoveLeft className={`text-red-400/80 stroke-[1.5] ${className}`} />;
     case 'arrow_distal': // Blue arrow pointing right
-      return <MoveRight className={`text-blue-500 stroke-[3] ${className}`} />;
+      return <MoveRight className={`text-blue-400/80 stroke-[1.5] ${className}`} />;
     case 'rotation': // Curved arrow
-      return <RefreshCw className={`text-orange-500 stroke-[3] ${className}`} />;
+      return <RefreshCw className={`text-orange-400/80 stroke-[1.5] ${className}`} />;
     case 'caries': // Red circle outline
-      return <Circle className={`text-red-600 stroke-[3] ${className}`} style={isStatic ? {} : { width: '100%', height: '100%' }} />;
+      return <Circle className={`text-red-500/80 stroke-[1.5] ${className}`} style={isStatic ? {} : { width: '100%', height: '100%' }} />;
     case 'bone_graft': // Semi-transparent teal blob
       return <Droplet className={`text-teal-500 fill-teal-500/50 stroke-[2] ${className}`} style={isStatic ? {} : { width: '100%', height: '100%' }} />;
     case 'polygon': // For custom drawn shapes
@@ -170,27 +183,32 @@ export default function TreatmentPlanner() {
           // Convert percentage (0-100) to inches relative to image bounds
           const x = imgX + (a.x / 100) * imgW;
           const y = imgY + (a.y / 100) * imgH;
-          const size = 0.5; // default size
+          const size = 0.5 * (a.size || 1.0);
+          const rot = a.rotate || 0;
 
           switch (a.type) {
             case 'arrow_mesial':
-              slide.addShape(pptx.ShapeType.leftArrow, { x: x - size/2, y: y - size/2, w: size, h: size, fill: { color: 'FF0000' } });
+              slide.addShape(pptx.ShapeType.leftArrow, { x: x - size/2, y: y - size/2, w: size, h: size, rotate: rot, fill: { color: 'FF0000' } });
               break;
             case 'arrow_distal':
-              slide.addShape(pptx.ShapeType.rightArrow, { x: x - size/2, y: y - size/2, w: size, h: size, fill: { color: '0000FF' } });
+              slide.addShape(pptx.ShapeType.rightArrow, { x: x - size/2, y: y - size/2, w: size, h: size, rotate: rot, fill: { color: '0000FF' } });
               break;
             case 'caries':
-              slide.addShape(pptx.ShapeType.ellipse, { x: x - size/2, y: y - size/2, w: size, h: size, fill: { transparency: 100 }, line: { color: 'FF0000', width: 2 } });
+              slide.addShape(pptx.ShapeType.ellipse, { x: x - size/2, y: y - size/2, w: size, h: size, rotate: rot, fill: { transparency: 100 }, line: { color: 'FF0000', width: 2 } });
               break;
             case 'bone_graft':
-              slide.addShape(pptx.ShapeType.ellipse, { x: x - size, y: y - size, w: size*2, h: size*2, fill: { color: '008080', transparency: 50 } });
+              slide.addShape(pptx.ShapeType.ellipse, { x: x - size, y: y - size, w: size*2, h: size*2, rotate: rot, fill: { color: '008080', transparency: 50 } });
               break;
             case 'implant':
               // Using a cylinder shape to represent an implant
-              slide.addShape(pptx.ShapeType.can, { x: x - 0.15, y: y - 0.3, w: 0.3, h: 0.6, fill: { color: 'A0A0A0' }, line: { color: '404040' } });
+              slide.addShape(pptx.ShapeType.can, { x: x - 0.15 * (a.size || 1), y: y - 0.3 * (a.size || 1), w: 0.3 * (a.size || 1), h: 0.6 * (a.size || 1), rotate: rot, fill: { color: 'A0A0A0' }, line: { color: '404040' } });
               break;
             case 'rotation':
-              slide.addShape(pptx.ShapeType.curvedDownArrow, { x: x - size/2, y: y - size/2, w: size, h: size, fill: { color: 'FFA500' } });
+              slide.addShape(pptx.ShapeType.curvedDownArrow, { x: x - size/2, y: y - size/2, w: size, h: size, rotate: rot, fill: { color: 'FFA500' } });
+              break;
+            case 'polygon':
+              // Native PPTX freeform polygons are complex, so we represent the area roughly as a semitransparent rectangle for now.
+              slide.addShape(pptx.ShapeType.rect, { x: x - size, y: y - size, w: size*2, h: size*2, rotate: rot, fill: { color: '008080', transparency: 70 } });
               break;
           }
         });
@@ -373,7 +391,8 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
       type,
       x,
       y,
-      size: 1.0
+      size: 1.0,
+      rotate: 0
     };
     setImage(prev => ({ ...prev, annotations: [...prev.annotations, newAnnotation] }));
     setSelectedId(newAnnotation.id);
@@ -384,6 +403,14 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
     setImage(prev => ({
       ...prev,
       annotations: prev.annotations.map(a => a.id === selectedId ? { ...a, size: val } : a)
+    }));
+  };
+
+  const handleUpdateRotate = (val: number) => {
+    if (!selectedId) return;
+    setImage(prev => ({
+      ...prev,
+      annotations: prev.annotations.map(a => a.id === selectedId ? { ...a, rotate: val } : a)
     }));
   };
 
@@ -401,7 +428,7 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
     setDrawingPoints([]);
   };
 
-  const handleCanvasClick = (e: React.MouseEvent) => {
+  const handleCanvasClick = (e: React.PointerEvent) => {
     if (!isDrawingPolygon || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const px = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
@@ -437,7 +464,11 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
 
   const handlePointerUp = (e: React.PointerEvent) => {
     setDraggingId(null);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (err) {
+      // Ignore if it fails to release
+    }
   };
 
   return (
@@ -476,16 +507,27 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
             </button>
           </div>
           
-          {/* Size Slider for Selected Item */}
+          {/* Size & Rotation Sliders for Selected Item */}
           {selectedId && !isDrawingPolygon && (
-            <div className="space-y-2 p-4 bg-neutral-800/50 rounded-xl border border-white/5">
-              <p className="text-xs text-neutral-400 font-bold">サイズ調整</p>
-              <input 
-                type="range" min="0.3" max="3" step="0.1" 
-                value={image.annotations.find(a => a.id === selectedId)?.size || 1.0}
-                onChange={(e) => handleUpdateSize(parseFloat(e.target.value))}
-                className="w-full accent-teal-500"
-              />
+            <div className="space-y-4 p-4 bg-neutral-800/50 rounded-xl border border-white/5">
+              <div className="space-y-2">
+                <p className="text-xs text-neutral-400 font-bold">サイズ調整</p>
+                <input 
+                  type="range" min="0.3" max="3" step="0.1" 
+                  value={image.annotations.find(a => a.id === selectedId)?.size || 1.0}
+                  onChange={(e) => handleUpdateSize(parseFloat(e.target.value))}
+                  className="w-full accent-teal-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-neutral-400 font-bold">回転</p>
+                <input 
+                  type="range" min="0" max="360" step="1" 
+                  value={image.annotations.find(a => a.id === selectedId)?.rotate || 0}
+                  onChange={(e) => handleUpdateRotate(parseInt(e.target.value))}
+                  className="w-full accent-orange-500"
+                />
+              </div>
             </div>
           )}
 
@@ -573,7 +615,8 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
-            onClick={handleCanvasClick}
+            onPointerCancel={handlePointerUp}
+            onPointerDown={handleCanvasClick}
           >
             <img 
               src={image.previewUrl} 
@@ -600,10 +643,17 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
             {image.annotations.map(a => (
               <div 
                 key={a.id} 
-                className={`absolute transform -translate-x-1/2 -translate-y-1/2 drop-shadow-xl transition-all ${
-                  a.type === 'polygon' ? 'inset-0 translate-x-0 translate-y-0' : 'cursor-move'
-                } ${selectedId === a.id ? 'ring-2 ring-teal-500 ring-offset-2 ring-offset-black scale-105' : 'hover:scale-105'}`}
-                style={a.type === 'polygon' ? { zIndex: 10 } : { left: `${a.x}%`, top: `${a.y}%`, zIndex: draggingId === a.id ? 50 : 10, width: `${(a.size || 1)*3}rem`, height: `${(a.size || 1)*3}rem` }}
+                className={`absolute transition-all ${
+                  a.type === 'polygon' ? 'inset-0' : 'cursor-move'
+                } ${selectedId === a.id ? 'ring-2 ring-teal-500 ring-offset-2 ring-offset-black' : ''}`}
+                style={a.type === 'polygon' ? { zIndex: 10 } : { 
+                  left: `${a.x}%`, 
+                  top: `${a.y}%`, 
+                  zIndex: draggingId === a.id ? 50 : 10, 
+                  width: `${(a.size || 1)*3}rem`, 
+                  height: `${(a.size || 1)*3}rem`,
+                  transform: `translate(-50%, -50%) rotate(${a.rotate || 0}deg) scale(${selectedId === a.id && draggingId !== a.id ? 1.05 : 1})`
+                }}
                 onPointerDown={(e) => handlePointerDown(e, a.id)}
               >
                 {a.type === 'polygon' ? (
