@@ -219,7 +219,7 @@ export default function SlideGenerator() {
       const pptx = new pptxgen();
       pptx.layout = "LAYOUT_16x9";
 
-      const captureAndAddSlide = async (ref: React.RefObject<HTMLDivElement>) => {
+      const captureAndAddSlide = async (ref: React.RefObject<HTMLDivElement | null>) => {
         if (!ref.current) return;
         
         // Remove styling that might mess up capture
