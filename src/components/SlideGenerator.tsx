@@ -236,32 +236,70 @@ export default function SlideGenerator() {
       const pptx = new pptxgen();
       pptx.layout = "LAYOUT_16x9";
 
-      const captureAndAddSlide = async (ref: React.RefObject<HTMLDivElement | null>) => {
-        if (!ref.current) return;
-        
-        const originalBorder = ref.current.style.border;
-        ref.current.style.border = 'none';
+      if (panoImage) {
+        const slide = pptx.addSlide();
+        slide.addImage({ 
+          data: panoImage.previewUrl, 
+          x: 0.25, y: 0.3125, w: 9.5, h: 5, 
+          sizing: { type: 'contain', w: 9.5, h: 5 },
+          rotate: panoImage.rotate || 0,
+          flipH: panoImage.flipH || false,
+          flipV: panoImage.flipV || false
+        });
+      }
 
-        const dataUrl = await htmlToImage.toJpeg(ref.current, { 
-          backgroundColor: '#000000', 
-          pixelRatio: 2,
-          quality: 0.95,
-          filter: (node) => {
-            if (node.classList && node.classList.contains && node.classList.contains('annotation-marker')) {
-              return false;
-            }
-            return true;
+      if (intraoralImages.some(img => img !== null)) {
+        const slide = pptx.addSlide();
+        const cellW = 3.1;
+        const cellH = 1.7;
+        const gapX = 0.1;
+        const gapY = 0.1;
+        const startX = (10 - (cellW * 3 + gapX * 2)) / 2;
+        const startY = (5.625 - (cellH * 3 + gapY * 2)) / 2;
+
+        intraoralImages.forEach((img, i) => {
+          if (img) {
+            const row = Math.floor(i / 3);
+            const col = i % 3;
+            slide.addImage({
+              data: img.previewUrl,
+              x: startX + col * (cellW + gapX), 
+              y: startY + row * (cellH + gapY), 
+              w: cellW, 
+              h: cellH,
+              sizing: { type: 'contain', w: cellW, h: cellH },
+              rotate: img.rotate || 0,
+              flipH: img.flipH || false,
+              flipV: img.flipV || false
+            });
           }
         });
-        
-        ref.current.style.border = originalBorder;
-        const slide = pptx.addSlide();
-        slide.addImage({ data: dataUrl, x: 0.5, y: 0.5, w: 9, h: 4.5, sizing: { type: 'contain', w: 9, h: 4.5 } });
-      };
+      }
 
-      if (panoImage) await captureAndAddSlide(panoRef);
-      if (intraoralImages.some(img => img !== null)) await captureAndAddSlide(intraoralRef);
-      if (facialImages.some(img => img !== null)) await captureAndAddSlide(facialRef);
+      if (facialImages.some(img => img !== null)) {
+        const slide = pptx.addSlide();
+        const cellW = 2.5;
+        const cellH = 3.33;
+        const gapX = 0.5;
+        const startX = (10 - (cellW * 3 + gapX * 2)) / 2;
+        const startY = (5.625 - cellH) / 2;
+
+        facialImages.forEach((img, i) => {
+          if (img) {
+            slide.addImage({
+              data: img.previewUrl,
+              x: startX + i * (cellW + gapX), 
+              y: startY, 
+              w: cellW, 
+              h: cellH,
+              sizing: { type: 'contain', w: cellW, h: cellH },
+              rotate: img.rotate || 0,
+              flipH: img.flipH || false,
+              flipV: img.flipV || false
+            });
+          }
+        });
+      }
 
       await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });
     } catch (e: any) {
@@ -287,7 +325,13 @@ export default function SlideGenerator() {
         const dataUrl = await htmlToImage.toJpeg(ref.current, { 
           backgroundColor: '#000000', 
           pixelRatio: 2,
-          quality: 0.95
+          quality: 0.95,
+          filter: (node) => {
+            if (node.classList && node.classList.contains && node.classList.contains('export-ignore')) {
+              return false;
+            }
+            return true;
+          }
         });
         
         ref.current.style.border = originalBorder;
@@ -397,7 +441,7 @@ export default function SlideGenerator() {
                     style={{ transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg) translate(${panoImage.panX || 0}%, ${panoImage.panY || 0}%)` }}
                   />
                   {renderAnnotations(panoAnnotations)}
-                  <div className="absolute top-2 right-2 flex gap-2 z-50">
+                  <div className="export-ignore absolute top-2 right-2 flex gap-2 z-50">
                     <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "pano", index: null, img: panoImage }); }} className="p-2 bg-black/60 rounded-lg text-white hover:bg-teal-600" title="詳細調整"><Sliders className="w-4 h-4" /></button>
                     <button onClick={(e) => rotateImage("pano", null, e)} className="p-2 bg-black/60 rounded-lg text-white hover:bg-blue-600"><RotateCw className="w-4 h-4" /></button>
                     <button onClick={(e) => toggleFlip("pano", null, "H", e)} className="p-2 bg-black/70 rounded-lg text-white hover:bg-blue-600"><FlipHorizontal className="w-4 h-4" /></button>
@@ -448,7 +492,7 @@ export default function SlideGenerator() {
                   {img ? (
                     <>
                       <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />
-                      <div className="absolute top-1 right-1 flex gap-1 z-50">
+                      <div className="export-ignore absolute top-1 right-1 flex gap-1 z-50">
                         <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "intraoral", index: idx, img }); }} className="p-1.5 bg-black/60 rounded text-white hover:bg-teal-600"><Sliders className="w-3 h-3" /></button>
                         <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><RotateCw className="w-3 h-3" /></button>
                         <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><FlipHorizontal className="w-3 h-3" /></button>
@@ -478,7 +522,7 @@ export default function SlideGenerator() {
                   {img ? (
                     <>
                       <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />
-                      <div className="absolute top-1 right-1 flex flex-col gap-1 z-50">
+                      <div className="export-ignore absolute top-1 right-1 flex flex-col gap-1 z-50">
                         <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "facial", index: idx, img }); }} className="p-1.5 bg-black/60 rounded text-white hover:bg-teal-600"><Sliders className="w-3 h-3" /></button>
                         <button onClick={(e) => rotateImage("facial", idx, e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><RotateCw className="w-3 h-3" /></button>
                         <button onClick={(e) => toggleFlip("facial", idx, "H", e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><FlipHorizontal className="w-3 h-3" /></button>
