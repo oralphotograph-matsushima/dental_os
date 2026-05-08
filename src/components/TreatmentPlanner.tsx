@@ -6,13 +6,17 @@ import pptxgen from "pptxgenjs";
 import { getApproximateCoordinates } from "@/lib/dentalGridMap";
 
 // --- Types ---
-export type AnnotationType = 'implant' | 'arrow_mesial' | 'arrow_distal' | 'rotation' | 'caries' | 'bone_graft';
+export type AnnotationType = 'implant' | 'arrow_mesial' | 'arrow_distal' | 'rotation' | 'caries' | 'bone_graft' | 'polygon';
+
+export interface Point { x: number; y: number; }
 
 export interface Annotation {
   id: string;
   type: AnnotationType;
   x: number; // Percentage 0-100 relative to image container width
   y: number; // Percentage 0-100 relative to image container height
+  size?: number; // Scaling factor (default 1.0)
+  points?: Point[]; // For polygons
 }
 
 export interface ImageData {
@@ -27,15 +31,16 @@ export interface ImageData {
 }
 
 // --- Marker Icons ---
-export const MarkerIcon = ({ type, className = "" }: { type: AnnotationType, className?: string }) => {
+export const MarkerIcon = ({ type, className = "", points, isStatic = false }: { type: AnnotationType, className?: string, points?: Point[], isStatic?: boolean }) => {
   switch (type) {
     case 'implant':
       return (
-        <div className={`w-6 h-10 bg-gradient-to-b from-gray-300 to-gray-500 rounded-t-md rounded-b-xl border-2 border-gray-600 shadow-sm flex flex-col items-center justify-evenly ${className}`}>
-           <div className="w-full h-px bg-gray-600"></div>
-           <div className="w-full h-px bg-gray-600"></div>
-           <div className="w-full h-px bg-gray-600"></div>
-        </div>
+        <img 
+          src="/implant.png" 
+          alt="implant"
+          className={`object-contain mix-blend-multiply ${className}`}
+          style={isStatic ? {} : { width: '100%', height: '100%' }}
+        />
       );
     case 'arrow_mesial': // Red arrow pointing left
       return <MoveLeft className={`text-red-500 stroke-[3] ${className}`} />;
@@ -44,9 +49,19 @@ export const MarkerIcon = ({ type, className = "" }: { type: AnnotationType, cla
     case 'rotation': // Curved arrow
       return <RefreshCw className={`text-orange-500 stroke-[3] ${className}`} />;
     case 'caries': // Red circle outline
-      return <Circle className={`text-red-600 stroke-[3] ${className}`} />;
+      return <Circle className={`text-red-600 stroke-[3] ${className}`} style={isStatic ? {} : { width: '100%', height: '100%' }} />;
     case 'bone_graft': // Semi-transparent teal blob
-      return <Droplet className={`text-teal-500 fill-teal-500/50 stroke-[2] ${className}`} />;
+      return <Droplet className={`text-teal-500 fill-teal-500/50 stroke-[2] ${className}`} style={isStatic ? {} : { width: '100%', height: '100%' }} />;
+    case 'polygon': // For custom drawn shapes
+      if (isStatic) return <span className={`text-teal-500 ${className}`}>⬡</span>;
+      if (!points || points.length === 0) return null;
+      // Convert points to SVG polygon string
+      const ptsString = points.map(p => `${p.x},${p.y}`).join(' ');
+      return (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+          <polygon points={ptsString} className="fill-teal-500/40 stroke-teal-500 stroke-2" />
+        </svg>
+      );
   }
 };
 
@@ -342,6 +357,9 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
   const [image, setImage] = useState<ImageData>({ ...initialImage, annotations: [...initialImage.annotations] });
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
+  const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);
   
   const [isRecording, setIsRecording] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
@@ -349,23 +367,59 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
   const audioChunksRef = useRef<Blob[]>([]);
 
   const handleAddMarker = (type: AnnotationType, x = 50, y = 50) => {
+    setIsDrawingPolygon(false);
     const newAnnotation: Annotation = {
       id: Math.random().toString(36).substring(7),
       type,
       x,
-      y
+      y,
+      size: 1.0
     };
     setImage(prev => ({ ...prev, annotations: [...prev.annotations, newAnnotation] }));
+    setSelectedId(newAnnotation.id);
+  };
+
+  const handleUpdateSize = (val: number) => {
+    if (!selectedId) return;
+    setImage(prev => ({
+      ...prev,
+      annotations: prev.annotations.map(a => a.id === selectedId ? { ...a, size: val } : a)
+    }));
+  };
+
+  const finishDrawingPolygon = () => {
+    if (drawingPoints.length > 2) {
+      const newAnnotation: Annotation = {
+        id: Math.random().toString(36).substring(7),
+        type: 'polygon',
+        x: 0, y: 0, // Absolute positioning for polygon is tricky, we'll store relative to 0,0
+        points: drawingPoints
+      };
+      setImage(prev => ({ ...prev, annotations: [...prev.annotations, newAnnotation] }));
+    }
+    setIsDrawingPolygon(false);
+    setDrawingPoints([]);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (!isDrawingPolygon || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const px = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const py = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    setDrawingPoints(prev => [...prev, { x: px, y: py }]);
   };
 
   const handleRemoveMarker = (id: string) => {
     setImage(prev => ({ ...prev, annotations: prev.annotations.filter(a => a.id !== id) }));
+    if (selectedId === id) setSelectedId(null);
   };
 
   // Dragging logic
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
+    if (isDrawingPolygon) return;
     setDraggingId(id);
+    setSelectedId(id);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -396,25 +450,44 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
           
           <div className="space-y-3">
             <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">マーカー追加</p>
-            <button onClick={() => handleAddMarker('implant')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="implant" className="w-6 h-6" /> インプラント
+            <button onClick={() => handleAddMarker('implant')} className={`w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5`}>
+              <MarkerIcon type="implant" className="w-4 h-6" isStatic /> インプラント
             </button>
             <button onClick={() => handleAddMarker('arrow_mesial')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="arrow_mesial" className="w-5 h-5" /> 近心移動
+              <MarkerIcon type="arrow_mesial" className="w-5 h-5" isStatic /> 近心移動
             </button>
             <button onClick={() => handleAddMarker('arrow_distal')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="arrow_distal" className="w-5 h-5" /> 遠心移動
+              <MarkerIcon type="arrow_distal" className="w-5 h-5" isStatic /> 遠心移動
             </button>
             <button onClick={() => handleAddMarker('rotation')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="rotation" className="w-5 h-5" /> 回転
+              <MarkerIcon type="rotation" className="w-5 h-5" isStatic /> 回転
             </button>
             <button onClick={() => handleAddMarker('caries')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="caries" className="w-5 h-5" /> 虫歯
+              <MarkerIcon type="caries" className="w-5 h-5" isStatic /> 虫歯
             </button>
-            <button onClick={() => handleAddMarker('bone_graft')} className="w-full flex items-center gap-3 p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl text-white transition-colors border border-white/5">
-              <MarkerIcon type="bone_graft" className="w-5 h-5" /> 骨造成・歯周病
+            <button 
+              onClick={() => {
+                if (isDrawingPolygon) { finishDrawingPolygon(); }
+                else { setIsDrawingPolygon(true); setSelectedId(null); }
+              }} 
+              className={`w-full flex items-center gap-3 p-3 rounded-xl text-white transition-colors border border-white/5 ${isDrawingPolygon ? "bg-teal-600 border-teal-500 animate-pulse" : "bg-neutral-900 hover:bg-neutral-800"}`}
+            >
+              <MarkerIcon type="polygon" className="w-5 h-5" isStatic /> {isDrawingPolygon ? "描画を完了する" : "エリア自由描画"}
             </button>
           </div>
+          
+          {/* Size Slider for Selected Item */}
+          {selectedId && !isDrawingPolygon && (
+            <div className="space-y-2 p-4 bg-neutral-800/50 rounded-xl border border-white/5">
+              <p className="text-xs text-neutral-400 font-bold">サイズ調整</p>
+              <input 
+                type="range" min="0.3" max="3" step="0.1" 
+                value={image.annotations.find(a => a.id === selectedId)?.size || 1.0}
+                onChange={(e) => handleUpdateSize(parseFloat(e.target.value))}
+                className="w-full accent-teal-500"
+              />
+            </div>
+          )}
 
           <div className="mt-auto space-y-4 pt-6 border-t border-white/5">
             <button 
@@ -425,6 +498,7 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
                   try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     const mr = new MediaRecorder(stream);
+                    mediaRecorderRef.current = mr; // FIX: Assigned to ref so it can be stopped!
                     audioChunksRef.current = [];
                     mr.ondataavailable = (e) => audioChunksRef.current.push(e.data);
                     mr.onstop = async () => {
@@ -495,10 +569,11 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
           {/* Interactive Area */}
           <div 
             ref={canvasRef}
-            className="w-full max-w-4xl max-h-[70vh] aspect-auto relative bg-black rounded-xl overflow-hidden border-2 border-dashed border-neutral-700 touch-none"
+            className={`w-full max-w-4xl max-h-[70vh] aspect-auto relative bg-black rounded-xl overflow-hidden border-2 border-dashed border-neutral-700 touch-none select-none ${isDrawingPolygon ? 'cursor-crosshair' : ''}`}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
+            onClick={handleCanvasClick}
           >
             <img 
               src={image.previewUrl} 
@@ -508,27 +583,57 @@ function AnnotationEditor({ initialImage, onSave, onClose }: { initialImage: Ima
               }}
             />
 
+            {/* Active Drawing Polygon */}
+            {isDrawingPolygon && drawingPoints.length > 0 && (
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-50">
+                <polygon 
+                  points={drawingPoints.map(p => `${p.x}%,${p.y}%`).join(' ')} 
+                  className="fill-teal-500/40 stroke-teal-500 stroke-2" 
+                />
+                {drawingPoints.map((p, i) => (
+                  <circle key={i} cx={`${p.x}%`} cy={`${p.y}%`} r="4" fill="white" />
+                ))}
+              </svg>
+            )}
+
             {/* Draggable Annotations */}
             {image.annotations.map(a => (
               <div 
                 key={a.id} 
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move drop-shadow-xl hover:scale-110 transition-transform active:scale-95 group"
-                style={{ left: `${a.x}%`, top: `${a.y}%`, zIndex: draggingId === a.id ? 50 : 10 }}
+                className={`absolute transform -translate-x-1/2 -translate-y-1/2 drop-shadow-xl transition-all ${
+                  a.type === 'polygon' ? 'inset-0 translate-x-0 translate-y-0' : 'cursor-move'
+                } ${selectedId === a.id ? 'ring-2 ring-teal-500 ring-offset-2 ring-offset-black scale-105' : 'hover:scale-105'}`}
+                style={a.type === 'polygon' ? { zIndex: 10 } : { left: `${a.x}%`, top: `${a.y}%`, zIndex: draggingId === a.id ? 50 : 10, width: `${(a.size || 1)*3}rem`, height: `${(a.size || 1)*3}rem` }}
                 onPointerDown={(e) => handlePointerDown(e, a.id)}
               >
-                <MarkerIcon type={a.type} className="w-10 h-10 md:w-16 md:h-16" />
+                {a.type === 'polygon' ? (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                    <polygon 
+                      points={a.points?.map(p => `${p.x}%,${p.y}%`).join(' ')} 
+                      className="fill-teal-500/40 stroke-teal-500 stroke-2" 
+                    />
+                  </svg>
+                ) : (
+                  <MarkerIcon type={a.type} />
+                )}
                 
-                {/* Delete Button (shows on hover) */}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleRemoveMarker(a.id); }}
-                  className="absolute -top-3 -right-3 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+                {/* Delete Button (shows on select) */}
+                {selectedId === a.id && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleRemoveMarker(a.id); }}
+                    className="absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors z-50 pointer-events-auto"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
-          <p className="text-neutral-500 mt-6 text-sm text-center">マーカーをドラッグ＆ドロップして位置を調整できます。</p>
+          <p className="text-neutral-500 mt-6 text-sm text-center">
+            {isDrawingPolygon 
+              ? "画面をクリックしてエリアの頂点を打っていきます。もう一度ボタンを押して完了します。" 
+              : "マーカーをドラッグ＆ドロップして位置を調整できます。クリックしてサイズ変更・削除。"}
+          </p>
         </div>
       </div>
     </div>
