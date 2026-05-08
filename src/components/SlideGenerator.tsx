@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Sliders, Edit3, Mic, Loader2, Maximize2, MoveRight, MoveLeft, RefreshCw, Circle, Droplet } from "lucide-react";
 import pptxgen from "pptxgenjs";
-import html2canvas from "html2canvas";
+import * as htmlToImage from "html-to-image";
 import jsPDF from "jspdf";
 import { getApproximateCoordinates } from "@/lib/dentalGridMap";
 
@@ -228,17 +228,19 @@ export default function SlideGenerator() {
         const originalBorder = ref.current.style.border;
         ref.current.style.border = 'none';
 
-        const canvas = await html2canvas(ref.current, { 
+        const dataUrl = await htmlToImage.toJpeg(ref.current, { 
           backgroundColor: '#000000', 
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          ignoreElements: (element) => element.classList && element.classList.contains && element.classList.contains('annotation-marker')
+          pixelRatio: 2,
+          quality: 0.95,
+          filter: (node) => {
+            if (node.classList && node.classList.contains && node.classList.contains('annotation-marker')) {
+              return false;
+            }
+            return true;
+          }
         });
         
         ref.current.style.border = originalBorder;
-
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
         const slide = pptx.addSlide();
         slide.addImage({ data: dataUrl, x: 0.5, y: 0.5, w: 9, h: 4.5, sizing: { type: 'contain', w: 9, h: 4.5 } });
       };
@@ -268,20 +270,19 @@ export default function SlideGenerator() {
         const originalBorder = ref.current.style.border;
         ref.current.style.border = 'none';
 
-        const canvas = await html2canvas(ref.current, { 
+        const dataUrl = await htmlToImage.toJpeg(ref.current, { 
           backgroundColor: '#000000', 
-          scale: 2,
-          useCORS: true,
-          logging: false
+          pixelRatio: 2,
+          quality: 0.95
         });
         
         ref.current.style.border = originalBorder;
 
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
         if (addedFirst) pdf.addPage();
+        
         // Calculate dimensions to center the image on the 16x9 page
-        // Canvas width/height will be determined by the DOM element's aspect ratio
-        const imgAspect = canvas.width / canvas.height;
+        // Since we don't have canvas dimensions directly, we can use the element's clientWidth/clientHeight
+        const imgAspect = ref.current.clientWidth / ref.current.clientHeight;
         let drawW = 16;
         let drawH = 16 / imgAspect;
         if (drawH > 9) {
