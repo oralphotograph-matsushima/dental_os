@@ -658,9 +658,12 @@ export default function Home() {
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50 border border-teal-400/20">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
-              OralNote AI
-            </h1>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
+                OralNote AI
+              </h1>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.0 (Build 0509)</span>
+            </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
@@ -1168,10 +1171,13 @@ export default function Home() {
 
               {/* Dictionary Settings */}
               <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
-                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-amber-500" />
-                  カスタム辞書・専門用語ルール
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-amber-500" />
+                    カスタム辞書・専門用語ルール
+                  </h3>
+                  <span className="text-[10px] text-neutral-500 font-mono">v1.3.0 (Build 0509)</span>
+                </div>
                 
                 <div className="space-y-4">
                   <div className="p-4 bg-black/40 rounded-xl border border-white/5">
