@@ -418,7 +418,6 @@ export default function SlideGenerator() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Detail Edit Modal */}
       {editingImage && (
