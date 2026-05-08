@@ -172,14 +172,14 @@ export default function LandingPage() {
                 <div className="bg-black/50 border border-white/5 rounded-3xl p-6 text-center">
                   <h4 className="text-white font-bold mb-6">導入のご相談・お申し込み</h4>
                   <a 
-                    href="https://lin.ee/MBSF2D9" 
+                    href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full block px-6 py-4 bg-[#06C755] hover:bg-[#05b34c] text-white font-bold rounded-2xl transition-all"
+                    className="w-full block px-6 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
                   >
-                    LINEで申し込む
+                    利用を開始する
                   </a>
-                  <p className="text-xs text-neutral-500 mt-4">Nostalgista公式LINEへ遷移します</p>
+                  <p className="text-xs text-neutral-500 mt-4">安全なStripe決済ページへ遷移します</p>
                 </div>
               </div>
             </div>

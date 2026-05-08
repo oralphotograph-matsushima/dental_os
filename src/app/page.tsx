@@ -180,7 +180,7 @@ export default function Home() {
             const loginRes = await fetch("/api/auth/login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, password: savedPass, deviceId }),
+              body: JSON.stringify({ emailOrPassword: savedPass, deviceId }),
             });
             if (loginRes.ok) return true;
           }
@@ -202,8 +202,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    const interval = setInterval(() => verifySession(authEmail, deviceIdRef.current), 10000);
-    return () => clearInterval(interval);
+    // Removed 10-second polling to prevent Vercel serverless cold-start logouts and Stripe rate limits.
+    // Session is validated on initial load.
   }, [isAuthenticated, authEmail]);
 
   // --- Directory Management ---
@@ -501,7 +501,7 @@ export default function Home() {
         const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ', { create: true });
         const fileHandle = await chartDirHandle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
-        const doctorInfo = staffName ? `**担当医:** ${staffName}\n\n` : "";
+        const doctorInfo = staffName ? `担当者：${staffName}\n` : "";
         await writable.write(doctorInfo + displaySoapText);
         await writable.close();
         
@@ -524,8 +524,8 @@ export default function Home() {
         setStatus("saved");
         setSavedPath(`${dirHandle.name} / カルテ / ${filename} および ${patientFilename}`);
       } else {
-        const doctorInfo = staffName ? `**担当医:** ${staffName}\n\n` : "";
-        const fallbackText = `患者ページ: [[${patientInfo}]]\n\n${doctorInfo}${displaySoapText}`;
+        const doctorInfo = staffName ? `担当者：${staffName}\n` : "";
+        const fallbackText = `患者ページ: [[${patientInfo}]]\n${doctorInfo}${displaySoapText}`;
         const blob = new Blob([fallbackText], { type: "text/markdown" });
         const url = URL.createObjectURL(blob);
         
@@ -634,7 +634,7 @@ export default function Home() {
               </button>
               
               <div className="pt-4 mt-4 border-t border-neutral-800 text-center">
-                <a href="/lp#pricing" onClick={() => setShowUnlockModal(false)} className="text-teal-400 text-sm font-semibold hover:text-teal-300">
+                <a href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" target="_blank" rel="noopener noreferrer" onClick={() => setShowUnlockModal(false)} className="text-teal-400 text-sm font-semibold hover:text-teal-300">
                   まだライセンスをお持ちでない方はこちら
                 </a>
               </div>
