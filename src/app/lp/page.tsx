@@ -12,7 +12,7 @@ export default function LandingPage() {
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">Dental OS</span>
+            <span className="text-xl font-bold tracking-tight text-white">OralNote AI</span>
           </div>
           <div>
             <a href="/" className="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all flex items-center gap-1 shadow-lg shadow-teal-500/20">
@@ -82,7 +82,7 @@ export default function LandingPage() {
       <section className="py-24 bg-neutral-900/30 border-y border-white/5">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Dental OS の圧倒的な特徴</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">OralNote AI の圧倒的な特徴</h2>
             <p className="text-neutral-400">毎日の臨床をサポートする3つのコア機能と、進化し続けるシステム。</p>
           </div>
 
@@ -117,7 +117,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">将来の機能拡張予定</h3>
               <p className="text-neutral-400 leading-relaxed">
-                Dental OSは日々進化します。将来的には蓄積したカルテデータの「高度な検索性向上」や「分析機能」など、医院の資産を最大化するアップデートを予定しています。
+                OralNote AIは日々進化します。将来的には蓄積したカルテデータの「高度な検索性向上」や「分析機能」など、医院の資産を最大化するアップデートを予定しています。
               </p>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-neutral-500" />
-            <span className="text-neutral-400 font-bold">Dental OS</span>
+            <span className="text-neutral-400 font-bold">OralNote AI</span>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-4 text-sm text-neutral-500">

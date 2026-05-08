@@ -651,7 +651,7 @@ export default function Home() {
               <FileText className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
-              Dental OS
+              OralNote AI
             </h1>
           </div>
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
