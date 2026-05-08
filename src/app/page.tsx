@@ -5,6 +5,7 @@ import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTr
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
+import TreatmentPlanner from "@/components/TreatmentPlanner";
 
 function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -27,7 +28,7 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "settings">("input");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "treatment" | "settings">("input");
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
 
@@ -379,6 +380,7 @@ export default function Home() {
   };
 
   const handleToothClick = (number: number, quadrant: 'UR' | 'UL' | 'LR' | 'LL') => {
+
     const symbols = { UR: '┘', UL: '└', LR: '┐', LL: '┌' };
     const symbol = symbols[quadrant];
     const textToAdd = `${number}${symbol} `;
@@ -552,7 +554,7 @@ export default function Home() {
     }
   };
 
-  const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "settings") => {
+  const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "treatment" | "settings") => {
     if (!isAuthenticated && tab !== "input") {
       setShowUnlockModal(true);
       return;
@@ -690,6 +692,15 @@ export default function Home() {
             >
               <Presentation className="w-4 h-4" />
               スライド生成
+            </button>
+            <button
+              onClick={() => handleTabChange("treatment")}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "treatment" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              治療計画エディタ
             </button>
           </div>
         </div>
@@ -1267,6 +1278,14 @@ export default function Home() {
             </div>
           )}
 
+          {activeTab === "slide" && (
+            <SlideGenerator />
+          )}
+
+          {activeTab === "treatment" && (
+            <TreatmentPlanner />
+          )}
+
         </div>
       </div>
 
@@ -1307,6 +1326,15 @@ export default function Home() {
         >
           <Presentation className="w-6 h-6" />
           <span className="text-[10px] font-bold">スライド</span>
+        </button>
+        <button
+          onClick={() => handleTabChange("treatment")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
+            activeTab === "treatment" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Presentation className="w-6 h-6" />
+          <span className="text-[10px] font-bold">計画</span>
         </button>
         <button
           onClick={() => handleTabChange("settings")}
