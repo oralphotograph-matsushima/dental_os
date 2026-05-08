@@ -96,7 +96,16 @@ export default function SlideGenerator() {
   const panoRef = useRef<HTMLDivElement>(null);
   const facialRef = useRef<HTMLDivElement>(null);
 
-  const handleFiles = (files: FileList | null, type: "intraoral" | "pano" | "facial") => {
+  const fileToDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFiles = async (files: FileList | null, type: "intraoral" | "pano" | "facial") => {
     if (!files || files.length === 0) {
       setUploadTargetIndex(null);
       return;
@@ -108,20 +117,23 @@ export default function SlideGenerator() {
       for (let i = startIndex; i < 9; i++) {
         if (!newImages[i] && fileIndex < files.length) {
           const file = files[fileIndex++];
-          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl: URL.createObjectURL(file), flipH: false, flipV: false, rotate: 0 };
+          const previewUrl = await fileToDataURL(file);
+          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl, flipH: false, flipV: false, rotate: 0 };
         }
       }
       for (let i = 0; i < startIndex; i++) {
         if (!newImages[i] && fileIndex < files.length) {
           const file = files[fileIndex++];
-          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl: URL.createObjectURL(file), flipH: false, flipV: false, rotate: 0 };
+          const previewUrl = await fileToDataURL(file);
+          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl, flipH: false, flipV: false, rotate: 0 };
         }
       }
       setIntraoralImages(newImages);
       setUploadTargetIndex(null);
     } else if (type === "pano") {
       const file = files[0];
-      setPanoImage({ id: Math.random().toString(36).substring(7), file, previewUrl: URL.createObjectURL(file), flipH: false, flipV: false, rotate: 0 });
+      const previewUrl = await fileToDataURL(file);
+      setPanoImage({ id: Math.random().toString(36).substring(7), file, previewUrl, flipH: false, flipV: false, rotate: 0 });
     } else if (type === "facial") {
       const newImages = [...facialImages];
       let fileIndex = 0;
@@ -129,13 +141,15 @@ export default function SlideGenerator() {
       for (let i = startIndex; i < 3; i++) {
         if (!newImages[i] && fileIndex < files.length) {
           const file = files[fileIndex++];
-          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl: URL.createObjectURL(file), flipH: false, flipV: false, rotate: 0 };
+          const previewUrl = await fileToDataURL(file);
+          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl, flipH: false, flipV: false, rotate: 0 };
         }
       }
       for (let i = 0; i < startIndex; i++) {
         if (!newImages[i] && fileIndex < files.length) {
           const file = files[fileIndex++];
-          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl: URL.createObjectURL(file), flipH: false, flipV: false, rotate: 0 };
+          const previewUrl = await fileToDataURL(file);
+          newImages[i] = { id: Math.random().toString(36).substring(7), file, previewUrl, flipH: false, flipV: false, rotate: 0 };
         }
       }
       setFacialImages(newImages);
