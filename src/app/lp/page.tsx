@@ -132,56 +132,75 @@ export default function LandingPage() {
             <p className="text-neutral-400">初期費用なし。いつでも解約可能です。</p>
           </div>
 
-          <div className="bg-gradient-to-b from-neutral-900 to-neutral-950 border border-neutral-800 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
-            
-            <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-              <div className="flex-1 space-y-6 w-full">
-                <div className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-bold">
-                  モニター特別価格
-                </div>
-                <div>
-                  <div className="flex items-end gap-2 mb-2">
-                    <span className="text-5xl font-extrabold text-white">¥3,300</span>
-                    <span className="text-neutral-400 font-medium mb-1">/ 月額 (税込)</span>
-                  </div>
-                  <p className="text-neutral-500 text-sm">※価格は将来改定される場合がありますが、モニター期間中にご契約いただいた方は永続してこの価格でご利用いただけます。</p>
-                </div>
-                
-                <ul className="space-y-4 pt-4 border-t border-neutral-800">
-                  <li className="flex items-center gap-3 text-neutral-300">
-                    <CheckCircle2 className="w-5 h-5 text-teal-500" />
-                    AIカルテアシスト機能（無制限）
-                  </li>
-                  <li className="flex items-center gap-3 text-neutral-300">
-                    <CheckCircle2 className="w-5 h-5 text-teal-500" />
-                    スライド自動作成機能
-                  </li>
-                  <li className="flex items-center gap-3 text-neutral-300">
-                    <CheckCircle2 className="w-5 h-5 text-teal-500" />
-                    将来の検索機能などの無償アップデート
-                  </li>
-                  <li className="flex items-center gap-3 text-neutral-300 font-bold">
-                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                    解約自由（いつでもキャンセル可能）
-                  </li>
-                </ul>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {/* Personal Plan */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 hover:border-teal-500/50 transition-all flex flex-col relative group">
+              <h3 className="text-xl font-bold text-white mb-2">Personal</h3>
+              <p className="text-sm text-neutral-400 mb-6">個人での利用（端末2台まで推奨）</p>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-white">¥3,300</span>
+                <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
               </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> AIカルテアシスト機能（無制限）</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スライド自動作成機能</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
+              </ul>
+              <a 
+                href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
+                target="_blank" rel="noreferrer"
+                className="w-full text-center py-3.5 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all"
+              >
+                利用を開始する
+              </a>
+            </div>
 
-              <div className="w-full md:w-[320px] shrink-0">
-                <div className="bg-black/50 border border-white/5 rounded-3xl p-6 text-center">
-                  <h4 className="text-white font-bold mb-6">導入のご相談・お申し込み</h4>
-                  <a 
-                    href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full block px-6 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
-                  >
-                    利用を開始する
-                  </a>
-                  <p className="text-xs text-neutral-500 mt-4">安全なStripe決済ページへ遷移します</p>
-                </div>
+            {/* Clinic Plan */}
+            <div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-teal-500 rounded-3xl p-8 shadow-2xl shadow-teal-900/30 flex flex-col relative transform md:-translate-y-4">
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-400 to-emerald-400 rounded-t-3xl" />
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                一番人気
               </div>
+              <h3 className="text-xl font-bold text-white mb-2 mt-2">Clinic</h3>
+              <p className="text-sm text-neutral-400 mb-6">クリニック全体での共有（端末5台まで推奨）</p>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-white">¥5,500</span>
+                <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> すべての基本機能が無制限</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> 複数スタッフでの利用に最適</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
+              </ul>
+              <a 
+                href="https://buy.stripe.com/3cI6oH0QH3qMehKbeQ33W01" 
+                target="_blank" rel="noreferrer"
+                className="w-full text-center py-3.5 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl transition-all shadow-lg shadow-teal-500/25"
+              >
+                利用を開始する
+              </a>
+            </div>
+
+            {/* Corporate Plan */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 hover:border-teal-500/50 transition-all flex flex-col relative group">
+              <h3 className="text-xl font-bold text-white mb-2">Corporate</h3>
+              <p className="text-sm text-neutral-400 mb-6">法人・大規模利用（端末10台まで推奨）</p>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-white">¥9,900</span>
+                <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
+              </div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> すべての基本機能が無制限</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 医療法人や大型分院展開に</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
+              </ul>
+              <a 
+                href="https://buy.stripe.com/dRm9AT0QH4uQ1uYciU33W02" 
+                target="_blank" rel="noreferrer"
+                className="w-full text-center py-3.5 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all"
+              >
+                利用を開始する
+              </a>
             </div>
           </div>
         </div>
