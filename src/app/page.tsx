@@ -1268,9 +1268,6 @@ export default function Home() {
             </div>
           )}
 
-          {activeTab === "slide" && (
-            <SlideGenerator />
-          )}
         </div>
       </div>
 

@@ -289,7 +289,7 @@ export default function SlideGenerator() {
             <span className="bg-teal-500/20 text-teal-400 p-2 rounded-xl"><Sliders className="w-5 h-5" /></span>
             プレゼンテーション生成 & 計画エディタ
           </h2>
-          <p className="text-xs md:text-sm text-neutral-400">各グリッドに「アノテーション」で全体に書き込みができます。出力ボタンで美しい1枚のスライド（PDF/画像）になります。</p>
+          <p className="text-xs md:text-sm text-neutral-400">各グリッドに「計画を書き込む」で全体に書き込みができます。出力ボタンで美しい1枚のスライド（PDF/画像）になります。</p>
         </div>
         <button onClick={generateSlide} disabled={isGenerating} className="w-full md:w-auto bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
           {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
@@ -297,15 +297,13 @@ export default function SlideGenerator() {
         </button>
       </div>
 
-      <div className="grid md:grid-cols-12 gap-8 px-2 md:px-0">
-        <div className="col-span-12 md:col-span-9 space-y-8">
-          
+      <div className="space-y-8 px-2 md:px-0">
           {/* Pano */}
           <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-base md:text-lg font-semibold text-white">パノラマレントゲン</h3>
               <button onClick={() => setActiveEditor("pano")} className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-teal-900/30 transition-all">
-                <Edit3 className="w-4 h-4" /> アノテーション
+                <Edit3 className="w-4 h-4" /> 計画を書き込む
               </button>
             </div>
             
@@ -349,7 +347,7 @@ export default function SlideGenerator() {
                 </button>
               </div>
               <button onClick={() => setActiveEditor("intraoral")} className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-teal-900/30 transition-all">
-                <Edit3 className="w-4 h-4" /> アノテーション
+                <Edit3 className="w-4 h-4" /> 計画を書き込む
               </button>
             </div>
             
@@ -390,21 +388,17 @@ export default function SlideGenerator() {
             </div>
           </div>
 
-        </div>
-
-        <div className="col-span-12 md:col-span-3 space-y-8">
-          {/* Facial */}
           <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
             <div className="flex flex-col gap-3 mb-4">
               <h3 className="text-base md:text-lg font-semibold text-white">顔貌写真</h3>
               <div className="flex justify-between items-center">
                 <button onClick={() => fileInputRefFacial.current?.click()} className="text-xs bg-neutral-800 hover:bg-neutral-700 text-white px-3 py-2 rounded-lg border border-white/10">画像を追加</button>
-                <button onClick={() => setActiveEditor("facial")} className="bg-teal-600 hover:bg-teal-500 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"><Edit3 className="w-3 h-3" /> アノテーション</button>
+                <button onClick={() => setActiveEditor("facial")} className="bg-teal-600 hover:bg-teal-500 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 transition-all"><Edit3 className="w-3 h-3" /> 計画を書き込む</button>
               </div>
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRefFacial} onChange={(e) => handleFiles(e.target.files, "facial")} />
             </div>
             
-            <div ref={facialRef} className="relative grid grid-cols-1 gap-2 bg-black p-2 rounded-xl border border-neutral-800 shadow-inner" onDrop={(e) => handleDrop(e, "facial")} onDragOver={handleDragOver}>
+            <div ref={facialRef} className="relative grid grid-cols-3 gap-2 md:gap-4 bg-black p-2 md:p-4 rounded-xl border border-neutral-800 shadow-inner" onDrop={(e) => handleDrop(e, "facial")} onDragOver={handleDragOver}>
               {renderAnnotations(facialAnnotations)}
               {facialImages.map((img, idx) => (
                 <div key={idx} onClick={() => handleFacialGridClick(idx)} className={`relative aspect-[3/4] rounded-lg flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all z-10 ${facialSwapIndex === idx ? 'border-2 border-teal-500 bg-teal-500/20 scale-95' : 'border border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}>
@@ -646,7 +640,7 @@ function AnnotationEditor({ category, panoImage, intraoralImages, facialImages, 
             </div>
           )}
           {category === "facial" && (
-            <div className="grid grid-cols-1 gap-2 p-2 max-w-sm mx-auto">
+            <div className="grid grid-cols-3 gap-2 p-2">
               {facialImages.map((img: ImageData | null, i: number) => (
                 <div key={i} className="aspect-[3/4] bg-neutral-900 rounded-lg overflow-hidden relative">
                   {img && <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />}
