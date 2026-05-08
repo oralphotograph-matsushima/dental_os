@@ -230,6 +230,15 @@ export default function SlideGenerator() {
     }
   };
 
+  const getImageDimensions = (url: string): Promise<{w: number, h: number}> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.width, h: img.height });
+      img.onerror = () => resolve({ w: 4, h: 3 }); // fallback
+      img.src = url;
+    });
+  };
+
   const generatePowerPoint = async () => {
     setIsGenerating(true);
     try {
@@ -238,10 +247,20 @@ export default function SlideGenerator() {
 
       if (panoImage) {
         const slide = pptx.addSlide();
+        const dims = await getImageDimensions(panoImage.previewUrl);
+        const imgRatio = dims.w / dims.h;
+        let finalW = 9.5;
+        let finalH = 9.5 / imgRatio;
+        if (finalH > 5) {
+          finalH = 5;
+          finalW = 5 * imgRatio;
+        }
         slide.addImage({ 
           data: panoImage.previewUrl, 
-          x: 0.25, y: 0.3125, 
-          sizing: { type: 'contain', w: 9.5, h: 5 },
+          x: (10 - finalW) / 2, 
+          y: (5.625 - finalH) / 2, 
+          w: finalW, 
+          h: finalH, 
           rotate: panoImage.rotate || 0,
           flipH: panoImage.flipH || false,
           flipV: panoImage.flipV || false
@@ -250,51 +269,77 @@ export default function SlideGenerator() {
 
       if (intraoralImages.some(img => img !== null)) {
         const slide = pptx.addSlide();
-        const cellW = 3.1;
-        const cellH = 1.7;
+        const cellMaxW = 3.1;
+        const cellMaxH = 1.7;
         const gapX = 0.1;
         const gapY = 0.1;
-        const startX = (10 - (cellW * 3 + gapX * 2)) / 2;
-        const startY = (5.625 - (cellH * 3 + gapY * 2)) / 2;
+        const startX = (10 - (cellMaxW * 3 + gapX * 2)) / 2;
+        const startY = (5.625 - (cellMaxH * 3 + gapY * 2)) / 2;
 
-        intraoralImages.forEach((img, i) => {
+        for (let i = 0; i < intraoralImages.length; i++) {
+          const img = intraoralImages[i];
           if (img) {
+            const dims = await getImageDimensions(img.previewUrl);
+            const imgRatio = dims.w / dims.h;
+            let finalW = cellMaxW;
+            let finalH = cellMaxW / imgRatio;
+            if (finalH > cellMaxH) {
+              finalH = cellMaxH;
+              finalW = cellMaxH * imgRatio;
+            }
+            const offsetX = (cellMaxW - finalW) / 2;
+            const offsetY = (cellMaxH - finalH) / 2;
+
             const row = Math.floor(i / 3);
             const col = i % 3;
             slide.addImage({
               data: img.previewUrl,
-              x: startX + col * (cellW + gapX), 
-              y: startY + row * (cellH + gapY), 
-              sizing: { type: 'contain', w: cellW, h: cellH },
+              x: startX + col * (cellMaxW + gapX) + offsetX, 
+              y: startY + row * (cellMaxH + gapY) + offsetY, 
+              w: finalW,
+              h: finalH,
               rotate: img.rotate || 0,
               flipH: img.flipH || false,
               flipV: img.flipV || false
             });
           }
-        });
+        }
       }
 
       if (facialImages.some(img => img !== null)) {
         const slide = pptx.addSlide();
-        const cellW = 2.5;
-        const cellH = 3.33;
+        const cellMaxW = 2.5;
+        const cellMaxH = 3.33;
         const gapX = 0.5;
-        const startX = (10 - (cellW * 3 + gapX * 2)) / 2;
-        const startY = (5.625 - cellH) / 2;
+        const startX = (10 - (cellMaxW * 3 + gapX * 2)) / 2;
+        const startY = (5.625 - cellMaxH) / 2;
 
-        facialImages.forEach((img, i) => {
+        for (let i = 0; i < facialImages.length; i++) {
+          const img = facialImages[i];
           if (img) {
+            const dims = await getImageDimensions(img.previewUrl);
+            const imgRatio = dims.w / dims.h;
+            let finalW = cellMaxW;
+            let finalH = cellMaxW / imgRatio;
+            if (finalH > cellMaxH) {
+              finalH = cellMaxH;
+              finalW = cellMaxH * imgRatio;
+            }
+            const offsetX = (cellMaxW - finalW) / 2;
+            const offsetY = (cellMaxH - finalH) / 2;
+
             slide.addImage({
               data: img.previewUrl,
-              x: startX + i * (cellW + gapX), 
-              y: startY, 
-              sizing: { type: 'contain', w: cellW, h: cellH },
+              x: startX + i * (cellMaxW + gapX) + offsetX, 
+              y: startY + offsetY, 
+              w: finalW,
+              h: finalH,
               rotate: img.rotate || 0,
               flipH: img.flipH || false,
               flipV: img.flipV || false
             });
           }
-        });
+        }
       }
 
       await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });

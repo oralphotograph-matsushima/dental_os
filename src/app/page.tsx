@@ -662,7 +662,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote AI
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.2 (Build 0509)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.3 (Build 0509)</span>
             </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1131,7 +1131,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.3.2 (Build 0509)
+                  v1.3.3 (Build 0509)
                 </div>
               </div>
 
