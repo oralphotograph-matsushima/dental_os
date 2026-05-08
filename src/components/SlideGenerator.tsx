@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Sliders, Edit3, Mic, Loader2, Maximize2, MoveRight, MoveLeft, RefreshCw, Circle, Droplet } from "lucide-react";
 import pptxgen from "pptxgenjs";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { getApproximateCoordinates } from "@/lib/dentalGridMap";
 
 export type AnnotationType = 'implant' | 'arrow_mesial' | 'arrow_distal' | 'rotation' | 'caries' | 'bone_graft' | 'polygon';
@@ -213,7 +214,7 @@ export default function SlideGenerator() {
     }
   };
 
-  const generateSlide = async () => {
+  const generatePowerPoint = async () => {
     setIsGenerating(true);
     try {
       const pptx = new pptxgen();
@@ -222,7 +223,46 @@ export default function SlideGenerator() {
       const captureAndAddSlide = async (ref: React.RefObject<HTMLDivElement | null>) => {
         if (!ref.current) return;
         
-        // Remove styling that might mess up capture
+        const originalBorder = ref.current.style.border;
+        ref.current.style.border = 'none';
+
+        const canvas = await html2canvas(ref.current, { 
+          backgroundColor: '#000000', 
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          ignoreElements: (element) => element.classList.contains('annotation-marker')
+        });
+        
+        ref.current.style.border = originalBorder;
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+        const slide = pptx.addSlide();
+        slide.addImage({ data: dataUrl, x: 0.5, y: 0.5, w: 9, h: 4.5, sizing: { type: 'contain', w: 9, h: 4.5 } });
+      };
+
+      if (panoImage) await captureAndAddSlide(panoRef);
+      if (intraoralImages.some(img => img !== null)) await captureAndAddSlide(intraoralRef);
+      if (facialImages.some(img => img !== null)) await captureAndAddSlide(facialRef);
+
+      await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });
+    } catch (e) {
+      console.error("PPTX Error", e);
+      alert("PowerPointの生成中にエラーが発生しました。");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    setIsGenerating(true);
+    try {
+      const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [16, 9] });
+      let addedFirst = false;
+
+      const captureAndAddPage = async (ref: React.RefObject<HTMLDivElement | null>) => {
+        if (!ref.current) return;
+        
         const originalBorder = ref.current.style.border;
         ref.current.style.border = 'none';
 
@@ -236,20 +276,30 @@ export default function SlideGenerator() {
         ref.current.style.border = originalBorder;
 
         const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-        const slide = pptx.addSlide();
-        
-        // Center the image on the 16x9 slide
-        slide.addImage({ data: dataUrl, x: 0.5, y: 0.5, w: 9, h: 4.5, sizing: { type: 'contain', w: 9, h: 4.5 } });
+        if (addedFirst) pdf.addPage();
+        // Calculate dimensions to center the image on the 16x9 page
+        // Canvas width/height will be determined by the DOM element's aspect ratio
+        const imgAspect = canvas.width / canvas.height;
+        let drawW = 16;
+        let drawH = 16 / imgAspect;
+        if (drawH > 9) {
+            drawH = 9;
+            drawW = 9 * imgAspect;
+        }
+        const x = (16 - drawW) / 2;
+        const y = (9 - drawH) / 2;
+        pdf.addImage(dataUrl, 'JPEG', x, y, drawW, drawH);
+        addedFirst = true;
       };
 
-      if (panoImage) await captureAndAddSlide(panoRef);
-      if (intraoralImages.some(img => img !== null)) await captureAndAddSlide(intraoralRef);
-      if (facialImages.some(img => img !== null)) await captureAndAddSlide(facialRef);
+      if (panoImage) await captureAndAddPage(panoRef);
+      if (intraoralImages.some(img => img !== null)) await captureAndAddPage(intraoralRef);
+      if (facialImages.some(img => img !== null)) await captureAndAddPage(facialRef);
 
-      await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });
+      pdf.save(`Dental_Presentation_${new Date().getTime()}.pdf`);
     } catch (e) {
-      console.error("PPTX Error", e);
-      alert("スライドの生成中にエラーが発生しました。");
+      console.error("PDF Error", e);
+      alert("PDFの生成中にエラーが発生しました。");
     } finally {
       setIsGenerating(false);
     }
@@ -260,7 +310,7 @@ export default function SlideGenerator() {
     return annotations.map(a => (
       <div 
         key={a.id} 
-        className="absolute drop-shadow-md pointer-events-none" 
+        className="annotation-marker absolute drop-shadow-md pointer-events-none"
         style={{ 
           left: `${a.x}%`, 
           top: `${a.y}%`,
@@ -291,10 +341,16 @@ export default function SlideGenerator() {
           </h2>
           <p className="text-xs md:text-sm text-neutral-400">各グリッドに「計画を書き込む」で全体に書き込みができます。出力ボタンで美しい1枚のスライド（PDF/画像）になります。</p>
         </div>
-        <button onClick={generateSlide} disabled={isGenerating} className="w-full md:w-auto bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
-          {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
-          スライド（PDF/画像）として出力
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button onClick={generatePowerPoint} disabled={isGenerating} className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
+            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+            PowerPointで出力（画像のみ）
+          </button>
+          <button onClick={generatePDF} disabled={isGenerating} className="flex-1 md:flex-none bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
+            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+            PDFで出力（計画込み）
+          </button>
+        </div>
       </div>
 
       <div className="space-y-8 px-2 md:px-0">
