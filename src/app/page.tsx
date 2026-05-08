@@ -235,13 +235,20 @@ export default function Home() {
         if ((await dirHandle.requestPermission({ mode: "read" })) !== "granted") return;
       }
 
-      const patients = [];
+      const patientsSet = new Set<string>();
       for await (const entry of dirHandle.values()) {
-        if (entry.kind === "file" && entry.name.endsWith(".md") && !entry.name.startsWith("カルテ_")) {
-          patients.push(entry.name.replace(".md", ""));
+        if (entry.kind === "file" && entry.name.endsWith(".md")) {
+          if (entry.name.startsWith("カルテ_")) {
+            const parts = entry.name.replace(".md", "").split("_");
+            if (parts.length >= 2) {
+              patientsSet.add(parts[1]);
+            }
+          } else {
+            patientsSet.add(entry.name.replace(".md", ""));
+          }
         }
       }
-      setPatientsList(patients);
+      setPatientsList(Array.from(patientsSet));
     } catch (err) {
       console.error("Failed to load patients", err);
     }
@@ -254,43 +261,43 @@ export default function Home() {
     setShowMobileDetail(true);
     try {
       const dirHandle: any = await get("obsidianDirHandle");
-      const patientFileHandle = await dirHandle.getFileHandle(`${patientName}.md`);
-      const patientFile = await patientFileHandle.getFile();
-      const content = await patientFile.text();
-      
-      const linkRegex = /\[\[(カルテ_[^\]]+)\]\]/g;
-      const links = [];
-      let match;
-      while ((match = linkRegex.exec(content)) !== null) {
-        links.push(match[1]); 
-      }
-      
       const history = [];
       
-      // Try to get the 'カルテ' subdirectory. If it doesn't exist, charts won't be found.
-      let chartDirHandle;
-      try {
-        chartDirHandle = await dirHandle.getDirectoryHandle('カルテ');
-      } catch (e) {
-        // Fallback to root directory if 'カルテ' folder doesn't exist yet (for backwards compatibility with old charts)
-        chartDirHandle = dirHandle;
-      }
-
-      for (const link of links.reverse()) { // Newest first based on insertion order
-        try {
-          const chartHandle = await chartDirHandle.getFileHandle(`${link}.md`);
-          const chartFile = await chartHandle.getFile();
-          const chartContent = await chartFile.text();
-          
-          const parts = link.split('_');
-          const dateStr = parts[parts.length - 1];
-          const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
-
-          history.push({ date: formattedDate, soap: chartContent, filename: `${link}.md` });
-        } catch(e) {
-          console.warn("Could not load linked chart", link);
+      // 1. Scan root directory for flat chart files
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === "file" && entry.name.startsWith(`カルテ_${patientName}_`) && entry.name.endsWith(".md")) {
+          try {
+            const chartFile = await entry.getFile();
+            const chartContent = await chartFile.text();
+            const parts = entry.name.replace(".md", "").split('_');
+            const dateStr = parts[parts.length - 1];
+            const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
+            history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
+          } catch(e) { console.warn(e); }
         }
       }
+
+      // 2. Scan inside 'カルテ' directory for organized chart files
+      try {
+        const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ');
+        for await (const entry of chartDirHandle.values()) {
+          if (entry.kind === "file" && entry.name.startsWith(`カルテ_${patientName}_`) && entry.name.endsWith(".md")) {
+            try {
+              const chartFile = await entry.getFile();
+              const chartContent = await chartFile.text();
+              const parts = entry.name.replace(".md", "").split('_');
+              const dateStr = parts[parts.length - 1];
+              const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
+              if (!history.find(h => h.filename === entry.name)) {
+                history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
+              }
+            } catch(e) {}
+          }
+        }
+      } catch (e) {}
+
+      // Sort newest first
+      history.sort((a, b) => b.filename.localeCompare(a.filename));
       setPatientHistory(history);
     } catch(err) {
       console.error(err);
