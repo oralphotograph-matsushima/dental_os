@@ -29,6 +29,8 @@ export interface ImageData {
   flipV: boolean;
   rotate: number;
   zoom?: number;
+  panX?: number;
+  panY?: number;
 }
 
 export const MarkerIcon = ({ type, className = "", points, isStatic = false }: { type: AnnotationType, className?: string, points?: Point[], isStatic?: boolean }) => {
@@ -231,7 +233,7 @@ export default function SlideGenerator() {
           scale: 2,
           useCORS: true,
           logging: false,
-          ignoreElements: (element) => element.classList.contains('annotation-marker')
+          ignoreElements: (element) => element.classList && element.classList.contains && element.classList.contains('annotation-marker')
         });
         
         ref.current.style.border = originalBorder;
@@ -246,9 +248,9 @@ export default function SlideGenerator() {
       if (facialImages.some(img => img !== null)) await captureAndAddSlide(facialRef);
 
       await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });
-    } catch (e) {
+    } catch (e: any) {
       console.error("PPTX Error", e);
-      alert("PowerPointの生成中にエラーが発生しました。");
+      alert("PowerPointの生成中にエラーが発生しました。\n詳細: " + (e.message || e.toString()));
     } finally {
       setIsGenerating(false);
     }
@@ -297,9 +299,9 @@ export default function SlideGenerator() {
       if (facialImages.some(img => img !== null)) await captureAndAddPage(facialRef);
 
       pdf.save(`Dental_Presentation_${new Date().getTime()}.pdf`);
-    } catch (e) {
+    } catch (e: any) {
       console.error("PDF Error", e);
-      alert("PDFの生成中にエラーが発生しました。");
+      alert("PDFの生成中にエラーが発生しました。\n詳細: " + (e.message || e.toString()));
     } finally {
       setIsGenerating(false);
     }
@@ -377,7 +379,7 @@ export default function SlideGenerator() {
                   <img 
                     src={panoImage.previewUrl} 
                     className="absolute inset-0 w-full h-full object-contain"
-                    style={{ transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg)` }}
+                    style={{ transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg) translate(${panoImage.panX || 0}%, ${panoImage.panY || 0}%)` }}
                   />
                   {renderAnnotations(panoAnnotations)}
                   <div className="absolute top-2 right-2 flex gap-2 z-50">
@@ -417,7 +419,7 @@ export default function SlideGenerator() {
             
             <div 
               ref={intraoralRef}
-              className="relative grid grid-cols-3 gap-1.5 md:gap-2 bg-black p-1.5 md:p-3 rounded-xl border border-neutral-800 shadow-inner"
+              className="relative grid grid-cols-3 gap-2 bg-black p-2 rounded-xl border border-neutral-800 shadow-inner"
               onDrop={(e) => handleDrop(e, "intraoral")} onDragOver={handleDragOver}
             >
               {renderAnnotations(intraoralAnnotations)}
@@ -454,7 +456,7 @@ export default function SlideGenerator() {
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRefFacial} onChange={(e) => handleFiles(e.target.files, "facial")} />
             </div>
             
-            <div ref={facialRef} className="relative grid grid-cols-3 gap-2 md:gap-4 bg-black p-2 md:p-4 rounded-xl border border-neutral-800 shadow-inner" onDrop={(e) => handleDrop(e, "facial")} onDragOver={handleDragOver}>
+            <div ref={facialRef} className="relative grid grid-cols-3 gap-2 bg-black p-2 rounded-xl border border-neutral-800 shadow-inner" onDrop={(e) => handleDrop(e, "facial")} onDragOver={handleDragOver}>
               {renderAnnotations(facialAnnotations)}
               {facialImages.map((img, idx) => (
                 <div key={idx} onClick={() => handleFacialGridClick(idx)} className={`relative aspect-[3/4] rounded-lg flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all z-10 ${facialSwapIndex === idx ? 'border-2 border-teal-500 bg-teal-500/20 scale-95' : 'border border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}>
@@ -483,14 +485,24 @@ export default function SlideGenerator() {
               <h3 className="text-xl font-bold text-white">画像の詳細調整</h3>
               <button onClick={() => setEditingImage(null)} className="text-neutral-400 hover:text-white p-2">✕</button>
             </div>
-            <div className="relative w-full aspect-video bg-black/50 rounded-xl overflow-hidden mb-8 border border-white/10 flex items-center justify-center">
-              <img src={editingImage.img.previewUrl} className="max-w-full max-h-full object-contain" style={{ transform: `scaleX(${editingImage.img.flipH ? -1 : 1}) scaleY(${editingImage.img.flipV ? -1 : 1}) rotate(${editingImage.img.rotate}deg) scale(${editingImage.img.zoom || 1})`, transition: 'transform 0.1s ease-out' }} />
+            <div className={`relative w-full ${editingImage.type === 'pano' ? 'aspect-[21/9]' : editingImage.type === 'intraoral' ? 'aspect-[4/3] max-w-sm mx-auto' : 'aspect-[3/4] max-w-xs mx-auto'} bg-black/50 rounded-xl overflow-hidden mb-8 border border-white/10 flex items-center justify-center`}>
+              <img src={editingImage.img.previewUrl} className={`absolute inset-0 w-full h-full ${editingImage.type === 'pano' ? 'object-contain' : 'object-cover'}`} style={{ transform: `scaleX(${editingImage.img.flipH ? -1 : 1}) scaleY(${editingImage.img.flipV ? -1 : 1}) rotate(${editingImage.img.rotate}deg) scale(${editingImage.img.zoom || 1}) translate(${editingImage.img.panX || 0}%, ${editingImage.img.panY || 0}%)`, transition: 'transform 0.1s ease-out' }} />
             </div>
             <div className="space-y-6">
               <div>
-                <div className="flex justify-between mb-2"><label className="text-sm font-semibold text-neutral-300">角度 (Rotate)</label><span className="text-sm text-teal-400">{editingImage.img.rotate}°</span></div>
-                <input type="range" min="-180" max="180" step="1" value={editingImage.img.rotate} onChange={(e) => setEditingImage({ ...editingImage, img: { ...editingImage.img, rotate: parseInt(e.target.value) } })} className="w-full accent-teal-500" />
+                <div className="flex justify-between mb-2"><label className="text-sm font-semibold text-neutral-300">横移動 (X)</label><span className="text-sm text-teal-400">{editingImage.img.panX || 0}%</span></div>
+                <input type="range" min="-50" max="50" step="1" value={editingImage.img.panX || 0} onChange={(e) => setEditingImage({ ...editingImage, img: { ...editingImage.img, panX: parseInt(e.target.value) } })} className="w-full accent-teal-500" />
               </div>
+              <div>
+                <div className="flex justify-between mb-2"><label className="text-sm font-semibold text-neutral-300">縦移動 (Y)</label><span className="text-sm text-teal-400">{editingImage.img.panY || 0}%</span></div>
+                <input type="range" min="-50" max="50" step="1" value={editingImage.img.panY || 0} onChange={(e) => setEditingImage({ ...editingImage, img: { ...editingImage.img, panY: parseInt(e.target.value) } })} className="w-full accent-teal-500" />
+              </div>
+              {editingImage.type !== 'pano' && (
+                <div>
+                  <div className="flex justify-between mb-2"><label className="text-sm font-semibold text-neutral-300">角度 (Rotate)</label><span className="text-sm text-teal-400">{editingImage.img.rotate}°</span></div>
+                  <input type="range" min="-180" max="180" step="1" value={editingImage.img.rotate} onChange={(e) => setEditingImage({ ...editingImage, img: { ...editingImage.img, rotate: parseInt(e.target.value) } })} className="w-full accent-teal-500" />
+                </div>
+              )}
               <div>
                 <div className="flex justify-between mb-2"><label className="text-sm font-semibold text-neutral-300">拡大 (Zoom)</label><span className="text-sm text-teal-400">{(editingImage.img.zoom || 1).toFixed(2)}x</span></div>
                 <input type="range" min="1" max="3" step="0.01" value={editingImage.img.zoom || 1} onChange={(e) => setEditingImage({ ...editingImage, img: { ...editingImage.img, zoom: parseFloat(e.target.value) } })} className="w-full accent-teal-500" />
@@ -682,14 +694,14 @@ function AnnotationEditor({ category, panoImage, intraoralImages, facialImages, 
           {/* Render the background grid based on category */}
           {category === "pano" && (
             <div className="w-full aspect-[21/9]">
-              {panoImage && <img src={panoImage.previewUrl} className="w-full h-full object-contain pointer-events-none" style={{ transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg)` }} />}
+              {panoImage && <img src={panoImage.previewUrl} className="absolute inset-0 w-full h-full object-contain pointer-events-none" style={{ transform: `scaleX(${(panoImage.flipH ? -1 : 1) * (panoImage.zoom || 1)}) scaleY(${(panoImage.flipV ? -1 : 1) * (panoImage.zoom || 1)}) rotate(${panoImage.rotate}deg) translate(${panoImage.panX || 0}%, ${panoImage.panY || 0}%)` }} />}
             </div>
           )}
           {category === "intraoral" && (
             <div className="grid grid-cols-3 gap-1.5 p-1.5">
               {intraoralImages.map((img: ImageData | null, i: number) => (
                 <div key={i} className="aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden relative">
-                  {img && <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />}
+                  {img && <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg) translate(${img.panX || 0}%, ${img.panY || 0}%)` }} />}
                 </div>
               ))}
             </div>
@@ -698,7 +710,7 @@ function AnnotationEditor({ category, panoImage, intraoralImages, facialImages, 
             <div className="grid grid-cols-3 gap-2 p-2">
               {facialImages.map((img: ImageData | null, i: number) => (
                 <div key={i} className="aspect-[3/4] bg-neutral-900 rounded-lg overflow-hidden relative">
-                  {img && <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />}
+                  {img && <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg) translate(${img.panX || 0}%, ${img.panY || 0}%)` }} />}
                 </div>
               ))}
             </div>
