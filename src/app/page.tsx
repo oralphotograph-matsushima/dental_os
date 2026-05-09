@@ -53,9 +53,31 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-  // QR Tab State
-  const [qrPatientId, setQrPatientId] = useState("");
+  // Wireless Connect Tab State
+  const [wirelessPatientId, setWirelessPatientId] = useState("");
+  const [wirelessImages, setWirelessImages] = useState<string[]>([]);
+  const [isWirelessActive, setIsWirelessActive] = useState(false);
 
+  // Wireless Connect Polling Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTab === "qr" && isWirelessActive && wirelessPatientId) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`http://localhost:3001/api/patients/${wirelessPatientId}/images`);
+          if (res.ok) {
+            const data = await res.json();
+            setWirelessImages(data.images);
+          }
+        } catch (e) {
+          console.error("Failed to fetch wireless images", e);
+        }
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab, isWirelessActive, wirelessPatientId]);
   // Append State
   const [appendingChart, setAppendingChart] = useState<string | null>(null);
   const [appendContent, setAppendContent] = useState("");
@@ -129,7 +151,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if ((activeTab === "search" || activeTab === "qr") && isFSApiSupported && hasDirectory && patientsList.length === 0) {
+    if (activeTab === "search" && isFSApiSupported && hasDirectory && patientsList.length === 0) {
       loadPatients();
     }
   }, [activeTab, hasDirectory, patientsList.length]);
@@ -249,8 +271,12 @@ export default function Home() {
         }
       }
       setPatientsList(Array.from(patientsSet));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load patients", err);
+      if (err.name === 'NotFoundError') {
+        setHasDirectory(false);
+        setDirectoryName("");
+      }
     }
   };
 
@@ -668,12 +694,15 @@ export default function Home() {
           <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
               onClick={() => handleTabChange("qr")}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "qr" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
-              <Camera className="w-4 h-4" />
-              撮影QR
+              <Camera className="w-5 h-5 flex-shrink-0" />
+              <div className="flex flex-col text-left leading-tight text-[11px] sm:text-[13px]">
+                <span>Wireless</span>
+                <span>Connect</span>
+              </div>
             </button>
             <button
               onClick={() => handleTabChange("input")}
@@ -736,76 +765,91 @@ export default function Home() {
             </div>
           )}
 
-          {/* === QR TAB === */}
+          {/* === WIRELESS CONNECT TAB === */}
           {activeTab === "qr" && (
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] flex flex-col items-center justify-center p-8">
-              <div className="w-full max-w-md space-y-8 flex flex-col items-center text-center">
-                
-                <div className="w-full space-y-2">
-                  <label className="text-sm font-bold text-neutral-400">患者ID（カルテ番号）を入力・選択</label>
-                  <div className="relative">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] flex flex-col p-8 relative overflow-hidden">
+              {/* Header section */}
+              <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-8 pb-8 border-b border-neutral-800">
+                <div>
+                  <h2 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                    <Camera className="w-8 h-8 text-teal-400" />
+                    Wireless Connect
+                  </h2>
+                  <p className="text-neutral-400 mt-2">カメラから直接PCへ写真を同期します</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                     <input
                       type="text"
-                      value={qrPatientId}
-                      onChange={(e) => setQrPatientId(e.target.value.toUpperCase())}
-                      placeholder="例: S1000"
-                      className="w-full bg-neutral-950 border-2 border-neutral-800 rounded-xl px-6 py-4 text-3xl font-bold text-center text-white focus:border-teal-500 outline-none uppercase tracking-wider"
+                      value={wirelessPatientId}
+                      onChange={(e) => {
+                        setWirelessPatientId(e.target.value.toUpperCase());
+                        setIsWirelessActive(false);
+                      }}
+                      placeholder="患者IDをスキャン"
+                      className="w-full bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl pl-12 pr-4 py-3 text-white font-bold uppercase tracking-wider outline-none transition-colors"
                     />
-                    {isFSApiSupported && patientsList.length > 0 && (
-                      <select 
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-neutral-800 text-white border-none rounded-lg p-2 text-sm outline-none cursor-pointer max-w-[120px]"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            const idMatch = val.split('_')[0];
-                            setQrPatientId(idMatch || val);
-                            setPatientInfo(val);
-                          }
-                        }}
-                        value=""
-                      >
-                        <option value="" disabled>リストから選択</option>
-                        {patientsList.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    )}
                   </div>
+                  <button
+                    onClick={async () => {
+                      if (!wirelessPatientId) return;
+                      try {
+                        await fetch('http://localhost:3001/api/patient', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ patientId: wirelessPatientId })
+                        });
+                        setIsWirelessActive(true);
+                      } catch (e) {
+                        setErrorMessage("バックグラウンドサーバー(3001)に接続できません。dev:allで起動しているか確認してください。");
+                      }
+                    }}
+                    disabled={!wirelessPatientId}
+                    className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
+                      isWirelessActive 
+                        ? "bg-teal-500/20 text-teal-400 border border-teal-500/50" 
+                        : "bg-white text-black hover:bg-neutral-200 disabled:opacity-50"
+                    }`}
+                  >
+                    {isWirelessActive ? (
+                      <><div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />同期中</>
+                    ) : "接続"}
+                  </button>
                 </div>
+              </div>
 
-                <div className="bg-white p-8 rounded-3xl shadow-2xl transition-all hover:scale-105 duration-300">
-                  {qrPatientId ? (
-                    <QRCodeSVG 
-                      value={qrPatientId} 
-                      size={256} 
-                      level={"H"}
-                      includeMargin={false}
-                    />
-                  ) : (
-                    <div className="w-[256px] h-[256px] flex flex-col items-center justify-center border-4 border-dashed border-neutral-200 rounded-xl text-neutral-400">
-                      <Camera className="w-16 h-16 mb-4 opacity-50" />
-                      <p className="font-bold">IDを入力</p>
+              {/* Gallery Section */}
+              <div className="flex-1">
+                {!isWirelessActive ? (
+                  <div className="h-full flex flex-col items-center justify-center text-neutral-500 py-20">
+                    <div className="w-24 h-24 rounded-full bg-neutral-800/50 flex items-center justify-center mb-6">
+                      <Camera className="w-10 h-10 opacity-50" />
                     </div>
-                  )}
-                </div>
-
-                {qrPatientId && (
-                  <div className="text-5xl font-black text-teal-400 tracking-widest mt-4">
-                    {qrPatientId}
+                    <p className="text-lg">患者IDを入力して「接続」を押すと、同期が開始されます</p>
+                  </div>
+                ) : wirelessImages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-teal-500/50 py-20">
+                    <Loader2 className="w-12 h-12 animate-spin mb-6" />
+                    <p className="text-lg font-medium">カメラからの転送を待機しています...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {wirelessImages.map((filename, i) => (
+                      <div key={filename} className="group relative aspect-square bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden hover:border-teal-500 transition-colors animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${i * 50}ms` }}>
+                        <img 
+                          src={`http://localhost:3001/images/${wirelessPatientId}/${filename}`} 
+                          alt={filename}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                          <p className="text-[10px] text-neutral-300 font-mono truncate">{filename}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-
-                <button
-                  onClick={() => {
-                    if (!patientInfo || !patientInfo.startsWith(qrPatientId)) {
-                      setPatientInfo(qrPatientId);
-                    }
-                    setActiveTab("input");
-                  }}
-                  disabled={!qrPatientId}
-                  className="w-full mt-12 py-5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xl font-bold rounded-2xl shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex justify-center items-center gap-3"
-                >
-                  <Mic className="w-6 h-6" />
-                  この患者のカルテ入力へ
-                </button>
               </div>
             </div>
           )}
