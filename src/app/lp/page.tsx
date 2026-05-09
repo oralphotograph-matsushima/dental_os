@@ -169,9 +169,9 @@ export default function LandingPage() {
                 <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0 mt-0.5" /> <span><strong>音声カルテ入力メイン</strong><br/><span className="text-xs text-neutral-500">（クラウド型Webアプリ）</span></span></li>
                 <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> AIカルテアシスト機能（無制限）</li>
                 <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スライド自動作成機能</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
               </ul>
               <a 
                 href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
@@ -195,9 +195,9 @@ export default function LandingPage() {
                 <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> すべての基本機能が無制限</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> 複数スタッフでの利用に最適</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>専用デスクトップアプリの提供</strong><br/><span className="text-xs text-neutral-400">（クリニックPCへのインストール版）</span></span></li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>カメラからの自動FTP/Wi-Fi同期</strong><br/><span className="text-xs text-neutral-400">（撮影画像を患者ごとに全自動振り分け）</span></span></li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> iPadへのリアルタイム画像表示</li>
               </ul>
               <button 
                 disabled
@@ -216,9 +216,9 @@ export default function LandingPage() {
                 <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> すべての基本機能が無制限</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 医療法人や大型分院展開に</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 解約自由（いつでもキャンセル可）</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0 mt-0.5" /> <span><strong>専用デスクトップアプリの提供</strong><br/><span className="text-xs text-neutral-500">（大型分院への一括導入に対応）</span></span></li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0 mt-0.5" /> <span><strong>カメラからの自動FTP/Wi-Fi同期</strong><br/><span className="text-xs text-neutral-500">（全チェアへのリアルタイム画像表示）</span></span></li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> 全基本機能の無制限利用</li>
               </ul>
               <button 
                 disabled
