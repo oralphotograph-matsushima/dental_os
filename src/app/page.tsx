@@ -5,6 +5,7 @@ import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTr
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
+import TechnicianOrder from "@/components/TechnicianOrder";
 
 function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -27,7 +28,7 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "settings">("input");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "technician" | "settings">("input");
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
 
@@ -586,7 +587,7 @@ export default function Home() {
     }
   };
 
-  const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "settings") => {
+  const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "technician" | "settings") => {
     if (!isAuthenticated && tab !== "input") {
       setShowUnlockModal(true);
       return;
@@ -691,7 +692,7 @@ export default function Home() {
               <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.4 (Build 0509)</span>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+          <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
               onClick={() => handleTabChange("qr")}
               className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -730,6 +731,15 @@ export default function Home() {
             >
               <Presentation className="w-4 h-4" />
               スライド生成
+            </button>
+            <button
+              onClick={() => handleTabChange("technician")}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "technician" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+              }`}
+            >
+              <Clipboard className="w-4 h-4" />
+              技工指示書
             </button>
           </div>
         </div>
@@ -1166,6 +1176,9 @@ export default function Home() {
 
           {activeTab === "slide" && <SlideGenerator />}
 
+          {/* === TECHNICIAN ORDER TAB === */}
+          {activeTab === "technician" && <TechnicianOrder />}
+
           {/* === SETTINGS TAB === */}
           {activeTab === "settings" && (
             <div className="max-w-4xl mx-auto py-4 md:py-8 mb-20 md:mb-0 space-y-6 md:space-y-8 px-2 md:px-0">
@@ -1369,6 +1382,15 @@ export default function Home() {
         >
           <Presentation className="w-6 h-6" />
           <span className="text-[10px] font-bold">スライド</span>
+        </button>
+        <button
+          onClick={() => handleTabChange("technician")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
+            activeTab === "technician" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+          }`}
+        >
+          <Clipboard className="w-6 h-6" />
+          <span className="text-[10px] font-bold">技工指示</span>
         </button>
         <button
           onClick={() => handleTabChange("settings")}
