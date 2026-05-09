@@ -42,6 +42,7 @@ export default function Home() {
   const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
   const [transcribedText, setTranscribedText] = useState("");
   const [soapText, setSoapText] = useState("");
+  const [outputLength, setOutputLength] = useState<"short" | "long">("short");
   const [patientInfo, setPatientInfo] = useState("");
   const [savedPath, setSavedPath] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -449,7 +450,7 @@ export default function Home() {
       const soapRes = await fetch("/api/soap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, customTerms: termsString }),
+        body: JSON.stringify({ text, customTerms: termsString, outputLength }),
       });
       const soapData = await soapRes.json();
       if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
@@ -786,6 +787,17 @@ export default function Home() {
                     Wireless Connect
                   </h2>
                   <p className="text-neutral-400 mt-2">カメラから直接PCへ写真を同期します</p>
+
+                  {/* アプリ版専用警告 */}
+                  {typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.match(/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/) && (
+                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/50 rounded-xl flex items-start gap-2 text-amber-500 text-sm max-w-xl animate-in fade-in slide-in-from-top-4">
+                      <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong>【ご注意】この機能はWeb版では動作しません</strong><br />
+                        カメラから直接写真を受信するには、クリニックのメインPCにインストールした「アプリ版（ローカル環境）」をご利用ください。
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
@@ -886,6 +898,31 @@ export default function Home() {
                     <><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">保存完了</span></>
                   )}
                   {status === "error" && <span className="text-red-500">エラー</span>}
+                </div>
+
+                {/* 文字数（出力長）切り替えトグル */}
+                <div className="flex w-full items-center justify-center gap-4 text-xs font-semibold px-4 py-2 bg-black/40 rounded-full border border-white/5 mt-4">
+                  <span className="text-neutral-400">出力の長さ:</span>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="outputLength" 
+                      checked={outputLength === 'short'} 
+                      onChange={() => setOutputLength('short')} 
+                      className="accent-teal-500" 
+                    />
+                    <span className={outputLength === 'short' ? 'text-white' : 'text-neutral-500'}>短め(要約)</span>
+                  </label>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="outputLength" 
+                      checked={outputLength === 'long'} 
+                      onChange={() => setOutputLength('long')} 
+                      className="accent-teal-500" 
+                    />
+                    <span className={outputLength === 'long' ? 'text-white' : 'text-neutral-500'}>長め(詳細)</span>
+                  </label>
                 </div>
 
                 <button

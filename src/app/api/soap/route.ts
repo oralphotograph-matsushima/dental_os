@@ -21,8 +21,8 @@ const DENTAL_SOAP_PROMPT = `あなたは「クラッセ歯科」および「セ�
    - N）：次回以降の治療計画や予定（例：1ヶ月後問題なければCADインレー印象など）。
    ※ A(Assessment)とP(Plan)は記載せず、必ず上記の「治療内容」「S」「O」「N）」のフォーマットを使用してください。
 
-3. 出力のフォーマットに関する絶対ルール（コンパクト化）：
-   - 見出しのマークダウン（#）や、項目間の空行（改行スペース）は一切入れず、極力コンパクトに詰めて出力してください。
+3. 出力のフォーマットに関する絶対ルール：
+   - 見出しのマークダウン（#）や、項目間の空行（改行スペース）は一切入れず、極力詰めて出力してください。
    - カルテモードの例：
 治療内容：〜〜〜
 S：〜〜〜
@@ -53,7 +53,7 @@ N）：〜〜〜
 
 export async function POST(request: Request) {
   try {
-    const { text, customTerms } = await request.json();
+    const { text, customTerms, outputLength } = await request.json();
 
     if (!text) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 });
@@ -63,6 +63,14 @@ export async function POST(request: Request) {
     const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2);
 
     let systemContent = DENTAL_SOAP_PROMPT + `\n【本日の日付】: ${dateStr}`;
+    
+    // 出力長に応じた指示の追加
+    if (outputLength === "long") {
+      systemContent += "\n\n【出力の長さに関する指示】: 入力された音声のディテールや熱量（細かい説明、雑談に近い補足、詳細な状態説明など）を一切カットせず、すべてカルテ上の適切な項目（OやSなど）に詳細に盛り込んでください。要約しすぎないことが極めて重要です。";
+    } else {
+      systemContent += "\n\n【出力の長さに関する指示】: 冗長な表現は省き、要点のみを極力コンパクトにまとめて要約して出力してください。";
+    }
+
     if (customTerms) {
       systemContent += `\n\n【クリニック固有の専門用語・略語リスト】\n以下の用語・略語を優先して使用・解釈してください：\n${customTerms}\n`;
     }
