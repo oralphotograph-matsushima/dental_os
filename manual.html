@@ -137,14 +137,27 @@
     </div>
 
     <div class="space-y-6">
+      <!-- Step 0 -->
+      <div class="glass-panel p-6 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl flex-shrink-0">0</div>
+        <div>
+          <h4 class="font-bold text-lg text-white mb-2">事前準備：Node.jsのインストール（必須）</h4>
+          <p class="text-sm text-neutral-300 mb-2">Oral Note AIをWindows上で動かすためのエンジンとして「Node.js」が必要です。</p>
+          <ul class="list-disc list-inside text-sm text-neutral-300 space-y-1 mb-2">
+            <li>公式サイト（<a href="https://nodejs.org/ja" class="text-teal-400 underline" target="_blank">https://nodejs.org/ja</a>）にアクセスします。</li>
+            <li>緑色のボタンの<strong>「LTS推奨版」</strong>をダウンロードし、そのまま「次へ」を押し続けてインストールを完了してください。</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- Step 1 -->
       <div class="glass-panel p-6 flex items-start gap-4">
         <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xl flex-shrink-0">1</div>
         <div>
           <h4 class="font-bold text-lg text-white mb-2">ファイルの配置（メインPC）</h4>
-          <p class="text-sm text-neutral-300 mb-3">USBメモリ等でお渡しする「<span class="text-teal-400 font-mono bg-teal-400/10 px-2 py-0.5 rounded">OralNoteAI.exe</span>」を、クリニックのメインPC（WindowsまたはMac）のデスクトップにコピーします。</p>
+          <p class="text-sm text-neutral-300 mb-3">USBメモリ等でお渡しする「<span class="text-teal-400 font-mono bg-teal-400/10 px-2 py-0.5 rounded">▶OralNote起動_Windows.bat</span>」を、クリニックのメインPCのデスクトップ等にコピーします。</p>
           <div class="bg-black/50 p-3 rounded-lg border border-neutral-800 text-xs text-neutral-400">
-            ※ この1つのファイルの中に、Oral Note AIのシステム全般（データベース、Webサーバー、監視システム）が丸ごと入っています。
+            ※ 初回ダブルクリック時に、必要なプログラム（node_modules）の自動ダウンロードが行われます。
           </div>
         </div>
       </div>
@@ -167,7 +180,7 @@
         <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xl flex-shrink-0">3</div>
         <div>
           <h4 class="font-bold text-lg text-white mb-2">iPadの接続設定（各チェア）</h4>
-          <p class="text-sm text-neutral-300 mb-2">メインPCで <span class="text-teal-400 font-mono">OralNoteAI.exe</span> をダブルクリックして起動した状態にします。</p>
+          <p class="text-sm text-neutral-300 mb-2">メインPCで <span class="text-teal-400 font-mono">▶OralNote起動_Windows.bat</span> をダブルクリックして起動した状態にします。</p>
           <ul class="list-disc list-inside text-sm text-neutral-300 space-y-1 mb-3">
             <li>iPadのSafariを開き、メインPCのIPアドレス（例: <span class="text-emerald-400 font-mono">http://192.168.x.x:3000</span>）を入力します。</li>
             <li>表示されたOral Note AIの画面を、Safariの「ホーム画面に追加」機能でアプリ化します。</li>
@@ -177,6 +190,25 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             これでセットアップは完了です！iPadからは本物のアプリのように操作可能になります。
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="glass-panel p-6 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xl flex-shrink-0">4</div>
+        <div>
+          <h4 class="font-bold text-lg text-white mb-2">PC起動時の自動立ち上げ設定（推奨）</h4>
+          <p class="text-sm text-neutral-300 mb-2">毎朝PCをつけるだけで自動的にシステムが準備完了状態になるように設定します。</p>
+          <ul class="list-disc list-inside text-sm text-neutral-300 space-y-1 mb-2">
+            <li>キーボードの <code>Windowsキー + R</code> を押し、「ファイル名を指定して実行」に <code>shell:startup</code> と入力してOKを押します。</li>
+            <li>開いた「スタートアップ」フォルダの中に、EOS Utilityのショートカットと、「▶OralNote起動_Windows.bat」のショートカットを両方入れておきます。</li>
+          </ul>
+          <div class="bg-teal-500/10 p-3 rounded-lg border border-teal-500/30 text-xs text-teal-300 flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            これで毎朝の自動化が完成します！
           </div>
         </div>
       </div>
