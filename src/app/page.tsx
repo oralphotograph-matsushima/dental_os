@@ -86,6 +86,7 @@ export default function Home() {
   const [defaultStaffName, setDefaultStaffName] = useState("");
   const [customTerms, setCustomTerms] = useState<CustomTerm[]>([]);
   const [globalTerms, setGlobalTerms] = useState<CustomTerm[]>([]);
+  const [showGlobalTerms, setShowGlobalTerms] = useState(false);
   const [newTermReading, setNewTermReading] = useState("");
   const [newTermNotation, setNewTermNotation] = useState("");
 
@@ -1340,26 +1341,37 @@ export default function Home() {
 
                       {/* Global Terms */}
                       <div className="pt-4 border-t border-white/5">
-                        <div className="text-xs font-semibold text-amber-500/80 uppercase tracking-wider mb-2 flex items-center justify-between">
-                          <span>共有辞書（全ユーザー共通・自動学習）</span>
-                          <span className="text-[10px] bg-amber-500/10 px-2 py-0.5 rounded text-amber-500">{globalTerms.length}件</span>
+                        <div 
+                          className="flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 p-2 -mx-2 rounded-lg transition-colors group"
+                          onClick={() => setShowGlobalTerms(!showGlobalTerms)}
+                        >
+                          <div className="text-xs font-semibold text-amber-500/80 uppercase tracking-wider flex items-center gap-2">
+                            <span>共有辞書（全ユーザー共通・自動学習）</span>
+                            <span className="text-[10px] bg-amber-500/10 px-2 py-0.5 rounded text-amber-500">{globalTerms.length}件</span>
+                          </div>
+                          <span className="text-[10px] text-neutral-500 group-hover:text-amber-500/80 transition-colors bg-black/40 px-2 py-1 rounded border border-white/5">
+                            {showGlobalTerms ? "閉じる ▲" : "詳細を見る ▼"}
+                          </span>
                         </div>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-neutral-700">
-                          {globalTerms.length === 0 ? (
-                            <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
-                              共有辞書の読み込み中、または登録がありません
-                            </div>
-                          ) : (
-                            globalTerms.map((t, idx) => (
-                              <div key={t.id || idx} className="flex items-center justify-between bg-black/40 p-3 rounded-lg border border-neutral-800/50">
-                                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
-                                  <span className="text-xs text-neutral-500 min-w-[80px]">よみ: <span className="text-neutral-400">{t.reading}</span></span>
-                                  <span className="text-sm font-bold text-amber-500/80">表記: {t.term}</span>
-                                </div>
+                        
+                        {showGlobalTerms && (
+                          <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-neutral-700">
+                            {globalTerms.length === 0 ? (
+                              <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
+                                共有辞書の読み込み中、または登録がありません
                               </div>
-                            ))
-                          )}
-                        </div>
+                            ) : (
+                              globalTerms.map((t, idx) => (
+                                <div key={t.id || idx} className="flex items-center justify-between bg-black/40 p-3 rounded-lg border border-neutral-800/50">
+                                  <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
+                                    <span className="text-xs text-neutral-500 min-w-[80px]">よみ: <span className="text-neutral-400">{t.reading}</span></span>
+                                    <span className="text-sm font-bold text-amber-500/80">表記: {t.term}</span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
