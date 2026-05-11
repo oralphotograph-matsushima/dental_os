@@ -89,6 +89,10 @@ export default function Home() {
   const [showGlobalTerms, setShowGlobalTerms] = useState(false);
   const [newTermReading, setNewTermReading] = useState("");
   const [newTermNotation, setNewTermNotation] = useState("");
+  const [reportReading, setReportReading] = useState("");
+  const [reportNotation, setReportNotation] = useState("");
+
+  const isMaster = typeof window !== 'undefined' ? localStorage.getItem('master_bypass') === 'true' : false;
 
   // Folder settings
   const [hasDirectory, setHasDirectory] = useState(false);
@@ -964,6 +968,59 @@ export default function Home() {
                     placeholder="ここにSOAP形式に整形されたカルテが表示されます。修正も可能です。"
                     className="flex-1 w-full p-4 bg-neutral-900 border border-neutral-700/50 focus:border-purple-500/50 rounded-2xl text-base md:text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono shadow-inner"
                   />
+                  {isMaster && soapText && (
+                    <div className="mt-2 p-3 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl animate-in fade-in slide-in-from-bottom-2">
+                      <div className="text-[10px] sm:text-xs font-bold text-amber-500 mb-2 flex items-center gap-1 sm:gap-2">
+                        <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        【管理者専用】誤字・専門用語を辞書へスピード登録
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input 
+                          type="text"
+                          value={reportReading}
+                          onChange={e => setReportReading(e.target.value)}
+                          placeholder="よみ（誤変換された音）"
+                          className="flex-1 bg-neutral-950 border border-amber-500/30 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:border-amber-500 outline-none"
+                        />
+                        <input 
+                          type="text"
+                          value={reportNotation}
+                          onChange={e => setReportNotation(e.target.value)}
+                          placeholder="正しい表記"
+                          className="flex-1 bg-neutral-950 border border-amber-500/30 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:border-amber-500 outline-none"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (!reportReading || !reportNotation) return;
+                            const newTerm = { id: Math.random().toString(36).substr(2, 9), reading: reportReading, term: reportNotation };
+                            
+                            // ローカル
+                            const newTerms = [...customTerms, newTerm];
+                            setCustomTerms(newTerms);
+                            localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                            
+                            // グローバル
+                            try {
+                              await supabase.from('global_terms').insert([{ reading: reportReading, term: reportNotation }]);
+                              const { data } = await supabase.from('global_terms').select('*');
+                              if (data) {
+                                setGlobalTerms(data.map((item: any) => ({
+                                  id: item.id, reading: item.reading, term: item.term
+                                })));
+                              }
+                            } catch (e) {}
+
+                            setReportReading("");
+                            setReportNotation("");
+                            alert("辞書に登録しました！次回から正しく変換されやすくなります。");
+                          }}
+                          className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors whitespace-nowrap active:scale-95"
+                        >
+                          登録
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between pt-2 flex-shrink-0 gap-4 mb-4 md:mb-0">
