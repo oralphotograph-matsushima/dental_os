@@ -36,7 +36,7 @@ export default function SubscriptionRequiredPage() {
 
         <div className="space-y-4">
           <a
-            href="#" // TODO: Stripeの決済ページ（Payment Link等）のURLを入れる
+            href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg transition-all"
