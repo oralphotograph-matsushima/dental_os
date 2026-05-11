@@ -13,6 +13,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAccess = async () => {
+      // 0. マスターパスワードのバイパス確認
+      const isMasterBypass = localStorage.getItem('master_bypass') === 'true';
+      if (isMasterBypass) {
+        if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices') {
+          router.push('/');
+        }
+        setLoading(false);
+        return;
+      }
+
       // 1. ログイン中のセッションを取得
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
