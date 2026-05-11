@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
 import TechnicianOrder from "@/components/TechnicianOrder";
+import { supabase } from "@/lib/supabase";
 
 function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -38,8 +39,6 @@ export default function Home() {
   }, []);
 
   // Input Tab State
-  const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
   const [transcribedText, setTranscribedText] = useState("");
   const [soapText, setSoapText] = useState("");
   const [outputLength, setOutputLength] = useState<"short" | "long">("short");
@@ -86,6 +85,7 @@ export default function Home() {
   const [staffName, setStaffName] = useState("");
   const [defaultStaffName, setDefaultStaffName] = useState("");
   const [customTerms, setCustomTerms] = useState<CustomTerm[]>([]);
+  const [globalTerms, setGlobalTerms] = useState<CustomTerm[]>([]);
   const [newTermReading, setNewTermReading] = useState("");
   const [newTermNotation, setNewTermNotation] = useState("");
 
@@ -96,9 +96,37 @@ export default function Home() {
   const [isIOS, setIsIOS] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
+  
+  // Draft save effect
+  useEffect(() => {
+    const savedDraft = localStorage.getItem("dental_os_draft_text");
+    if (savedDraft) setTranscribedText(savedDraft);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("dental_os_draft_text", transcribedText);
+  }, [transcribedText]);
+
+  // Fetch Global Terms
+  useEffect(() => {
+    const fetchGlobalTerms = async () => {
+      try {
+        const { data, error } = await supabase.from('global_terms').select('*');
+        if (error) throw error;
+        if (data) {
+          setGlobalTerms(data.map((item: any) => ({
+            id: item.id,
+            reading: item.reading,
+            term: item.term
+          })));
+        }
+      } catch (err) {
+        console.error("Failed to fetch global terms:", err);
+      }
+    };
+    fetchGlobalTerms();
+  }, []);
 
   useEffect(() => {
     let storedDeviceId = localStorage.getItem("dental_os_device_id");
@@ -368,50 +396,7 @@ export default function Home() {
     }
   };
 
-  // --- Input Tab Logic ---
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = processAudio;
-      mediaRecorder.start();
-      setIsRecording(true);
-      setStatus("recording");
-      setTranscribedText("");
-      setSoapText("");
-      setErrorMessage("");
-      setSavedPath("");
-
-      recordingTimeoutRef.current = setTimeout(() => {
-        alert("安全のため録音を終了しました。AI処理を開始します");
-        stopRecording();
-      }, 119000);
-
-    } catch (err: any) {
-      console.error("Error accessing microphone:", err);
-      setStatus("error");
-      setErrorMessage("マイクへのアクセスに失敗しました。権限を確認してください。");
-    }
-  };
-
-  const stopRecording = () => {
-    if (recordingTimeoutRef.current) {
-      clearTimeout(recordingTimeoutRef.current);
-      recordingTimeoutRef.current = null;
-    }
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-      setIsRecording(false);
-    }
-  };
+  // Audio recording has been removed in favor of OS-native keyboard dictation
 
   const handleToothClick = (number: number, quadrant: 'UR' | 'UL' | 'LR' | 'LL') => {
 
@@ -445,7 +430,8 @@ export default function Home() {
     }
 
     setStatus("formatting");
-    const termsString = customTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
+    const allTerms = [...customTerms, ...globalTerms];
+    const termsString = allTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
     try {
       const soapRes = await fetch("/api/soap", {
         method: "POST",
@@ -465,33 +451,7 @@ export default function Home() {
     }
   };
 
-  const processAudio = async () => {
-    if (!isAuthenticated && trialCount >= 5) {
-      setShowUnlockModal(true);
-      return;
-    }
-    
-    setStatus("transcribing");
-    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    const formData = new FormData();
-    formData.append("file", audioBlob, "recording.webm");
-    const termsString = customTerms.map(t => `${t.reading} → ${t.term}`).join(", ");
-    if (termsString) formData.append("customTerms", termsString);
-
-    try {
-      const transcribeRes = await fetch("/api/transcribe", { method: "POST", body: formData });
-      const transcribeData = await transcribeRes.json();
-      if (!transcribeRes.ok) throw new Error(transcribeData.error || "Transcription failed");
-      const text = transcribeData.text;
-      setTranscribedText(text);
-
-      await generateSOAP(text);
-    } catch (err: any) {
-      console.error(err);
-      setStatus("error");
-      setErrorMessage(err.message || "エラーが発生しました。");
-    }
-  };
+  // Native OS dictation does not use processAudio
 
   const displaySoapText = staffName.trim() && soapText ? `${soapText}\n\n---\n担当: ${staffName}` : soapText;
 
@@ -690,7 +650,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote AI
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.4 (Build 0509)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.5 (Build 0511)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -882,12 +842,6 @@ export default function Home() {
               <div className="md:col-span-4 flex flex-col items-center justify-center p-6 md:p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative flex-shrink-0 order-1">
                 <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-950/50 border border-neutral-800 text-xs font-medium">
                   {status === "idle" && <span className="text-neutral-400">準備完了</span>}
-                  {status === "recording" && (
-                    <><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /><span className="text-red-400">録音中</span></>
-                  )}
-                  {status === "transcribing" && (
-                    <><Loader2 className="w-3 h-3 text-blue-400 animate-spin" /><span className="text-blue-400">文字起こし</span></>
-                  )}
                   {status === "formatting" && (
                     <><Loader2 className="w-3 h-3 text-purple-400 animate-spin" /><span className="text-purple-400">整形中</span></>
                   )}
@@ -925,19 +879,24 @@ export default function Home() {
                   </label>
                 </div>
 
-                <button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={status === "transcribing" || status === "formatting" || status === "saving"}
-                  className={`relative group flex items-center justify-center w-[200px] h-16 md:w-[240px] md:h-20 rounded-3xl transition-all duration-300 mt-6 shadow-2xl gap-3 ${
-                    isRecording 
-                      ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border-2 border-red-500/50' 
-                      : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 hover:scale-105 border border-teal-500/20'
-                  } disabled:opacity-50 disabled:pointer-events-none disabled:hover:scale-100`}
-                >
-                  {isRecording && <div className="absolute inset-0 rounded-3xl border-4 border-red-500/30 animate-ping" />}
-                  {isRecording ? <Square className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" /> : <Mic className="w-6 h-6 md:w-8 md:h-8" />}
-                  <span className="font-bold text-sm md:text-base">{isRecording ? "タップして停止" : "タップして録音"}</span>
-                </button>
+                <div className="mt-8 w-full p-6 bg-teal-500/10 border border-teal-500/20 rounded-2xl flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Mic className="w-6 h-6 text-teal-400" />
+                  </div>
+                  <h3 className="text-teal-400 font-bold mb-2">音声入力のご案内</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">
+                    iPadやiPhoneの<br/>
+                    <strong className="text-neutral-200">キーボードのマイク機能（音声認識）</strong><br/>
+                    を使用して右側のテキストエリアに入力してください。
+                  </p>
+                  <div className="mt-4 text-xs text-neutral-500 text-left bg-black/40 p-3 rounded-xl w-full">
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>入力内容は自動保存されます。</li>
+                      <li>リロードしても消えません。</li>
+                      <li>AI通信料がかかりません。</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
@@ -971,16 +930,26 @@ export default function Home() {
                   <textarea
                     value={transcribedText}
                     onChange={(e) => setTranscribedText(e.target.value)}
-                    placeholder="ここにメモを入力するか、マイクで録音してください... (例: CR充填)"
-                    className="w-full h-24 p-4 bg-neutral-900 border border-neutral-700/50 focus:border-teal-500/50 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors shadow-inner"
+                    placeholder="ここをタップして、キーボードのマイクボタンを押して録音してください... (例: CR充填)"
+                    className="w-full h-32 p-4 bg-neutral-900 border border-neutral-700/50 focus:border-teal-500/50 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors shadow-inner"
                   />
                   <button
                     onClick={() => generateSOAP(transcribedText)}
-                    disabled={!transcribedText || status === "formatting" || status === "transcribing" || status === "saving"}
+                    disabled={!transcribedText || status === "formatting" || status === "saving"}
                     className="w-full mt-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <FileText className="w-5 h-5" />
                     🪄 AIカルテ生成 (SOAP化)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTranscribedText("");
+                      localStorage.removeItem("dental_os_draft_text");
+                    }}
+                    disabled={!transcribedText}
+                    className="w-full mt-2 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    入力内容をクリア
                   </button>
                 </div>
 
@@ -1018,7 +987,7 @@ export default function Home() {
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
                         }}
-                        disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
+                        disabled={!soapText || status === "saving" || status === "formatting"}
                         className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-4 md:py-3 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Clipboard className="w-5 h-5" />}
@@ -1026,7 +995,7 @@ export default function Home() {
                       </button>
                       <button
                         onClick={saveToObsidian}
-                        disabled={!soapText || status === "saving" || status === "formatting" || status === "transcribing" || isRecording}
+                        disabled={!soapText || status === "saving" || status === "formatting"}
                         className="flex-[2] md:flex-none flex justify-center items-center gap-2 px-6 py-4 md:py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         <Save className="w-5 h-5" />
@@ -1225,7 +1194,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.3.4 (Build 0509)
+                  v1.3.5 (Build 0511)
                 </div>
               </div>
 
@@ -1301,11 +1270,31 @@ export default function Home() {
                         className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
                       />
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if (!newTermReading || !newTermNotation) return;
-                          const newTerms = [...customTerms, { id: Math.random().toString(36).substr(2, 9), reading: newTermReading, term: newTermNotation }];
+                          
+                          // 1. ローカル保存
+                          const newTerm = { id: Math.random().toString(36).substr(2, 9), reading: newTermReading, term: newTermNotation };
+                          const newTerms = [...customTerms, newTerm];
                           setCustomTerms(newTerms);
                           localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                          
+                          // 2. サーバー共有（グローバル辞書）
+                          try {
+                            await supabase.from('global_terms').insert([{ reading: newTermReading, term: newTermNotation }]);
+                            // 最新のグローバル辞書を取得し直す
+                            const { data } = await supabase.from('global_terms').select('*');
+                            if (data) {
+                              setGlobalTerms(data.map((item: any) => ({
+                                id: item.id,
+                                reading: item.reading,
+                                term: item.term
+                              })));
+                            }
+                          } catch (err) {
+                            console.error("Failed to add to global terms", err);
+                          }
+
                           setNewTermReading("");
                           setNewTermNotation("");
                         }}
@@ -1316,32 +1305,62 @@ export default function Home() {
                     </div>
 
                     {/* List of terms */}
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                      {customTerms.length === 0 ? (
-                        <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
-                          登録されている用語はありません
-                        </div>
-                      ) : (
-                        customTerms.map(t => (
-                          <div key={t.id} className="flex items-center justify-between bg-neutral-800/50 p-3 rounded-lg border border-neutral-700/50 hover:border-neutral-600 transition-colors">
-                            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
-                              <span className="text-xs text-neutral-400 min-w-[80px]">よみ: <span className="text-neutral-300">{t.reading}</span></span>
-                              <span className="text-sm font-bold text-teal-400">表記: {t.term}</span>
+                    <div className="space-y-6">
+                      {/* Local Terms */}
+                      <div>
+                        <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">ローカル辞書（あなた専用）</div>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                          {customTerms.length === 0 ? (
+                            <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
+                              登録されている用語はありません
                             </div>
-                            <button 
-                              onClick={() => {
-                                const newTerms = customTerms.filter(item => item.id !== t.id);
-                                setCustomTerms(newTerms);
-                                localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
-                              }}
-                              className="text-neutral-500 hover:text-red-400 p-2 transition-colors ml-2"
-                              title="削除"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))
-                      )}
+                          ) : (
+                            customTerms.map(t => (
+                              <div key={t.id} className="flex items-center justify-between bg-neutral-800/50 p-3 rounded-lg border border-neutral-700/50 hover:border-neutral-600 transition-colors">
+                                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
+                                  <span className="text-xs text-neutral-400 min-w-[80px]">よみ: <span className="text-neutral-300">{t.reading}</span></span>
+                                  <span className="text-sm font-bold text-teal-400">表記: {t.term}</span>
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    const newTerms = customTerms.filter(item => item.id !== t.id);
+                                    setCustomTerms(newTerms);
+                                    localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                                  }}
+                                  className="text-neutral-500 hover:text-red-400 p-2 transition-colors ml-2"
+                                  title="削除"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Global Terms */}
+                      <div className="pt-4 border-t border-white/5">
+                        <div className="text-xs font-semibold text-amber-500/80 uppercase tracking-wider mb-2 flex items-center justify-between">
+                          <span>共有辞書（全ユーザー共通・自動学習）</span>
+                          <span className="text-[10px] bg-amber-500/10 px-2 py-0.5 rounded text-amber-500">{globalTerms.length}件</span>
+                        </div>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-neutral-700">
+                          {globalTerms.length === 0 ? (
+                            <div className="text-center py-6 text-neutral-500 text-sm border-2 border-dashed border-neutral-800 rounded-xl">
+                              共有辞書の読み込み中、または登録がありません
+                            </div>
+                          ) : (
+                            globalTerms.map((t, idx) => (
+                              <div key={t.id || idx} className="flex items-center justify-between bg-black/40 p-3 rounded-lg border border-neutral-800/50">
+                                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 flex-1">
+                                  <span className="text-xs text-neutral-500 min-w-[80px]">よみ: <span className="text-neutral-400">{t.reading}</span></span>
+                                  <span className="text-sm font-bold text-amber-500/80">表記: {t.term}</span>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
