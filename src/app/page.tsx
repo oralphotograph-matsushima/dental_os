@@ -894,13 +894,7 @@ export default function Home() {
                     <strong className="text-neutral-200">キーボードのマイク機能（音声認識）</strong><br/>
                     を使用して右側のテキストエリアに入力してください。
                   </p>
-                  <div className="mt-4 text-xs text-neutral-500 text-left bg-black/40 p-3 rounded-xl w-full">
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>入力内容は自動保存されます。</li>
-                      <li>リロードしても消えません。</li>
-                      <li>AI通信料がかかりません。</li>
-                    </ul>
-                  </div>
+
                 </div>
               </div>
 
@@ -968,11 +962,11 @@ export default function Home() {
                     placeholder="ここにSOAP形式に整形されたカルテが表示されます。修正も可能です。"
                     className="flex-1 w-full p-4 bg-neutral-900 border border-neutral-700/50 focus:border-purple-500/50 rounded-2xl text-base md:text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono shadow-inner"
                   />
-                  {isMaster && soapText && (
-                    <div className="mt-2 p-3 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl animate-in fade-in slide-in-from-bottom-2">
-                      <div className="text-[10px] sm:text-xs font-bold text-amber-500 mb-2 flex items-center gap-1 sm:gap-2">
+                  {soapText && (
+                    <div className={`mt-2 p-3 sm:p-4 border rounded-xl animate-in fade-in slide-in-from-bottom-2 ${isMaster ? 'bg-amber-500/10 border-amber-500/30' : 'bg-teal-500/10 border-teal-500/30'}`}>
+                      <div className={`text-[10px] sm:text-xs font-bold mb-2 flex items-center gap-1 sm:gap-2 ${isMaster ? 'text-amber-500' : 'text-teal-400'}`}>
                         <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
-                        【管理者専用】誤字・専門用語を辞書へスピード登録
+                        {isMaster ? "【管理者専用】誤字・専門用語を辞書へスピード登録" : "【AI学習】誤字があれば、あなた専用のローカル辞書に登録できます"}
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <input 
@@ -980,14 +974,14 @@ export default function Home() {
                           value={reportReading}
                           onChange={e => setReportReading(e.target.value)}
                           placeholder="よみ（誤変換された音）"
-                          className="flex-1 bg-neutral-950 border border-amber-500/30 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:border-amber-500 outline-none"
+                          className={`flex-1 bg-neutral-950 border rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none ${isMaster ? 'border-amber-500/30 focus:border-amber-500' : 'border-teal-500/30 focus:border-teal-500'}`}
                         />
                         <input 
                           type="text"
                           value={reportNotation}
                           onChange={e => setReportNotation(e.target.value)}
                           placeholder="正しい表記"
-                          className="flex-1 bg-neutral-950 border border-amber-500/30 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:border-amber-500 outline-none"
+                          className={`flex-1 bg-neutral-950 border rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none ${isMaster ? 'border-amber-500/30 focus:border-amber-500' : 'border-teal-500/30 focus:border-teal-500'}`}
                         />
                         <button
                           onClick={async () => {
@@ -999,22 +993,24 @@ export default function Home() {
                             setCustomTerms(newTerms);
                             localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
                             
-                            // グローバル
-                            try {
-                              await supabase.from('global_terms').insert([{ reading: reportReading, term: reportNotation }]);
-                              const { data } = await supabase.from('global_terms').select('*');
-                              if (data) {
-                                setGlobalTerms(data.map((item: any) => ({
-                                  id: item.id, reading: item.reading, term: item.term
-                                })));
-                              }
-                            } catch (e) {}
+                            // グローバル (管理者のみ)
+                            if (isMaster) {
+                              try {
+                                await supabase.from('global_terms').insert([{ reading: reportReading, term: reportNotation }]);
+                                const { data } = await supabase.from('global_terms').select('*');
+                                if (data) {
+                                  setGlobalTerms(data.map((item: any) => ({
+                                    id: item.id, reading: item.reading, term: item.term
+                                  })));
+                                }
+                              } catch (e) {}
+                            }
 
                             setReportReading("");
                             setReportNotation("");
                             alert("辞書に登録しました！次回から正しく変換されやすくなります。");
                           }}
-                          className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors whitespace-nowrap active:scale-95"
+                          className={`${isMaster ? 'bg-amber-600 hover:bg-amber-500' : 'bg-teal-600 hover:bg-teal-500'} text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors whitespace-nowrap active:scale-95`}
                         >
                           登録
                         </button>
