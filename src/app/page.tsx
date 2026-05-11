@@ -1308,7 +1308,11 @@ export default function Home() {
                   <div className="p-4 bg-black/40 rounded-xl border border-white/5">
                     <div className="mb-4">
                       <div className="font-semibold text-neutral-200 mb-1">よく使う略語・専門用語</div>
-                      <div className="text-xs md:text-sm text-neutral-400">「よみ」と「表記」をセットで登録することで、AIの文字起こし精度が向上します。</div>
+                      <div className="text-xs md:text-sm text-neutral-400">
+                        「よみ」と「表記」をセットで登録することで、AIの文字起こし精度が向上します。<br/>
+                        <span className="text-teal-500 font-medium">※ここに登録した単語は、あなたのクリニック専用（ローカル）として保存され、他のユーザーには影響しません。</span>
+                        {isMaster && <span className="text-amber-500 font-bold ml-1">【管理者モード】あなたが登録した単語は全ユーザー共通の共有辞書にも追加されます。</span>}
+                      </div>
                     </div>
                     
                     {/* Add new term */}
@@ -1337,20 +1341,22 @@ export default function Home() {
                           setCustomTerms(newTerms);
                           localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
                           
-                          // 2. サーバー共有（グローバル辞書）
-                          try {
-                            await supabase.from('global_terms').insert([{ reading: newTermReading, term: newTermNotation }]);
-                            // 最新のグローバル辞書を取得し直す
-                            const { data } = await supabase.from('global_terms').select('*');
-                            if (data) {
-                              setGlobalTerms(data.map((item: any) => ({
-                                id: item.id,
-                                reading: item.reading,
-                                term: item.term
-                              })));
+                          // 2. サーバー共有（グローバル辞書） - 管理者のみ登録可能
+                          if (isMaster) {
+                            try {
+                              await supabase.from('global_terms').insert([{ reading: newTermReading, term: newTermNotation }]);
+                              // 最新のグローバル辞書を取得し直す
+                              const { data } = await supabase.from('global_terms').select('*');
+                              if (data) {
+                                setGlobalTerms(data.map((item: any) => ({
+                                  id: item.id,
+                                  reading: item.reading,
+                                  term: item.term
+                                })));
+                              }
+                            } catch (err) {
+                              console.error("Failed to add to global terms", err);
                             }
-                          } catch (err) {
-                            console.error("Failed to add to global terms", err);
                           }
 
                           setNewTermReading("");
