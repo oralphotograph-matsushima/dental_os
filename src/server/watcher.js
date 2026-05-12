@@ -4,6 +4,20 @@ const { FtpSrv } = require('ftp-srv');
 const chokidar = require('chokidar');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+function getLocalIpAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+const localIp = getLocalIpAddress();
 
 const app = express();
 app.use(cors());
@@ -67,7 +81,7 @@ const ftpPort = 2121;
 const ftpServer = new FtpSrv({
   url: `ftp://0.0.0.0:${ftpPort}`,
   anonymous: true,
-  pasv_url: '127.0.0.1' // ※本番環境ではWindowsマシンのIPアドレスにする必要があります
+  pasv_url: localIp // 自動取得したIPアドレスを設定
 });
 
 ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
@@ -125,4 +139,8 @@ watcher.on('add', (filePath) => {
 const httpPort = 3001; // Next.jsが3000を使うため、3001を使用
 app.listen(httpPort, () => {
   console.log(`[HTTP] 🌐 Watcher API server listening on http://localhost:${httpPort}`);
+  console.log(`====================================================`);
+  console.log(` 🚀 iPadやスマートフォンからは以下のURLでアクセスしてください: `);
+  console.log(`    http://${localIp}:3000`);
+  console.log(`====================================================`);
 });

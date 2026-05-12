@@ -65,7 +65,7 @@ export default function Home() {
     if (activeTab === "qr" && isWirelessActive && wirelessPatientId) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`http://localhost:3001/api/patients/${wirelessPatientId}/images`);
+          const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${wirelessPatientId}/images`);
           if (res.ok) {
             const data = await res.json();
             setWirelessImages(data.images);
@@ -515,8 +515,8 @@ export default function Home() {
         const patientContent = await patientFile.text();
         
         const newPatientContent = patientContent 
-          ? patientContent + `\n- [[${filename.replace('.md', '')}]]`
-          : `# ${patientInfo}\n\n## 診療記録\n- [[${filename.replace('.md', '')}]]`;
+          ? patientContent + `\n- ${filename.replace('.md', '')}`
+          : `# ${patientInfo}\n\n## 診療記録\n- ${filename.replace('.md', '')}`;
 
         const patientWritable = await patientFileHandle.createWritable();
         await patientWritable.write(newPatientContent);
@@ -526,7 +526,7 @@ export default function Home() {
         setSavedPath(`${dirHandle.name} / カルテ / ${filename} および ${patientFilename}`);
       } else {
         const doctorInfo = staffName ? `担当者：${staffName}\n` : "";
-        const fallbackText = `患者ページ: [[${patientInfo}]]\n${doctorInfo}${displaySoapText}`;
+        const fallbackText = `患者ページ: #${patientInfo}\n${doctorInfo}${displaySoapText}`;
         const blob = new Blob([fallbackText], { type: "text/markdown" });
         const url = URL.createObjectURL(blob);
         
@@ -783,7 +783,7 @@ export default function Home() {
                     onClick={async () => {
                       if (!wirelessPatientId) return;
                       try {
-                        await fetch('http://localhost:3001/api/patient', {
+                        await fetch(`http://${window.location.hostname}:3001/api/patient`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ patientId: wirelessPatientId })
@@ -826,7 +826,7 @@ export default function Home() {
                     {wirelessImages.map((filename, i) => (
                       <div key={filename} className="group relative aspect-square bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden hover:border-teal-500 transition-colors animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${i * 50}ms` }}>
                         <img 
-                          src={`http://localhost:3001/images/${wirelessPatientId}/${filename}`} 
+                          src={`http://${window.location.hostname}:3001/images/${wirelessPatientId}/${filename}`}
                           alt={filename}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
