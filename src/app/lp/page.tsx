@@ -35,13 +35,16 @@ export default function LandingPage() {
             <Zap className="w-4 h-4" />
             次世代Dental OS（画像転送 × AIカルテ）
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.2]">
-            撮った瞬間、iPadに届く。<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
+          <h1 
+            className="text-[1.7rem] md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-snug md:leading-[1.2] break-keep"
+            style={{ wordBreak: 'auto-phrase' as any }}
+          >
+            撮った瞬間、iPadに届く。<br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 mt-2 md:mt-0 inline-block">
               しゃべるだけで、カルテが完成する。
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed break-keep mt-6" style={{ wordBreak: 'auto-phrase' as any }}>
             SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote AI」。毎日の臨床を劇的に変える、統合型システム。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
@@ -73,11 +76,11 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
               <div className="text-teal-400 font-bold mb-2 tracking-wider text-sm">WIRELESS CONNECT</div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-                SDカードは、もう抜きません。<br />
+              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+                SDカードは、もう抜きません。<br className="hidden md:block" />
                 撮った瞬間、iPadがカウンセリングツールに。
               </h2>
-              <p className="text-lg text-neutral-300 leading-relaxed mb-4">
+              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
                 「写真を撮った後、PCに取り込む手間で『撮りっぱなし』になっていませんか？」<br/><br/>
                 シャッターを切るだけで、数秒でiPadへ自動転送。患者様を待たせることなく、最高画質の写真で説明が可能です。最もハードルの高い「ネットワーク設定」は、届いた専用ルーターを院内に置くだけで完了します。
               </p>
@@ -103,10 +106,10 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
               <div className="text-blue-400 font-bold mb-2 tracking-wider text-sm">AI CHARTING</div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-                手が塞がっていても、<br />声だけでカルテが完了。
+              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+                手が塞がっていても、<br className="hidden md:block" />声だけでカルテが完了。
               </h2>
-              <p className="text-lg text-neutral-300 leading-relaxed">
+              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
                 グローブを外す必要も、キーボードを叩く必要もありません。治療しながら、あるいは治療直後に喋るだけで、AIが瞬時に構造化されたカルテ（SOAP形式）を書き上げます。
               </p>
             </div>
@@ -131,10 +134,10 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
                <div className="text-purple-400 font-bold mb-2 tracking-wider text-sm">SLIDE AUTOMATION</div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-                カルテのついでに、<br />スライドも一瞬で完成。
+              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+                カルテのついでに、<br className="hidden md:block" />スライドも一瞬で完成。
               </h2>
-              <p className="text-lg text-neutral-300 leading-relaxed">
+              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
                 Wireless Connectで転送された写真をアップロードするだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「画像転送 → 声でカルテ作成 → スライド生成」という、全く新しいシームレスな診療スタイルを実現します。
               </p>
             </div>
@@ -145,9 +148,9 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-neutral-900/30 border-t border-white/5">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">システム利用プラン</h2>
-            <p className="text-neutral-400">用途に合わせてお選びください。※Wireless Connect機能の利用には、別途専用カメラ機材が必要です。</p>
+          <div className="text-center mb-10 md:mb-16">
+            <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>システム利用プラン</h2>
+            <p className="text-[0.85rem] md:text-base text-neutral-400 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>用途に合わせてお選びください。※Wireless Connect機能の利用には、別途専用カメラ機材が必要です。</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
