@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -32,6 +32,20 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "technician" | "settings">("input");
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [localIP, setLocalIP] = useState("");
+
+  const fetchLocalIP = async () => {
+    try {
+      const res = await fetch("/api/network");
+      if (res.ok) {
+        const data = await res.json();
+        setLocalIP(data.ip);
+      }
+    } catch (e) {
+      console.error("Failed to fetch local IP:", e);
+    }
+  };
 
   useEffect(() => {
     const savedCount = localStorage.getItem("dental_os_trial_count");
@@ -644,6 +658,35 @@ export default function Home() {
         </div>
       )}
 
+      {/* iPad QR Code Connect Modal Overlay */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col items-center">
+            <button onClick={() => setShowQRModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
+            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+              <Tablet className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2 text-center">iPad連携（ローカル接続）</h2>
+            <p className="text-sm text-neutral-400 text-center leading-relaxed mb-6">
+              同一Wi-Fiに接続されたiPadのカメラで<br/>以下のQRコードを読み取ってください。
+            </p>
+            <div className="bg-white p-4 rounded-2xl mb-4">
+              {localIP ? (
+                <QRCodeSVG value={`http://${localIP}:3000`} size={200} />
+              ) : (
+                <div className="w-[200px] h-[200px] flex items-center justify-center text-neutral-400">取得中...</div>
+              )}
+            </div>
+            {localIP && (
+              <div className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-center">
+                <span className="text-xs text-neutral-500 block mb-1">直接入力する場合のURL</span>
+                <span className="text-sm text-teal-400 font-mono select-all">http://{localIP}:3000</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation (Desktop/iPad) */}
       <nav className="hidden md:flex bg-neutral-900/60 backdrop-blur-xl border-b border-white/5 px-6 py-4 items-center justify-between z-10 shadow-2xl">
         <div className="flex items-center gap-8">
@@ -711,6 +754,16 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-6">
+          <button 
+            onClick={() => {
+              fetchLocalIP();
+              setShowQRModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+          >
+            <Tablet className="w-4 h-4" />
+            iPad連携
+          </button>
           <button 
             onClick={() => handleTabChange("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${

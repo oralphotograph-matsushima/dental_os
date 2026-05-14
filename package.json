@@ -1,13 +1,46 @@
 {
   "name": "dental-os-prototype",
   "version": "0.1.0",
-  "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "dev:all": "concurrently \"npm run dev\" \"node src/server/watcher.js\"",
+    "dev:electron": "next build && node scripts/build-electron.js && cross-env NODE_ENV=development electron .",
     "build": "next build",
+    "build:win": "next build && node scripts/build-electron.js && electron-builder --win",
+    "build:mac": "next build && node scripts/build-electron.js && electron-builder --mac",
     "start": "next start",
     "lint": "eslint"
+  },
+  "build": {
+    "npmRebuild": false,
+    "appId": "com.oralnote.ai",
+    "productName": "OralNote AI",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/main.js",
+      "package.json",
+      ".next/standalone/**/*",
+      "src/server/**/*"
+    ],
+    "asarUnpack": [
+      ".next/standalone/**/*"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "oralphotograph-matsushima",
+        "repo": "dental_os"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
@@ -16,6 +49,7 @@
     "chokidar": "^5.0.0",
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",
+    "electron-updater": "^6.8.3",
     "express": "^5.2.1",
     "ftp-srv": "^4.6.3",
     "html-to-image": "^1.11.13",
@@ -41,8 +75,12 @@
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "electron": "^41.6.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "fs-extra": "^11.3.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
