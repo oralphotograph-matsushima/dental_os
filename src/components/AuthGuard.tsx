@@ -13,7 +13,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAccess = async () => {
-      // 0. マスターパスワードのバイパス確認
+      // 0. LPなどの完全公開ページは認証チェックをスキップ
+      if (pathname.startsWith('/lp')) {
+        setLoading(false);
+        return;
+      }
+
+      // 1. マスターパスワードのバイパス確認
       const isMasterBypass = localStorage.getItem('master_bypass') === 'true';
       if (isMasterBypass) {
         if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices') {
@@ -23,7 +29,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 1. ログイン中のセッションを取得
+      // 2. ログイン中のセッションを取得
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (!session) {
@@ -39,7 +45,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 2. サブスクリプション状態の確認
+      // 3. サブスクリプション状態の確認
       const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -55,7 +61,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 3. デバイスチェック
+      // 4. デバイスチェック
       const deviceId = getDeviceId();
       const { data: devices, error: devicesError } = await supabase
         .from('user_devices')
@@ -128,8 +134,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 特定のページ（ログインやデバイス管理）はそのまま表示、それ以外はチェックを通った子要素を表示
-  if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices') {
+  // 特定のページ（ログインやデバイス管理、LP）はそのまま表示、それ以外はチェックを通った子要素を表示
+  if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) {
     return <>{children}</>;
   }
 
