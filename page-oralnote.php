@@ -69,11 +69,11 @@ Template Name: OralNote & Wireless Connect LP
       <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.2]">
         撮った瞬間、iPadに届く。<br />
         <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
-          しゃべるだけで、カルテが完成する。
+          歯科の業務効率を劇的に変える専用アプリ。
         </span>
       </h1>
       <p class="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-        SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote」。毎日の臨床を劇的に変える、統合型システム。
+        カメラのSDカード運用から解放される「Wireless Connect」と、日々の記録業務をシームレスに繋ぐ「OralNote」。現場のストレスをなくし、患者様と向き合う時間を増やす次世代Dental OS。
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
         <a href="#pricing" class="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
@@ -94,7 +94,7 @@ Template Name: OralNote & Wireless Connect LP
         <div class="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px] bg-neutral-800 flex items-center justify-center">
           <!-- TODO: 必要に応じてNostalgistaの画像URLに差し替えてください -->
           <img 
-            src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80" 
+            src="https://dental-os-kappa.vercel.app/banner-human.png" 
             alt="Wireless Connect" 
             class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 opacity-60"
           />
@@ -124,7 +124,7 @@ Template Name: OralNote & Wireless Connect LP
       <div class="flex flex-col md:flex-row-reverse items-stretch bg-neutral-900 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden group">
         <div class="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px] bg-neutral-800 flex items-center justify-center">
           <img 
-            src="https://dental-os-kappa.vercel.app/voice-chart-concept.png" 
+            src="https://dental-os-kappa.vercel.app/voice-chart-human.png" 
             onerror="this.style.display='none'"
             alt="Voice Charting Concept" 
             class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 opacity-60"
@@ -135,12 +135,12 @@ Template Name: OralNote & Wireless Connect LP
           </div>
         </div>
         <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
-          <div class="text-blue-400 font-bold mb-2 tracking-wider text-sm">AI CHARTING</div>
+          <div class="text-blue-400 font-bold mb-2 tracking-wider text-sm">DOCUMENTATION ASSIST</div>
           <h2 class="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
             手が塞がっていても、<br />声だけでカルテが完了。
           </h2>
           <p class="text-lg text-neutral-300 leading-relaxed">
-            グローブを外す必要も、キーボードを叩く必要もありません。治療しながら、あるいは治療直後に喋るだけで、AIが瞬時に構造化されたカルテ（SOAP形式）を書き上げます。
+            iPadに転送された画像を見ながら、その場で直感的に記録を残せます。タイピングが苦手なスタッフでも安心の「音声入力アシスト」も搭載。忙しい診療の合間でも、カルテの下書きがあっという間に完了します。
           </p>
         </div>
       </div>
@@ -153,7 +153,7 @@ Template Name: OralNote & Wireless Connect LP
       <div class="flex flex-col md:flex-row items-stretch bg-neutral-900 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden group">
         <div class="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px] bg-neutral-800 flex items-center justify-center">
           <img 
-            src="https://dental-os-kappa.vercel.app/slide-gen-concept.png"
+            src="https://dental-os-kappa.vercel.app/slide-gen-human.png"
             onerror="this.style.display='none'"
             alt="Automatic PowerPoint Generation" 
             class="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 opacity-60"
@@ -169,7 +169,7 @@ Template Name: OralNote & Wireless Connect LP
             カルテのついでに、<br />スライドも一瞬で完成。
           </h2>
           <p class="text-lg text-neutral-300 leading-relaxed">
-            Wireless Connectで転送された写真をアップロードするだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「画像転送 → 声でカルテ作成 → スライド生成」という、全く新しいシームレスな診療スタイルを実現します。
+            Wireless Connectで転送された写真を選ぶだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「画像転送 → 記録作成 → スライド生成」という、全く新しいシームレスな診療スタイルを実現します。
           </p>
         </div>
       </div>
