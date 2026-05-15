@@ -32,14 +32,20 @@ let activePatientId = null;
 // 2. ディレクトリ設定 (Directories)
 // ==========================================
 const homedir = require('os').homedir();
-const FTP_STAGING_DIR = path.join(homedir, 'Desktop', 'Camera_Inbox');
+const STAGING_DIR = path.join(homedir, 'Desktop', 'EOS_Utility_Photos');
 const BASE_DATA_DIR = path.join(homedir, 'Desktop', 'OralNote_Data');
 const PATIENTS_DIR = path.join(BASE_DATA_DIR, 'Patients');
 const UNASSIGNED_DIR = path.join(BASE_DATA_DIR, 'Unassigned');
 
-[FTP_STAGING_DIR, PATIENTS_DIR, UNASSIGNED_DIR].forEach(dir => {
+[STAGING_DIR, PATIENTS_DIR, UNASSIGNED_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
+
+// SSE接続クライアントの管理
+let clients = [];
+const sendToClients = (data) => {
+  clients.forEach(client => client.res.write(`data: ${JSON.stringify(data)}\n\n`));
+};
 
 // 画像フォルダをWeb経由で直接アクセスできるようにする
 app.use('/images', express.static(PATIENTS_DIR));
@@ -74,6 +80,23 @@ app.get('/api/patients/:id/images', (req, res) => {
   res.json({ images: files });
 });
 
+app.get('/api/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const clientId = Date.now();
+  const newClient = { id: clientId, res };
+  clients.push(newClient);
+  console.log(`[SSE] 📡 Client connected (ID: ${clientId}). Total clients: ${clients.length}`);
+
+  req.on('close', () => {
+    console.log(`[SSE] 🔌 Client disconnected (ID: ${clientId})`);
+    clients = clients.filter(client => client.id !== clientId);
+  });
+});
+
 // ==========================================
 // 4. FTPサーバー (ftp-srv - カメラからの受信用)
 // ==========================================
@@ -86,7 +109,7 @@ const ftpServer = new FtpSrv({
 
 ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
   console.log(`[FTP] 📸 Camera connected.`);
-  resolve({ root: FTP_STAGING_DIR });
+  resolve({ root: STAGING_DIR });
 });
 
 ftpServer.listen().then(() => {
@@ -96,7 +119,7 @@ ftpServer.listen().then(() => {
 // ==========================================
 // 5. ファイル監視と自動振り分け (Chokidar)
 // ==========================================
-const watcher = chokidar.watch(FTP_STAGING_DIR, {
+const watcher = chokidar.watch(STAGING_DIR, {
   ignored: /(^|[\/\\])\../,
   persistent: true,
   awaitWriteFinish: {
@@ -129,6 +152,8 @@ watcher.on('add', (filePath) => {
       console.error(`[Watcher] ❌ Error moving file:`, err);
     } else {
       console.log(`[Watcher] ✅ File moved to: ${targetDir}`);
+      // 新しい画像が追加されたことをクライアントに通知
+      sendToClients({ type: 'NEW_IMAGE', fileName, patientId: activePatientId || 'unassigned' });
     }
   });
 });

@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
 import TechnicianOrder from "@/components/TechnicianOrder";
+import CameraMode from "@/components/CameraMode";
 import { supabase } from "@/lib/supabase";
 
 function generateDeviceId() {
@@ -796,102 +797,7 @@ export default function Home() {
 
           {/* === WIRELESS CONNECT TAB === */}
           {activeTab === "qr" && (
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] flex flex-col p-8 relative overflow-hidden">
-              {/* Header section */}
-              <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-8 pb-8 border-b border-neutral-800">
-                <div>
-                  <h2 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                    <Camera className="w-8 h-8 text-teal-400" />
-                    Wireless Connect
-                  </h2>
-                  <p className="text-neutral-400 mt-2">カメラから直接PCへ写真を同期します</p>
-
-                  {/* アプリ版専用警告 */}
-                  {typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.match(/^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/) && (
-                    <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/50 rounded-xl flex items-start gap-2 text-amber-500 text-sm max-w-xl animate-in fade-in slide-in-from-top-4">
-                      <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <strong>【ご注意】この機能はWeb版では動作しません</strong><br />
-                        カメラから直接写真を受信するには、クリニックのメインPCにインストールした「アプリ版（ローカル環境）」をご利用ください。
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                    <input
-                      type="text"
-                      value={wirelessPatientId}
-                      onChange={(e) => {
-                        setWirelessPatientId(e.target.value.toUpperCase());
-                        setIsWirelessActive(false);
-                      }}
-                      placeholder="患者IDをスキャン"
-                      className="w-full bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl pl-12 pr-4 py-3 text-white font-bold uppercase tracking-wider outline-none transition-colors"
-                    />
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (!wirelessPatientId) return;
-                      try {
-                        await fetch(`http://${window.location.hostname}:3001/api/patient`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ patientId: wirelessPatientId })
-                        });
-                        setIsWirelessActive(true);
-                      } catch (e) {
-                        setErrorMessage("バックグラウンドサーバー(3001)に接続できません。dev:allで起動しているか確認してください。");
-                      }
-                    }}
-                    disabled={!wirelessPatientId}
-                    className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
-                      isWirelessActive 
-                        ? "bg-teal-500/20 text-teal-400 border border-teal-500/50" 
-                        : "bg-white text-black hover:bg-neutral-200 disabled:opacity-50"
-                    }`}
-                  >
-                    {isWirelessActive ? (
-                      <><div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />同期中</>
-                    ) : "接続"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Gallery Section */}
-              <div className="flex-1">
-                {!isWirelessActive ? (
-                  <div className="h-full flex flex-col items-center justify-center text-neutral-500 py-20">
-                    <div className="w-24 h-24 rounded-full bg-neutral-800/50 flex items-center justify-center mb-6">
-                      <Camera className="w-10 h-10 opacity-50" />
-                    </div>
-                    <p className="text-lg">患者IDを入力して「接続」を押すと、同期が開始されます</p>
-                  </div>
-                ) : wirelessImages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-teal-500/50 py-20">
-                    <Loader2 className="w-12 h-12 animate-spin mb-6" />
-                    <p className="text-lg font-medium">カメラからの転送を待機しています...</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {wirelessImages.map((filename, i) => (
-                      <div key={filename} className="group relative aspect-square bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden hover:border-teal-500 transition-colors animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${i * 50}ms` }}>
-                        <img 
-                          src={`http://${window.location.hostname}:3001/images/${wirelessPatientId}/${filename}`}
-                          alt={filename}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                          <p className="text-[10px] text-neutral-300 font-mono truncate">{filename}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <CameraMode />
           )}
 
           {/* === INPUT TAB === */}
