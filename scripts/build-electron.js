@@ -25,6 +25,13 @@ async function buildElectron() {
     await fs.copy(staticDir, path.join(standaloneDir, '.next', 'static'));
   }
 
+  // Copy .env.local if it exists
+  const envLocalPath = path.join(__dirname, '..', '.env.local');
+  if (fs.existsSync(envLocalPath)) {
+    console.log('Copying .env.local to standalone...');
+    await fs.copy(envLocalPath, path.join(standaloneDir, '.env'));
+  }
+
   console.log('Successfully prepared standalone build!');
 }
 

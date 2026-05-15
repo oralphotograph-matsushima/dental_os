@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 export async function POST(req: NextRequest) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const formData = await req.formData();
     
     // フォームデータの取得
@@ -17,28 +18,15 @@ export async function POST(req: NextRequest) {
     const shadePhoto = formData.get('shadePhoto') as File | null;
     const instructionPhoto = formData.get('instructionPhoto') as File | null;
 
-    // 必須チェック（サーバーサイド）
     if (!labEmail) {
       return NextResponse.json({ error: '送信先メールアドレスは必須です' }, { status: 400 });
     }
 
-    // SMTP設定の確認
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    if (!process.env.RESEND_API_KEY) {
       return NextResponse.json({ 
-        error: 'サーバーのメール送信設定（SMTP）が未設定です。管理者に連絡してください。' 
+        error: 'Resend APIキーが設定されていません。管理者に連絡してください。' 
       }, { status: 500 });
     }
-
-    // Nodemailerトランスポーターの作成
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465, // 465の場合はtrue
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
 
     // 添付ファイルの準備
     const attachments = [];
@@ -59,11 +47,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // メールの作成
-    const mailOptions = {
-      from: `"${process.env.CLINIC_NAME || 'OralNote AI'}" <${process.env.SMTP_USER}>`,
-      to: labEmail,
-      cc: clinicEmail || process.env.CLINIC_EMAIL, // 医院のアドレスにもCCで送る
+    // 送信元アドレス（Nostalgistaのドメインを使用）
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'OralNote AI <order@nostalgista.co.jp>';
+
+    // Resendでメール送信
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: [labEmail],
+      cc: clinicEmail ? [clinicEmail] : undefined,
+      reply_to: clinicEmail || undefined, // 技工所が返信した時にクリニックへ届くように設定
       subject: subject || `【技工指示書】患者ID: ${patientId || '未入力'} (${labName}様宛)`,
       text: `
 ${labName} ご担当者様
@@ -79,19 +71,21 @@ ${shadeDetails || '特になし'}
 
 ※詳細な指示内容および画像は添付ファイルをご確認ください。
 ※本メールはOralNote AIシステムより自動送信されています。
-`,
+      `,
       attachments: attachments,
-    };
+    });
 
-    // メールの送信
-    await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Resend Error:', error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true, message: 'メールを送信しました' });
+    return NextResponse.json({ success: true, message: 'メールを送信しました', data });
 
   } catch (error: any) {
     console.error('Email send error:', error);
     return NextResponse.json(
-      { error: 'メールの送信中にエラーが発生しました', details: error.message },
+      { error: 'メールの送信中に予期せぬエラーが発生しました', details: error.message },
       { status: 500 }
     );
   }
