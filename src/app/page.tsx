@@ -696,7 +696,7 @@ export default function Home() {
             </div>
             <div className="flex items-baseline gap-2">
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
-                OralNote AI
+                OralNote
               </h1>
               <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.6 (Build 0515)</span>
             </div>

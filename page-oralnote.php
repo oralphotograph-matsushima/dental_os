@@ -1,6 +1,6 @@
 <?php
 /*
-Template Name: OralNote AI & Wireless Connect LP
+Template Name: OralNote & Wireless Connect LP
 */
 ?>
 <!DOCTYPE html>
@@ -8,7 +8,7 @@ Template Name: OralNote AI & Wireless Connect LP
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OralNote AI | 次世代Dental OS</title>
+    <title>OralNote | 次世代Dental OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -43,7 +43,7 @@ Template Name: OralNote AI & Wireless Connect LP
         <div class="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
           <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
         </div>
-        <span class="text-xl font-bold tracking-tight text-white">OralNote AI</span>
+        <span class="text-xl font-bold tracking-tight text-white">OralNote</span>
       </div>
       <div class="flex gap-4">
         <a href="https://dental-os-kappa.vercel.app/" class="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all flex items-center gap-1 shadow-lg shadow-teal-500/20">
@@ -73,7 +73,7 @@ Template Name: OralNote AI & Wireless Connect LP
         </span>
       </h1>
       <p class="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-        SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote AI」。毎日の臨床を劇的に変える、統合型システム。
+        SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote」。毎日の臨床を劇的に変える、統合型システム。
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
         <a href="#pricing" class="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
@@ -247,7 +247,7 @@ Template Name: OralNote AI & Wireless Connect LP
     <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2">
         <i data-lucide="file-text" class="w-5 h-5 text-neutral-500"></i>
-        <span class="text-neutral-400 font-bold">Nostalgista | OralNote AI</span>
+        <span class="text-neutral-400 font-bold">Nostalgista | OralNote</span>
       </div>
       <div class="flex flex-col items-end gap-2">
         <div class="flex items-center gap-4 text-sm text-neutral-500">

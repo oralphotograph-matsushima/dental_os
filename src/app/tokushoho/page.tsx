@@ -17,7 +17,7 @@ export default function TokushohoPage() {
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">OralNote AI</span>
+            <span className="text-xl font-bold tracking-tight text-white">OralNote</span>
           </div>
         </div>
       </nav>
@@ -61,7 +61,7 @@ export default function TokushohoPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 p-6 md:p-8 hover:bg-neutral-800/30 transition-colors">
                 <dt className="text-neutral-500 font-semibold mb-2 md:mb-0">販売価格</dt>
                 <dd className="md:col-span-2 text-neutral-200">
-                  <p className="text-white text-lg">OralNote AI 月額利用料（機能無制限版）</p>
+                  <p className="text-white text-lg">OralNote 月額利用料（機能無制限版）</p>
                   月額 3,300円（税込）
                 </dd>
               </div>

@@ -15,7 +15,7 @@
   "build": {
     "npmRebuild": false,
     "appId": "com.oralnote.ai",
-    "productName": "OralNote AI",
+    "productName": "OralNote",
     "directories": {
       "output": "dist"
     },

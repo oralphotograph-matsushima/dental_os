@@ -12,7 +12,7 @@ export default function LandingPage() {
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">OralNote AI</span>
+            <span className="text-xl font-bold tracking-tight text-white">OralNote</span>
           </div>
           <div>
             <a href="/" className="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all flex items-center gap-1 shadow-lg shadow-teal-500/20">
@@ -45,7 +45,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed break-keep mt-6" style={{ wordBreak: 'auto-phrase' as any }}>
-            SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote AI」。毎日の臨床を劇的に変える、統合型システム。
+            SDカードの抜き差しから解放される「Wireless Connect」と、音声でSOAPカルテを自動生成する「OralNote」。毎日の臨床を劇的に変える、統合型システム。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
@@ -215,7 +215,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-neutral-500" />
-            <span className="text-neutral-400 font-bold">Nostalgista | OralNote AI</span>
+            <span className="text-neutral-400 font-bold">Nostalgista | OralNote</span>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-4 text-sm text-neutral-500">

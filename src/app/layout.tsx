@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OralNote AI | 次世代AI歯科システム",
-  description: "しゃべるだけで完璧なカルテが完成する。毎日の診療をサポートする次世代のAI歯科カルテ作成・スライド自動生成システム「OralNote AI」",
+  title: "OralNote | 次世代AI歯科システム",
+  description: "しゃべるだけで完璧なカルテが完成する。毎日の診療をサポートする次世代のAI歯科カルテ作成・スライド自動生成システム「OralNote」",
   openGraph: {
-    title: "OralNote AI | 次世代AI歯科システム",
+    title: "OralNote | 次世代AI歯科システム",
     description: "しゃべるだけで完璧なカルテが完成する次世代AI歯科カルテシステム",
-    siteName: "OralNote AI",
+    siteName: "OralNote",
     images: [
       {
         url: "/OralNoteAI_Banner.png",

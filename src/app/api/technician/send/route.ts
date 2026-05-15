@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 送信元アドレス（Nostalgistaのドメインを使用）
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'OralNote AI <order@nostalgista.co.jp>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'OralNote <order@nostalgista.co.jp>';
 
     // Resendでメール送信
     const { data, error } = await resend.emails.send({
@@ -70,7 +70,7 @@ ${shadeDetails || '特になし'}
 -----------------------------------------
 
 ※詳細な指示内容および画像は添付ファイルをご確認ください。
-※本メールはOralNote AIシステムより自動送信されています。
+※本メールはOralNoteシステムより自動送信されています。
       `,
       attachments: attachments,
     });
