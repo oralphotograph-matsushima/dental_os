@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi, HelpCircle, X, ExternalLink } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -51,6 +51,9 @@ export default function Home() {
   // App Update State
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{latestVersion: string, downloadUrl: string, releaseNotes: string} | null>(null);
+
+  // Help Panel State
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
 
   useEffect(() => {
     // Desktop App Update Checker
@@ -1661,6 +1664,73 @@ export default function Home() {
 
         </div>
       </div>
+
+      {/* Floating Help Button */}
+      <button
+        onClick={() => setShowHelpPanel(true)}
+        className="fixed bottom-20 md:bottom-8 right-6 w-14 h-14 bg-teal-600 hover:bg-teal-500 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 z-40"
+      >
+        <HelpCircle className="w-6 h-6" />
+      </button>
+
+      {/* Help Panel (Slide-in) */}
+      {showHelpPanel && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm transition-opacity">
+          <div 
+            className="w-full md:w-[400px] h-full bg-neutral-900 border-l border-neutral-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div className="flex items-center gap-2 text-white">
+                <HelpCircle className="w-5 h-5 text-teal-400" />
+                <h2 className="font-bold">ヘルプ・導入サポート</h2>
+              </div>
+              <button 
+                onClick={() => setShowHelpPanel(false)}
+                className="p-2 hover:bg-neutral-800 rounded-full text-neutral-400 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-6">
+                <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="w-5 h-5 text-teal-400" />
+                </div>
+                <h3 className="text-white font-bold mb-2">Wireless Connect 導入マニュアル<br/><span className="text-xs text-neutral-400 font-normal">（専用AIサポート）</span></h3>
+                <p className="text-sm text-neutral-300 leading-relaxed mb-4">
+                  カメラ設定からネットワーク構築までの完全な手順は、専用のAIサポート環境（NotebookLM）にて提供しております。
+                </p>
+                <div className="space-y-2 mb-6">
+                  <p className="text-xs text-neutral-400 flex items-start gap-1.5">
+                    <span className="text-teal-500 font-bold">1.</span>
+                    <span>以下のボタンからアクセス権をリクエストしてください。（※承認制のため、お待ちいただく場合がございます）</span>
+                  </p>
+                  <p className="text-xs text-neutral-400 flex items-start gap-1.5">
+                    <span className="text-teal-500 font-bold">2.</span>
+                    <span>承認後、画面右側の「Studio」欄にステップごとのマニュアルが格納されています。</span>
+                  </p>
+                  <p className="text-xs text-neutral-400 flex items-start gap-1.5">
+                    <span className="text-teal-500 font-bold">3.</span>
+                    <span>マニュアルを読んでも分からない点は、AIへ直接質問することで即座に解決策を提示します。</span>
+                  </p>
+                </div>
+                
+                <a 
+                  href="https://notebooklm.google.com/notebook/b6cb1303-04fa-4831-b8d4-cd806c57d239?authuser=1"
+                  target="_blank" rel="noreferrer"
+                  className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
+                >
+                  マニュアルを開く
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation (Mobile Only) */}
       <nav className="md:hidden flex bg-neutral-900/80 backdrop-blur-xl border-t border-white/5 pb-safe z-50">
