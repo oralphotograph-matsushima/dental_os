@@ -55,16 +55,13 @@ export default function LandingPage() {
             <Zap className="w-4 h-4" />
             次世代Dental OS（画像転送 × デジタルカルテ）
           </div>
-          <h1 
-            className="text-[1.7rem] md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-snug md:leading-[1.2] break-keep"
-            style={{ wordBreak: 'auto-phrase' as any }}
-          >
+          <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-snug md:leading-[1.2]">
             撮った瞬間、iPadに届く。<br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 mt-2 md:mt-0 inline-block">
               歯科の業務効率を劇的に変える専用アプリ。
             </span>
           </h1>
-          <p className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed break-keep mt-6" style={{ wordBreak: 'auto-phrase' as any }}>
+          <p className="text-sm sm:text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mt-6">
             カメラのSDカード運用から解放される「Wireless Connect」と、日々の記録業務をシームレスに繋ぐ「OralNote」。現場のストレスをなくし、患者様と向き合う時間を増やす次世代Dental OS。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
@@ -103,11 +100,11 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
               <div className="text-teal-400 font-bold mb-2 tracking-wider text-sm">WIRELESS CONNECT</div>
-              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight">
                 SDカードは、もう抜きません。<br className="hidden md:block" />
                 撮った瞬間、iPadがカウンセリングツールに。
               </h2>
-              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed mb-4">
                 「写真を撮った後、PCに取り込む手間で『撮りっぱなし』になっていませんか？」<br/><br/>
                 シャッターを切るだけで、数秒でiPadへ自動転送。患者様を待たせることなく、最高画質の写真で説明が可能です。最もハードルの高い「ネットワーク設定」は、届いた専用ルーターを院内に置くだけで完了します。
               </p>
@@ -133,10 +130,10 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
               <div className="text-blue-400 font-bold mb-2 tracking-wider text-sm">DOCUMENTATION ASSIST</div>
-              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight">
                 写真を見ながら、<br className="hidden md:block" />その場でサクサク記録。
               </h2>
-              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed">
                 iPadに転送された画像を見ながら、その場で直感的に記録を残せます。タイピングが苦手なスタッフでも安心の「音声入力アシスト」も搭載。忙しい診療の合間でも、カルテの下書きがあっという間に完了します。
               </p>
             </div>
@@ -161,10 +158,10 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
                <div className="text-purple-400 font-bold mb-2 tracking-wider text-sm">SLIDE AUTOMATION</div>
-              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight">
                 説明用スライドも、<br className="hidden md:block" />ワンクリックで完成。
               </h2>
-              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed">
                 Wireless Connectで転送された写真を選ぶだけで、患者説明や症例発表に使える美しいPowerPointが自動生成されます。「画像転送 → 記録作成 → スライド生成」という、全く新しいシームレスな診療スタイルを実現します。
               </p>
             </div>
@@ -190,10 +187,10 @@ export default function LandingPage() {
             </div>
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
                <div className="text-emerald-400 font-bold mb-2 tracking-wider text-sm">LOCAL-FIRST ARCHITECTURE</div>
-              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight">
                 完全ローカル保存による<br className="hidden md:block" />究極のセキュリティー。
               </h2>
-              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+              <p className="text-sm sm:text-base md:text-lg text-neutral-300 leading-relaxed">
                 患者様のデータはクラウドには送信されず、すべてクリニック内のメインPCに直接保存されます。iPad本体にもデータは残らないため、圧倒的な安全性を誇ります。<br/><br/>
                 また、院内のWi-Fiに繋がったiPadなら、パスワード入力すら不要。QRコードを読むだけで何台でも瞬時にメインPCとシームレスに同期します。
               </p>
@@ -206,7 +203,7 @@ export default function LandingPage() {
       <section className="py-20 px-6 bg-neutral-950">
         <div className="max-w-5xl mx-auto text-center mb-16">
           <div className="text-teal-400 font-bold mb-2 tracking-wider text-sm">EASY SETUP</div>
-          <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+          <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4">
             驚くほど簡単な導入ステップ
           </h2>
           <p className="text-neutral-400">複雑なネットワーク設定や業者の訪問は不要。本日からすぐにお使いいただけます。</p>
@@ -249,8 +246,8 @@ export default function LandingPage() {
       <section id="pricing" className="py-24 bg-neutral-900/30 border-t border-white/5">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-10 md:mb-16">
-            <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>システム利用プラン</h2>
-            <p className="text-[0.85rem] md:text-base text-neutral-400 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>用途に合わせてお選びください。※Wireless Connect機能の利用には、別途専用カメラ機材が必要です。</p>
+            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4">システム利用プラン</h2>
+            <p className="text-[0.85rem] md:text-base text-neutral-400">用途に合わせてお選びください。※Wireless Connect機能の利用には、別途専用カメラ機材が必要です。</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
