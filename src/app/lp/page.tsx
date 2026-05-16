@@ -244,64 +244,100 @@ export default function LandingPage() {
 
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-neutral-900/30 border-t border-white/5">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10 md:mb-16">
             <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-4">システム利用プラン</h2>
-            <p className="text-[0.85rem] md:text-base text-neutral-400">用途に合わせてお選びください。※Wireless Connect機能の利用には、別途専用カメラ機材が必要です。</p>
+            <p className="text-[0.85rem] md:text-base text-neutral-400">用途に合わせて最適なプランをお選びください。</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Personal Plan */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 hover:border-teal-500/50 transition-all flex flex-col relative group">
-              <h3 className="text-2xl font-bold text-white mb-2">Personal <span className="text-sm font-normal text-neutral-400">/ クラウド利用</span></h3>
-              <p className="text-sm text-neutral-400 mb-6">個人でのスマートカルテ利用（端末2台まで推奨）</p>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-teal-500/50 transition-all flex flex-col relative group">
+              <h3 className="text-xl font-bold text-white mb-2">Personal <span className="text-xs font-normal text-neutral-400">/ クラウド利用</span></h3>
+              <p className="text-xs text-neutral-400 mb-6">個人でのスマートカルテ利用（端末2台まで）</p>
               <div className="mb-6">
-                <span className="text-4xl font-extrabold text-white">¥3,300</span>
-                <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
+                <span className="text-3xl font-extrabold text-white">¥3,300</span>
+                <span className="text-neutral-500 text-xs"> / 月額(税込)</span>
               </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0 mt-0.5" /> <span><strong>音声カルテ入力メイン</strong><br/><span className="text-xs text-neutral-500">（クラウド型Webアプリからのアクセス）</span></span></li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スマート記録アシスト機能（無制限）</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スライド自動作成機能</li>
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" /> <span><strong>音声カルテ入力メイン</strong><br/><span className="text-[10px] text-neutral-500">（クラウド型Webアプリからのアクセス）</span></span></li>
+                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" /> 記録アシスト機能（無制限）</li>
+                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" /> スライド自動作成機能</li>
               </ul>
               <a 
                 href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
                 target="_blank" rel="noreferrer"
-                className="w-full text-center py-3.5 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all block"
+                className="w-full text-center py-3 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all block text-sm"
               >
-                Personalを申し込む
+                申し込む
               </a>
             </div>
 
-            {/* Clinic Plan */}
-            <div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-teal-500 rounded-3xl p-8 shadow-2xl shadow-teal-900/30 flex flex-col relative transform md:-translate-y-4">
-              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-400 to-emerald-400 rounded-t-3xl" />
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                画像転送・完全パッケージ
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2 mt-2">Clinic Pro <span className="text-sm font-normal text-teal-300">/ ローカル同期</span></h3>
-              <p className="text-sm text-neutral-400 mb-6">クリニック全体での共有（端末5台まで推奨）</p>
+            {/* Clinic Pro Plan */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-teal-500/50 transition-all flex flex-col relative group">
+              <h3 className="text-xl font-bold text-white mb-2">Clinic Pro <span className="text-xs font-normal text-teal-300">/ アプリ単体</span></h3>
+              <p className="text-xs text-neutral-400 mb-6">アプリ機能とローカル同期のみ利用する方</p>
               <div className="mb-6">
-                <span className="text-4xl font-extrabold text-white">¥5,500</span>
-                <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
+                <span className="text-3xl font-extrabold text-white">¥5,500</span>
+                <span className="text-neutral-500 text-xs"> / 月額(税込)</span>
               </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>専用デスクトップアプリの提供</strong><br/><span className="text-xs text-teal-300">（クリニックPCへのインストール版）</span></span></li>
-                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>Wireless Connect 画像自動連携</strong><br/><span className="text-xs text-teal-300">（カメラからの自動FTP/Wi-Fi同期）</span></span></li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> iPadへのリアルタイム画像表示</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> スマートカルテ ＆ スライド生成機能</li>
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" /> <span><strong>専用デスクトップアプリの提供</strong><br/><span className="text-[10px] text-teal-300">（クリニックPCへのインストール版）</span></span></li>
+                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" /> ローカル内での自動同期</li>
+                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" /> iPadへのリアルタイム画像表示</li>
               </ul>
-              <div className="space-y-3">
+              <div className="space-y-3 mt-auto">
+                 <div className="bg-teal-950/40 border border-teal-500/20 p-3 rounded-lg mb-4">
+                   <p className="text-[10px] text-teal-300 leading-tight">
+                     🎁 <strong>過去購入者特典</strong><br/>
+                     初期モニター（旧Wireless Connectマニュアルご購入）の先生は、本プランの月額費用が<strong>【永年無料】</strong>となります。
+                   </p>
+                 </div>
                  <a 
                    href="https://buy.stripe.com/3cI6oH0QH3qMehKbeQ33W01" 
-                   id="clinic-pro-link"
                    target="_blank" rel="noreferrer"
-                   className="w-full text-center py-3.5 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl transition-all block shadow-lg shadow-teal-500/25"
+                   className="w-full text-center py-3 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all block text-sm"
                  >
-                   Clinic Proを申し込む
+                   申し込む
                  </a>
-                 <p className="text-xs text-center text-neutral-500 mt-2">
-                    ※画像自動連携のご利用には、別途<a href="https://nostalgista.co.jp/lineup" target="_blank" rel="noreferrer" className="underline hover:text-teal-400">設定済みカメラ・ルーターセット</a>が必要です。
+              </div>
+            </div>
+
+            {/* Wireless Connect Setup Plan */}
+            <div className="bg-gradient-to-b from-neutral-800 to-neutral-900 border border-teal-500 rounded-3xl p-6 shadow-2xl shadow-teal-900/30 flex flex-col relative transform md:-translate-y-4">
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-teal-400 to-emerald-400 rounded-t-3xl" />
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-[10px] font-bold px-4 py-1 rounded-full shadow-lg whitespace-nowrap">
+                すべてお任せフルパッケージ
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2 mt-2">Wireless Connect 導入 <span className="text-xs font-normal text-emerald-300">/ フルセット</span></h3>
+              <p className="text-xs text-neutral-400 mb-4">カメラ連携の仕組みをゼロから構築する方へ</p>
+              <div className="mb-2">
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-neutral-400 text-xs font-bold">初期費用: </span>
+                  <span className="text-2xl font-extrabold text-emerald-400">¥66,000</span>
+                  <span className="text-neutral-500 text-[10px]">(税込)</span>
+                </div>
+                <div className="flex items-end gap-1">
+                  <span className="text-neutral-400 text-xs font-bold">月額費用: </span>
+                  <span className="text-lg font-bold text-white">¥5,500</span>
+                  <span className="text-neutral-500 text-[10px]">(税込)</span>
+                </div>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1 mt-6">
+                <li className="flex items-start gap-2 text-white text-sm"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" /> <span><strong>カメラ連携 完全構築マニュアル</strong><br/><span className="text-[10px] text-emerald-300">（FTP / ルーター / 撮影プロトコルの設定ガイド）</span></span></li>
+                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" /> <span><strong>OralNote Clinic Pro 全機能</strong><br/><span className="text-[10px] text-teal-300">（デスクトップアプリの利用権利込み）</span></span></li>
+                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" /> 無制限のスマートカルテ・スライド生成</li>
+              </ul>
+              <div className="space-y-3 mt-auto">
+                 <a 
+                   href="https://buy.stripe.com/4gM28rczp6CYgpSer233W03" 
+                   target="_blank" rel="noreferrer"
+                   className="w-full text-center py-3 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl transition-all block shadow-lg shadow-teal-500/25 text-sm"
+                 >
+                   申し込む
+                 </a>
+                 <p className="text-[10px] text-center text-neutral-500 mt-2">
+                    ※ご利用には、別途<a href="https://nostalgista.co.jp/lineup" target="_blank" rel="noreferrer" className="underline hover:text-teal-400">推奨カメラ機材</a>が必要です。
                  </p>
               </div>
             </div>
