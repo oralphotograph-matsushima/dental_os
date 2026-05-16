@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -47,6 +47,35 @@ export default function Home() {
       console.error("Failed to fetch local IP:", e);
     }
   };
+
+  // App Update State
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{latestVersion: string, downloadUrl: string, releaseNotes: string} | null>(null);
+
+  useEffect(() => {
+    // Desktop App Update Checker
+    const checkUpdate = async () => {
+      const hostname = window.location.hostname;
+      const isLocal = hostname === 'localhost' || /^(192\.168\.|10\.|172\.)/.test(hostname);
+      
+      if (isLocal) {
+        try {
+          const CURRENT_VERSION = "0.1.4"; // 現在のアプリのバージョン
+          const res = await fetch("https://oralnote.nostalgista.co.jp/api/app-version", { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.latestVersion && data.latestVersion > CURRENT_VERSION) {
+              setUpdateInfo(data);
+              setShowUpdateModal(true);
+            }
+          }
+        } catch (e) {
+          console.error("Update check failed", e);
+        }
+      }
+    };
+    checkUpdate();
+  }, []);
 
   useEffect(() => {
     const savedCount = localStorage.getItem("dental_os_trial_count");
@@ -747,6 +776,45 @@ export default function Home() {
                 </a>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* App Update Modal */}
+      {showUpdateModal && updateInfo && (
+        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center mb-6">
+              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+                <Download className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 text-center">アップデートのお知らせ</h2>
+              <p className="text-sm text-neutral-400 text-center leading-relaxed mb-4">
+                新しいバージョン（{updateInfo.latestVersion}）がリリースされました。
+              </p>
+              {updateInfo.releaseNotes && (
+                <div className="w-full bg-black/40 p-3 rounded-lg border border-neutral-800 text-xs text-neutral-300 text-left mb-6">
+                  {updateInfo.releaseNotes}
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              <a 
+                href={updateInfo.downloadUrl} 
+                target="_blank" rel="noopener noreferrer"
+                onClick={() => setShowUpdateModal(false)}
+                className="w-full bg-teal-500 text-white font-bold rounded-xl py-3.5 hover:bg-teal-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-500/25"
+              >
+                新しいバージョンをダウンロード
+              </a>
+              <button 
+                onClick={() => setShowUpdateModal(false)}
+                className="w-full bg-neutral-800 text-neutral-400 font-bold rounded-xl py-3 hover:bg-neutral-700 hover:text-neutral-300 transition-colors"
+              >
+                あとで更新する
+              </button>
+            </div>
           </div>
         </div>
       )}
