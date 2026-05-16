@@ -117,6 +117,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
 
   const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
+  const [mdSaveTarget, setMdSaveTarget] = useState<'ipad' | 'pc'>('pc');
   
   // Draft save effect
   useEffect(() => {
@@ -149,6 +150,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // マスターバイパス（PC版など）が有効なら即座に認証完了とする
+    if (localStorage.getItem('master_bypass') === 'true') {
+      setIsAuthenticated(true);
+    }
+
     let storedDeviceId = localStorage.getItem("dental_os_device_id");
     if (!storedDeviceId) {
       storedDeviceId = generateDeviceId();
@@ -159,8 +165,14 @@ export default function Home() {
     const storedEmail = localStorage.getItem("dental_os_email");
     if (storedEmail) {
       setAuthEmail(storedEmail);
+      // 通信ラグで一瞬未認証扱いになるのを防ぐため、ローカルに保存されていれば即座に認証済みとする（Optimistic UI）
+      setIsAuthenticated(true);
+      
       verifySession(storedEmail, storedDeviceId).then(valid => {
-        if (valid) setIsAuthenticated(true);
+        // もしサーバー側で明確に無効と判定された場合のみログアウトする
+        if (!valid && localStorage.getItem('master_bypass') !== 'true') {
+          setIsAuthenticated(false);
+        }
       });
     }
 
@@ -261,8 +273,10 @@ export default function Home() {
       }
       return true;
     } catch (err: any) {
-      handleLogout(err.message);
-      return false;
+      console.warn("Session verification network error ignored:", err);
+      // 通信エラー（iPadのスリープ復帰時など）でサーバーに繋がらない場合は、
+      // 強制ログアウトさせず、ローカルのセッションを維持する。
+      return true;
     }
   };
 
@@ -489,6 +503,24 @@ export default function Home() {
       const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2); 
       const filename = `カルテ_${patientInfo}_${dateStr}.md`;
 
+      if (mdSaveTarget === 'pc') {
+        // バックエンド（Windows PC）に直接保存する
+        const saveRes = await fetch("/api/save-md", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename, content: displaySoapText }),
+        });
+        
+        if (!saveRes.ok) throw new Error("PCへの保存に失敗しました");
+        const saveData = await saveRes.json();
+        
+        localStorage.setItem("dental_os_staff_name", staffName);
+        setStatus("saved");
+        setSavedPath(`PCへ保存完了 (${saveData.filePath})`);
+        return;
+      }
+
+      // 従来の処理（iPadローカル / File System Access API）
       if (isIOS) {
         const filePath = encodeURIComponent(`カルテ/${filename}`);
         const content = encodeURIComponent(displaySoapText);
@@ -983,6 +1015,23 @@ export default function Home() {
                     {status === "saved" && `保存先: ${savedPath}`}
                   </div>
                   <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
+                    <div className="flex flex-col gap-1 items-center md:items-end mr-2">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">保存先</span>
+                      <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden p-0.5">
+                        <button
+                          onClick={() => setMdSaveTarget('pc')}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'pc' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                        >
+                          PC本体
+                        </button>
+                        <button
+                          onClick={() => setMdSaveTarget('ipad')}
+                          className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'ipad' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                        >
+                          この端末
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
                       <User className="w-4 h-4 text-teal-500 hidden md:block" />
                       <input 
@@ -1012,7 +1061,9 @@ export default function Home() {
                         className="flex-[2] md:flex-none flex justify-center items-center gap-2 px-6 py-4 md:py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                       >
                         <Save className="w-5 h-5" />
-                        <span className="text-base md:text-sm">{isIOS ? "Obsidianへ転送" : isFSApiSupported ? "データを保存" : "ダウンロード"}</span>
+                        <span className="text-base md:text-sm">
+                          {mdSaveTarget === 'pc' ? 'PCへ保存' : (isIOS ? "Obsidianへ転送" : (isFSApiSupported ? "データを保存" : "ダウンロード"))}
+                        </span>
                       </button>
                     </div>
                   </div>

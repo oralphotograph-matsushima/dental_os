@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Send, UploadCloud, AlertCircle, CheckCircle2, Loader2, FileImage, Trash2, Camera } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, UploadCloud, AlertCircle, CheckCircle2, Loader2, FileImage, Trash2, Camera, Settings, Plus } from 'lucide-react';
 
 // 画像圧縮用のユーティリティ関数
 const compressImage = (file: File, maxWidth = 1600, quality = 0.8): Promise<File> => {
@@ -62,8 +62,42 @@ export default function TechnicianOrder() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // 技工所設定用ステート
+  const [presetLabs, setPresetLabs] = useState<{name: string, email: string}[]>([]);
+  const [showLabSettings, setShowLabSettings] = useState(false);
+  const [newLabName, setNewLabName] = useState('');
+  const [newLabEmail, setNewLabEmail] = useState('');
+
   const shadeInputRef = useRef<HTMLInputElement>(null);
   const instructionInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('dental_os_technician_labs');
+    if (stored) {
+      try { setPresetLabs(JSON.parse(stored)); } catch(e){}
+    } else {
+      // デフォルトサンプル
+      setPresetLabs([
+        { name: '〇〇デンタルラボ', email: 'info@example.com' },
+        { name: '技工所ABC', email: 'order@abc-lab.example' }
+      ]);
+    }
+  }, []);
+
+  const saveLab = () => {
+    if(!newLabName || !newLabEmail) return;
+    const updated = [...presetLabs, { name: newLabName, email: newLabEmail }];
+    setPresetLabs(updated);
+    localStorage.setItem('dental_os_technician_labs', JSON.stringify(updated));
+    setNewLabName('');
+    setNewLabEmail('');
+  };
+
+  const removeLab = (index: number) => {
+    const updated = presetLabs.filter((_, i) => i !== index);
+    setPresetLabs(updated);
+    localStorage.setItem('dental_os_technician_labs', JSON.stringify(updated));
+  };
 
   // バリデーション状態の計算（新人がパッと見て「穴が空いている」と気づくためのロジック）
   const isLabNameMissing = labName.trim() === '';
@@ -175,12 +209,6 @@ export default function TechnicianOrder() {
     }
   };
 
-  // よく使う技工所プリセット（サンプル）
-  const presetLabs = [
-    { name: '〇〇デンタルラボ', email: 'info@example.com' },
-    { name: '技工所ABC', email: 'order@abc-lab.example' }
-  ];
-
   const handleLabSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lab = presetLabs.find(l => l.name === e.target.value);
     if (lab) {
@@ -246,7 +274,57 @@ export default function TechnicianOrder() {
                 ))}
               </select>
             </div>
+            <div className="flex items-end pb-1">
+              <button
+                type="button"
+                onClick={() => setShowLabSettings(!showLabSettings)}
+                className="text-sm text-teal-400 hover:text-teal-300 flex items-center gap-1 bg-teal-500/10 px-4 py-2.5 rounded-xl border border-teal-500/20 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                技工所の登録・編集
+              </button>
+            </div>
           </div>
+
+          {/* 技工所設定パネル */}
+          {showLabSettings && (
+            <div className="mt-4 p-4 bg-black/40 border border-white/10 rounded-xl animate-in fade-in slide-in-from-top-2">
+              <h4 className="text-white font-bold mb-3">登録済みの技工所（ローカル保存）</h4>
+              <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+                {presetLabs.map((lab, i) => (
+                  <div key={i} className="flex items-center justify-between bg-neutral-900 px-3 py-2 rounded-lg border border-neutral-800">
+                    <div>
+                      <span className="text-white font-bold text-sm block">{lab.name}</span>
+                      <span className="text-neutral-400 text-xs">{lab.email}</span>
+                    </div>
+                    <button type="button" onClick={() => removeLab(i)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                {presetLabs.length === 0 && <p className="text-xs text-neutral-500">登録されていません</p>}
+              </div>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="技工所名" 
+                  value={newLabName} 
+                  onChange={e => setNewLabName(e.target.value)} 
+                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
+                />
+                <input 
+                  type="email" 
+                  placeholder="メールアドレス" 
+                  value={newLabEmail} 
+                  onChange={e => setNewLabEmail(e.target.value)} 
+                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
+                />
+                <button type="button" onClick={saveLab} className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition-colors">
+                  <Plus className="w-4 h-4" /> 追加
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>

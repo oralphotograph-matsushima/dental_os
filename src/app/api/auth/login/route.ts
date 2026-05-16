@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "必要な情報が不足しています" }, { status: 400 });
     }
 
-    let plan: any = "unlimited";
+    let plan: any = "1_device"; // デフォルトは1端末制限（複数端末での同時利用を防止）
     let userEmail = emailOrPassword;
 
     // 1. Check Master Password

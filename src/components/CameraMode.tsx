@@ -21,12 +21,25 @@ export default function CameraModePage() {
   // 初回ロード時に現在のActive Patientを取得
   useEffect(() => {
     fetchActivePatient();
+    
+    // スリープ復帰時などの自動再接続処理
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // もし接続が切れていて、かつ activePatientId があれば再接続
+        if (!isConnected && activePatientId) {
+          connectSSE();
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [isConnected, activePatientId]);
 
   const fetchActivePatient = async () => {
     try {
@@ -84,7 +97,8 @@ export default function CameraModePage() {
 
     sse.onerror = () => {
       setIsConnected(false);
-      sse.close();
+      // 自動再接続を妨げないため、ここでは close() しない
+      // sse.close(); 
     };
 
     eventSourceRef.current = sse;
@@ -295,10 +309,13 @@ export default function CameraModePage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 transition-opacity group-hover:opacity-100 opacity-50"></div>
           
           <div className="relative z-10">
-            <h2 className="text-lg font-semibold text-neutral-200 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-neutral-200 mb-2 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-sm font-bold">1</span>
               患者番号を指定して同期を開始
             </h2>
+            <p className="text-xs text-neutral-400 mb-6 flex items-center gap-1.5 bg-black/40 p-2.5 rounded-lg border border-white/5 inline-flex">
+              <span className="text-teal-500 font-bold">📌 保存先:</span> PCのデスクトップ / OralNote_Data / Patients / [患者番号]
+            </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <input 
