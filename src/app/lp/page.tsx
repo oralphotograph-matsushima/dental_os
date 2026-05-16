@@ -1,7 +1,24 @@
-import React from 'react';
-import { Mic, FileText, Presentation, Wifi, Zap, ChevronRight, CheckCircle2, ShieldCheck, Download, QrCode, PlayCircle } from 'lucide-react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Mic, FileText, Presentation, Wifi, Zap, ChevronRight, CheckCircle2, ShieldCheck, Download, QrCode, PlayCircle, X } from 'lucide-react';
+import HeroAnimationSimple from '@/components/HeroAnimationSimple';
 
 export default function LandingPage() {
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
+
+  // モーダル表示時に背景スクロールをロック
+  useEffect(() => {
+    if (showFeatureModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showFeatureModal]);
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30 overflow-x-hidden">
       
@@ -58,6 +75,13 @@ export default function LandingPage() {
             <a href="https://nostalgista.co.jp/lineup" target="_blank" rel="noreferrer" className="w-full sm:w-auto px-8 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700 transition-all flex items-center justify-center gap-2">
               対応カメラ機材を見る
             </a>
+          </div>
+
+          {/* Animation Container */}
+          <div className="pt-16 max-w-5xl mx-auto w-full">
+            <div className="relative z-10">
+              <HeroAnimationSimple onClick={() => setShowFeatureModal(true)} />
+            </div>
           </div>
         </div>
       </section>
@@ -306,6 +330,63 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Feature Detail Modal */}
+      {showFeatureModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowFeatureModal(false)} />
+          <div className="relative bg-neutral-900 border border-neutral-800 w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <button 
+              onClick={() => setShowFeatureModal(false)}
+              className="absolute top-4 right-4 p-2 bg-neutral-800 hover:bg-neutral-700 rounded-full text-neutral-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20">
+                <Wifi className="w-8 h-8 text-white" />
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-center text-white mb-2">Wireless Connect 機能</h2>
+            <p className="text-center text-teal-400 font-bold tracking-widest text-sm mb-8">SDカードの抜き差しは、もう過去のものです。</p>
+
+            <div className="space-y-6 text-neutral-300">
+              <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                  完全自動転送
+                </h3>
+                <p className="text-sm leading-relaxed">
+                  一眼レフカメラでシャッターを切った瞬間、写真データが自動的に院内ネットワーク上のOralNoteアプリに送信されます。
+                </p>
+              </div>
+              <div className="bg-black/30 p-4 rounded-xl border border-white/5">
+                <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                  iPadへの即時同期
+                </h3>
+                <p className="text-sm leading-relaxed">
+                  PCに届いた写真は瞬時にiPadアプリへ同期されます。患者様の目の前で写真を撮り、すぐにiPadを手渡してカウンセリングを行うことができます。
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a href="/?login=true" className="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl py-3.5 transition-colors flex items-center justify-center shadow-lg shadow-teal-500/25">
+                無料で体験してみる
+              </a>
+              <button 
+                onClick={() => setShowFeatureModal(false)}
+                className="w-full bg-neutral-800 text-neutral-300 font-bold rounded-xl py-3.5 hover:bg-neutral-700 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
