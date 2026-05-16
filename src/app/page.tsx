@@ -73,6 +73,7 @@ export default function Home() {
   const [wirelessPatientId, setWirelessPatientId] = useState("");
   const [wirelessImages, setWirelessImages] = useState<string[]>([]);
   const [isWirelessActive, setIsWirelessActive] = useState(false);
+  const [showClinicProUpsell, setShowClinicProUpsell] = useState(false);
 
   // Wireless Connect Polling Effect
   useEffect(() => {
@@ -223,6 +224,14 @@ export default function Home() {
     const ua = navigator.userAgent;
     if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
       setIsIOS(true);
+    }
+
+    // Handle login=true URL parameter
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === 'true') {
+        setShowUnlockModal(true);
+      }
     }
   }, []);
 
@@ -644,6 +653,18 @@ export default function Home() {
       setShowUnlockModal(true);
       return;
     }
+
+    // Cloud Web Version check for Wireless Connect (qr) tab
+    if (tab === "qr") {
+      const isCloud = typeof window !== 'undefined' && 
+                      window.location.hostname !== 'localhost' && 
+                      !window.location.hostname.match(/^(192\.168\.|10\.|172\.)/);
+      if (isCloud) {
+        setShowClinicProUpsell(true);
+        return;
+      }
+    }
+
     setActiveTab(tab);
     setShowMobileDetail(false);
   };
@@ -726,6 +747,40 @@ export default function Home() {
                 </a>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Clinic Pro Upsell Modal */}
+      {showClinicProUpsell && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onClick={() => setShowClinicProUpsell(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
+            <div className="flex flex-col items-center mb-6">
+              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+                <Wifi className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 text-center">Clinic Pro 専用機能です</h2>
+              <p className="text-sm text-neutral-400 text-center leading-relaxed">
+                「Wireless Connect（カメラ画像自動転送）」をご利用いただくには、PCインストール版アプリを提供する<strong className="text-teal-400">Clinic Proプラン</strong>へのご加入が必要です。
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <a 
+                href="https://buy.stripe.com/3cI6oH0QH3qMehKbeQ33W01" 
+                target="_blank" rel="noopener noreferrer"
+                className="w-full bg-teal-500 text-white font-bold rounded-xl py-4 hover:bg-teal-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-500/25"
+              >
+                Clinic Pro を申し込む
+              </a>
+              <button 
+                onClick={() => setShowClinicProUpsell(false)}
+                className="w-full bg-neutral-800 text-neutral-300 font-bold rounded-xl py-3 hover:bg-neutral-700 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
           </div>
         </div>
       )}

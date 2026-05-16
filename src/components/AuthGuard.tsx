@@ -13,8 +13,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAccess = async () => {
-      // 0. LPなどの完全公開ページは認証チェックをスキップ
-      if (pathname.startsWith('/lp')) {
+      // 0. LPなどの完全公開ページ、およびトップページ(/)は認証チェックをスキップ
+      // (トップページは page.tsx 側で5回無料のお試し制限や独自のログインモーダルを管理します)
+      if (pathname.startsWith('/lp') || pathname === '/') {
         setLoading(false);
         return;
       }

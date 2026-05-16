@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, FileText, Presentation, Wifi, Zap, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Mic, FileText, Presentation, Wifi, Zap, ChevronRight, CheckCircle2, ShieldCheck, Download, QrCode, PlayCircle } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -14,9 +14,12 @@ export default function LandingPage() {
             </div>
             <span className="text-xl font-bold tracking-tight text-white">OralNote</span>
           </div>
-          <div>
+          <div className="flex items-center gap-3">
+            <a href="/?login=true" className="text-sm font-bold text-neutral-300 hover:text-white px-4 py-2 transition-colors">
+              ログイン
+            </a>
             <a href="/" className="text-sm font-bold text-white bg-teal-600 hover:bg-teal-500 px-6 py-2.5 rounded-full transition-all flex items-center gap-1 shadow-lg shadow-teal-500/20">
-              ログイン / 無料で試す
+              無料で試す
               <ChevronRight className="w-4 h-4" />
             </a>
           </div>
@@ -33,7 +36,7 @@ export default function LandingPage() {
         <div className="relative max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-semibold mb-4">
             <Zap className="w-4 h-4" />
-            次世代Dental OS（画像転送 × AIカルテ）
+            次世代Dental OS（画像転送 × デジタルカルテ）
           </div>
           <h1 
             className="text-[1.7rem] md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-snug md:leading-[1.2] break-keep"
@@ -145,6 +148,79 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Feature 4: Local-First Security & Sync */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row items-stretch bg-neutral-900 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden group">
+            <div className="w-full md:w-1/2 relative overflow-hidden aspect-video md:aspect-auto md:min-h-[400px] bg-neutral-800 flex items-center justify-center">
+              <div className="absolute inset-0 bg-teal-500/10 blur-[80px]"></div>
+              <img 
+                src="/network_diagram.png"
+                alt="Local Network Security" 
+                className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 opacity-70"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-neutral-900" />
+              <div className="z-10 text-center relative">
+                 <ShieldCheck className="w-20 h-20 text-emerald-400 mx-auto drop-shadow-lg" />
+              </div>
+            </div>
+            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-neutral-900 z-10">
+               <div className="text-emerald-400 font-bold mb-2 tracking-wider text-sm">LOCAL-FIRST ARCHITECTURE</div>
+              <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 md:mb-6 leading-snug md:leading-tight break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+                完全ローカル保存による<br className="hidden md:block" />究極のセキュリティー。
+              </h2>
+              <p className="text-[0.95rem] md:text-lg text-neutral-300 leading-relaxed break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+                患者様のデータはクラウドには送信されず、すべてクリニック内のメインPCに直接保存されます。iPad本体にもデータは残らないため、圧倒的な安全性を誇ります。<br/><br/>
+                また、院内のWi-Fiに繋がったiPadなら、パスワード入力すら不要。QRコードを読むだけで何台でも瞬時にメインPCとシームレスに同期します。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 Step Setup Section */}
+      <section className="py-20 px-6 bg-neutral-950">
+        <div className="max-w-5xl mx-auto text-center mb-16">
+          <div className="text-teal-400 font-bold mb-2 tracking-wider text-sm">EASY SETUP</div>
+          <h2 className="text-[1.4rem] md:text-4xl font-bold text-white mb-4 break-keep" style={{ wordBreak: 'auto-phrase' as any }}>
+            驚くほど簡単な導入ステップ
+          </h2>
+          <p className="text-neutral-400">複雑なネットワーク設定や業者の訪問は不要。本日からすぐにお使いいただけます。</p>
+        </div>
+        
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+          <div className="bg-neutral-900/50 border border-white/5 p-8 rounded-3xl relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors"></div>
+            <span className="text-6xl font-black text-white/5 absolute top-6 right-6">01</span>
+            <Download className="w-12 h-12 text-teal-400 mb-6 relative z-10" />
+            <h3 className="text-xl font-bold text-white mb-3 relative z-10">PCにインストール</h3>
+            <p className="text-neutral-400 leading-relaxed relative z-10">
+              お渡しするセットアップファイルをメインのWindows PCで実行するだけ。専用のデータ保存フォルダが自動で作成されます。
+            </p>
+          </div>
+          
+          <div className="bg-neutral-900/50 border border-white/5 p-8 rounded-3xl relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors"></div>
+            <span className="text-6xl font-black text-white/5 absolute top-6 right-6">02</span>
+            <QrCode className="w-12 h-12 text-teal-400 mb-6 relative z-10" />
+            <h3 className="text-xl font-bold text-white mb-3 relative z-10">iPadでQRを読む</h3>
+            <p className="text-neutral-400 leading-relaxed relative z-10">
+              PC画面に表示されるQRコードを、お手元のiPadカメラで読み取ります。パスワード不要で即座にシステムにアクセスできます。
+            </p>
+          </div>
+
+          <div className="bg-neutral-900/50 border border-white/5 p-8 rounded-3xl relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors"></div>
+            <span className="text-6xl font-black text-white/5 absolute top-6 right-6">03</span>
+            <PlayCircle className="w-12 h-12 text-teal-400 mb-6 relative z-10" />
+            <h3 className="text-xl font-bold text-white mb-3 relative z-10">すぐに運用開始</h3>
+            <p className="text-neutral-400 leading-relaxed relative z-10">
+              これだけで準備完了。入力された記録やカメラの写真は、全て安全にメインPCのデスクトップへ自動保存されていきます。
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-neutral-900/30 border-t border-white/5">
         <div className="max-w-4xl mx-auto px-6">
@@ -157,14 +233,14 @@ export default function LandingPage() {
             {/* Personal Plan */}
             <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 hover:border-teal-500/50 transition-all flex flex-col relative group">
               <h3 className="text-2xl font-bold text-white mb-2">Personal <span className="text-sm font-normal text-neutral-400">/ クラウド利用</span></h3>
-              <p className="text-sm text-neutral-400 mb-6">個人でのAIカルテ利用（端末2台まで推奨）</p>
+              <p className="text-sm text-neutral-400 mb-6">個人でのスマートカルテ利用（端末2台まで推奨）</p>
               <div className="mb-6">
                 <span className="text-4xl font-extrabold text-white">¥3,300</span>
                 <span className="text-neutral-500 text-sm">/ 月額(税込)</span>
               </div>
               <ul className="space-y-4 mb-8 flex-1">
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0 mt-0.5" /> <span><strong>音声カルテ入力メイン</strong><br/><span className="text-xs text-neutral-500">（クラウド型Webアプリからのアクセス）</span></span></li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> AIカルテアシスト機能（無制限）</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スマート記録アシスト機能（無制限）</li>
                 <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" /> スライド自動作成機能</li>
               </ul>
               <a 
@@ -192,15 +268,17 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>専用デスクトップアプリの提供</strong><br/><span className="text-xs text-teal-300">（クリニックPCへのインストール版）</span></span></li>
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" /> <span><strong>Wireless Connect 画像自動連携</strong><br/><span className="text-xs text-teal-300">（カメラからの自動FTP/Wi-Fi同期）</span></span></li>
                 <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> iPadへのリアルタイム画像表示</li>
-                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> AIカルテ ＆ スライド生成機能</li>
+                <li className="flex items-center gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" /> スマートカルテ ＆ スライド生成機能</li>
               </ul>
               <div className="space-y-3">
-                 <button 
-                   disabled
-                   className="w-full text-center py-3.5 bg-teal-500/50 text-white/70 font-bold rounded-xl cursor-not-allowed block"
+                 <a 
+                   href="https://buy.stripe.com/3cI6oH0QH3qMehKbeQ33W01" 
+                   id="clinic-pro-link"
+                   target="_blank" rel="noreferrer"
+                   className="w-full text-center py-3.5 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-xl transition-all block shadow-lg shadow-teal-500/25"
                  >
-                   Clinic Pro 準備中（アプリ版へ移行）
-                 </button>
+                   Clinic Proを申し込む
+                 </a>
                  <p className="text-xs text-center text-neutral-500 mt-2">
                     ※画像自動連携のご利用には、別途<a href="https://nostalgista.co.jp/lineup" target="_blank" rel="noreferrer" className="underline hover:text-teal-400">設定済みカメラ・ルーターセット</a>が必要です。
                  </p>
