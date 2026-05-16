@@ -72,31 +72,85 @@ export default function TechnicianOrder() {
   const instructionInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('dental_os_technician_labs');
-    if (stored) {
-      try { setPresetLabs(JSON.parse(stored)); } catch(e){}
-    } else {
-      // デフォルトサンプル
-      setPresetLabs([
-        { name: '〇〇デンタルラボ', email: 'info@example.com' },
-        { name: '技工所ABC', email: 'order@abc-lab.example' }
-      ]);
-    }
+    // サーバーから技工所設定を取得（複数端末で同期）
+    const fetchLabs = async () => {
+      try {
+        const res = await fetch('/api/settings/labs');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setPresetLabs(data);
+          } else {
+            // デフォルトサンプル
+            setPresetLabs([
+              { name: '〇〇デンタルラボ', email: 'info@example.com' },
+              { name: '技工所ABC', email: 'order@abc-lab.example' }
+            ]);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch labs:", e);
+      }
+    };
+    
+    // サーバーから医院控えCCアドレスを取得（複数端末で同期）
+    const fetchClinicSettings = async () => {
+      try {
+        const res = await fetch('/api/settings/clinic');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.email) {
+            setClinicEmail(data.email);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch clinic settings:", e);
+      }
+    };
+
+    fetchLabs();
+    fetchClinicSettings();
   }, []);
 
-  const saveLab = () => {
+  const handleClinicEmailBlur = async () => {
+    try {
+      await fetch('/api/settings/clinic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: clinicEmail })
+      });
+    } catch(e) { console.error("Failed to save clinic email:", e); }
+  };
+
+  const saveLab = async () => {
     if(!newLabName || !newLabEmail) return;
     const updated = [...presetLabs, { name: newLabName, email: newLabEmail }];
     setPresetLabs(updated);
-    localStorage.setItem('dental_os_technician_labs', JSON.stringify(updated));
     setNewLabName('');
     setNewLabEmail('');
+    
+    // サーバーに保存
+    try {
+      await fetch('/api/settings/labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+    } catch(e) { console.error(e); }
   };
 
-  const removeLab = (index: number) => {
+  const removeLab = async (index: number) => {
     const updated = presetLabs.filter((_, i) => i !== index);
     setPresetLabs(updated);
-    localStorage.setItem('dental_os_technician_labs', JSON.stringify(updated));
+    
+    // サーバーに保存
+    try {
+      await fetch('/api/settings/labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+    } catch(e) { console.error(e); }
   };
 
   // バリデーション状態の計算（新人がパッと見て「穴が空いている」と気づくためのロジック）
@@ -515,6 +569,7 @@ export default function TechnicianOrder() {
             type="email"
             value={clinicEmail}
             onChange={(e) => setClinicEmail(e.target.value)}
+            onBlur={handleClinicEmailBlur}
             placeholder="clinic@example.com"
             className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-teal-500 transition-colors"
           />

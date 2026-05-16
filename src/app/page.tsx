@@ -150,17 +150,22 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // マスターバイパス（PC版など）が有効なら即座に認証完了とする
-    if (localStorage.getItem('master_bypass') === 'true') {
-      setIsAuthenticated(true);
-    }
-
     let storedDeviceId = localStorage.getItem("dental_os_device_id");
     if (!storedDeviceId) {
       storedDeviceId = generateDeviceId();
       localStorage.setItem("dental_os_device_id", storedDeviceId);
     }
     deviceIdRef.current = storedDeviceId;
+
+    // ローカルネットワーク（iPad等からのアクセス）を判定
+    const isLanIp = /^(192\.168\.\d+\.\d+|10\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)$/.test(window.location.hostname);
+
+    // マスターバイパスが有効、またはLAN経由（iPad等）なら即座に認証完了とする
+    if (localStorage.getItem('master_bypass') === 'true' || isLanIp) {
+      setIsAuthenticated(true);
+      // LAN経由（iPad）の場合は、PC側で既に認証されている前提として、Stripe認証を完全にスキップする
+      if (isLanIp) return; 
+    }
 
     const storedEmail = localStorage.getItem("dental_os_email");
     if (storedEmail) {
@@ -186,15 +191,24 @@ export default function Home() {
       setDefaultStaffName(storedStaff);
     }
 
-    const storedTerms = localStorage.getItem("dental_os_custom_terms");
-    if (storedTerms) {
+    // カスタム辞書（ローカルネットワーク同期）の取得
+    const fetchCustomTerms = async () => {
       try {
-        setCustomTerms(JSON.parse(storedTerms));
+        const res = await fetch('/api/settings/terms');
+        if (res.ok) {
+          const data = await res.json();
+          setCustomTerms(Array.isArray(data) ? data : []);
+        }
       } catch (e) {
-        setCustomTerms([{ id: "old", reading: "以前のメモ", term: storedTerms }]);
+        console.error("Failed to fetch custom terms:", e);
+        // フォールバックとして古いlocalStorageを読み込む
+        const storedTerms = localStorage.getItem("dental_os_custom_terms");
+        if (storedTerms) {
+          try { setCustomTerms(JSON.parse(storedTerms)); } catch(e){}
+        }
       }
-    }
-
+    };
+    fetchCustomTerms();
     if (!('showDirectoryPicker' in window)) {
       setIsFSApiSupported(false);
     } else {
@@ -433,11 +447,36 @@ export default function Home() {
   // Audio recording has been removed in favor of OS-native keyboard dictation
 
   const handleToothClick = (number: number, quadrant: 'UR' | 'UL' | 'LR' | 'LL') => {
-
-    const symbols = { UR: '┘', UL: '└', LR: '┐', LL: '┌' };
+    const symbols = { UR: '┛', UL: '┗', LR: '┓', LL: '┏' };
     const symbol = symbols[quadrant];
-    const textToAdd = `${number}${symbol} `;
-    setTranscribedText(prev => prev + textToAdd);
+    
+    setTranscribedText(prev => {
+      let trimmed = prev.trimEnd();
+      
+      // 同じ象限（ブロック）に連続入力された場合は数字を連結する
+      if (quadrant === 'UR' || quadrant === 'LR') {
+        // 右側: 既に「数字+記号」で終わっている場合、記号の前に数字を挿入（例: 6┛ -> 65┛）
+        const regex = new RegExp(`(\\d+)(${symbol})$`);
+        if (regex.test(trimmed)) {
+          return trimmed.replace(regex, `$1${number}$2`) + ' ';
+        }
+      } else {
+        // 左側: 既に「記号+数字」で終わっている場合、数字の後に数字を挿入（例: ┗1 -> ┗12）
+        const regex = new RegExp(`(${symbol})(\\d+)$`);
+        if (regex.test(trimmed)) {
+          return trimmed.replace(regex, `$1$2${number}`) + ' ';
+        }
+      }
+
+      // 新規ブロックとして追加
+      const textToAdd = (quadrant === 'UR' || quadrant === 'LR') 
+        ? `${number}${symbol}` 
+        : `${symbol}${number}`;
+        
+      // 直前がスペースでなければスペースを挟む
+      const prefix = (prev.endsWith(' ') || prev.endsWith('\n') || prev === '') ? '' : ' ';
+      return prev + prefix + textToAdd + ' ';
+    });
   };
 
   const renderToothRow = (numbers: number[], quadrant: 'UR' | 'UL' | 'LR' | 'LL') => (
@@ -982,7 +1021,13 @@ export default function Home() {
                             // ローカル
                             const newTerms = [...customTerms, newTerm];
                             setCustomTerms(newTerms);
-                            localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                            try {
+                              fetch('/api/settings/terms', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newTerms)
+                              });
+                            } catch(e) {}
                             
                             // グローバル (管理者のみ)
                             if (isMaster) {
@@ -1345,7 +1390,13 @@ export default function Home() {
                           const newTerm = { id: Math.random().toString(36).substr(2, 9), reading: newTermReading, term: newTermNotation };
                           const newTerms = [...customTerms, newTerm];
                           setCustomTerms(newTerms);
-                          localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                          try {
+                            fetch('/api/settings/terms', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(newTerms)
+                            });
+                          } catch(e) {}
                           
                           // 2. サーバー共有（グローバル辞書） - 管理者のみ登録可能
                           if (isMaster) {
@@ -1395,7 +1446,13 @@ export default function Home() {
                                   onClick={() => {
                                     const newTerms = customTerms.filter(item => item.id !== t.id);
                                     setCustomTerms(newTerms);
-                                    localStorage.setItem("dental_os_custom_terms", JSON.stringify(newTerms));
+                                    try {
+                                      fetch('/api/settings/terms', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(newTerms)
+                                      });
+                                    } catch(e) {}
                                   }}
                                   className="text-neutral-500 hover:text-red-400 p-2 transition-colors ml-2"
                                   title="削除"
