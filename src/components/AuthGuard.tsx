@@ -15,7 +15,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const checkAccess = async () => {
       // 0. LPなどの完全公開ページ、およびトップページ(/)は認証チェックをスキップ
       // (トップページは page.tsx 側で5回無料のお試し制限や独自のログインモーダルを管理します)
-      if (pathname.startsWith('/lp') || pathname === '/') {
+      if (!pathname || pathname === '/' || pathname.startsWith('/lp')) {
         setLoading(false);
         return;
       }
@@ -135,8 +135,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 特定のページ（ログインやデバイス管理、LP）はそのまま表示、それ以外はチェックを通った子要素を表示
-  if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) {
+  if (!pathname || pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) {
     return <>{children}</>;
   }
 
