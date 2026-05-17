@@ -11,118 +11,131 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
+    // どんなエラーがあっても3秒後には強制的に画面を表示させるフェイルセーフ
+    const timer = setTimeout(() => {
+      setLoading((prevLoading) => {
+        if (prevLoading) {
+          setErrorMsg("タイムアウトにより強制的に画面を表示しました");
+          return false;
+        }
+        return prevLoading;
+      });
+    }, 3000);
+
     const checkAccess = async () => {
-      // 0. LPなどの完全公開ページ、およびトップページ(/)は認証チェックをスキップ
-      // (トップページは page.tsx 側で5回無料のお試し制限や独自のログインモーダルを管理します)
-      if (!pathname || pathname === '/' || pathname.startsWith('/lp')) {
-        setLoading(false);
-        return;
-      }
-
-      // 1. マスターパスワードのバイパス確認
-      const isMasterBypass = localStorage.getItem('master_bypass') === 'true';
-      if (isMasterBypass) {
-        if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices') {
-          router.push('/');
+      try {
+        if (!pathname || pathname === '/' || pathname.startsWith('/lp')) {
+          setLoading(false);
+          return;
         }
-        setLoading(false);
-        return;
-      }
 
-      // 2. ログイン中のセッションを取得
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (!session) {
-        if (pathname !== '/login') router.push('/login');
-        setLoading(false);
-        return;
-      }
-
-      // ログインページにいる場合はトップへ
-      if (pathname === '/login') {
-        router.push('/');
-        setLoading(false);
-        return;
-      }
-
-      // 3. サブスクリプション状態の確認
-      const { data: subData, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      // 管理者から手動で登録されてない場合や、ステータスがactiveでない場合
-      if (subError || !subData || subData.status !== 'active') {
-        if (pathname !== '/subscription-required') {
-          router.push('/subscription-required');
-        }
-        setLoading(false);
-        return;
-      }
-
-      // 4. デバイスチェック
-      const deviceId = getDeviceId();
-      const { data: devices, error: devicesError } = await supabase
-        .from('user_devices')
-        .select('*')
-        .eq('user_id', session.user.id);
-
-      if (devicesError) {
-        console.error('Failed to fetch devices', devicesError);
-        setLoading(false);
-        return;
-      }
-
-      const currentDevice = devices?.find((d) => d.device_id === deviceId);
-
-      if (currentDevice) {
-        // 既に登録済みなのでOK、最終アクセス時間を更新
-        await supabase
-          .from('user_devices')
-          .update({ last_active_at: new Date().toISOString() })
-          .eq('device_id', deviceId);
-      } else {
-        // 未登録デバイスの場合、上限チェック
-        const maxDevices = subData.max_devices || 0;
-        const currentCount = devices?.length || 0;
-
-        if (currentCount >= maxDevices) {
-          // 上限オーバー
-          if (pathname !== '/manage-devices') {
-            router.push('/manage-devices');
+        const isMasterBypass = localStorage.getItem('master_bypass') === 'true';
+        if (isMasterBypass) {
+          if (pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices') {
+            router.push('/');
           }
           setLoading(false);
           return;
-        } else {
-          // 上限以内なので新規登録
-          await supabase.from('user_devices').insert({
-            user_id: session.user.id,
-            device_id: deviceId,
-            device_name: getDeviceName(),
-          });
         }
-      }
 
-      // 全てクリア
-      if (pathname === '/subscription-required' || pathname === '/manage-devices') {
-         router.push('/');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!session) {
+          if (pathname !== '/login') router.push('/login');
+          setLoading(false);
+          return;
+        }
+
+        if (pathname === '/login') {
+          router.push('/');
+          setLoading(false);
+          return;
+        }
+
+        const { data: subData, error: subError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (subError || !subData || subData.status !== 'active') {
+          if (pathname !== '/subscription-required') {
+            router.push('/subscription-required');
+          }
+          setLoading(false);
+          return;
+        }
+
+        const deviceId = getDeviceId();
+        const { data: devices, error: devicesError } = await supabase
+          .from('user_devices')
+          .select('*')
+          .eq('user_id', session.user.id);
+
+        if (devicesError) {
+          setLoading(false);
+          return;
+        }
+
+        const currentDevice = devices?.find((d) => d.device_id === deviceId);
+
+        if (currentDevice) {
+          await supabase
+            .from('user_devices')
+            .update({ last_active_at: new Date().toISOString() })
+            .eq('device_id', deviceId);
+        } else {
+          const maxDevices = subData.max_devices || 0;
+          const currentCount = devices?.length || 0;
+
+          if (currentCount >= maxDevices) {
+            if (pathname !== '/manage-devices') {
+              router.push('/manage-devices');
+            }
+            setLoading(false);
+            return;
+          } else {
+            await supabase.from('user_devices').insert({
+              user_id: session.user.id,
+              device_id: deviceId,
+              device_name: getDeviceName(),
+            });
+          }
+        }
+
+        if (pathname === '/subscription-required' || pathname === '/manage-devices') {
+           router.push('/');
+        }
+        setLoading(false);
+      } catch (err: any) {
+        console.error("AuthGuard checkAccess error:", err);
+        setErrorMsg(err.message || String(err));
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAccess();
 
-    // 認証状態の変化を購読（ログアウト時など）
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        router.push('/login');
-      }
-    });
+    let subscriptionRef: any = null;
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          router.push('/login');
+        }
+      });
+      subscriptionRef = subscription;
+    } catch (err: any) {
+      console.error("Supabase onAuthStateChange error:", err);
+      setErrorMsg("Supabase初期化エラー: " + (err.message || String(err)));
+      setLoading(false);
+    }
 
     return () => {
-      subscription.unsubscribe();
+      clearTimeout(timer);
+      if (subscriptionRef) subscriptionRef.unsubscribe();
     };
   }, [pathname, router]);
 
@@ -131,13 +144,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
         <p className="text-gray-400">認証情報を確認中...</p>
+        <p className="text-xs text-gray-600 mt-2">v1.0.0 (Path: {pathname || 'null'})</p>
       </div>
     );
   }
 
-  if (!pathname || pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) {
-    return <>{children}</>;
-  }
-
-  return <>{children}</>;
+  return (
+    <>
+      {errorMsg && (
+        <div className="bg-red-500 text-white text-xs p-2 text-center sticky top-0 z-[9999]">
+          エラー: {errorMsg}
+        </div>
+      )}
+      {(!pathname || pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) ? children : children}
+    </>
+  );
 }
