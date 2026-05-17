@@ -46,7 +46,8 @@
       ]
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "identity": null
     }
   },
   "dependencies": {
