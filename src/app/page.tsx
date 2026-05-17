@@ -73,7 +73,7 @@ export default function Home() {
             }
           }
         } catch (e) {
-          console.error("Update check failed", e);
+          console.log("Update check failed (expected if offline or CORS issue)");
         }
       }
     };
