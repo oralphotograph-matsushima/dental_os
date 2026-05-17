@@ -63,7 +63,7 @@ export default function Home() {
       
       if (isLocal) {
         try {
-          const CURRENT_VERSION = "0.1.4"; // 現在のアプリのバージョン
+          const CURRENT_VERSION = "1.0.0"; // 現在のアプリのバージョン
           const res = await fetch("https://oralnote.nostalgista.co.jp/api/app-version", { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
@@ -896,7 +896,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.6 (Build 0515)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.0.0 (App)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1429,7 +1429,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.3.6 (Build 0515)
+                  v1.0.0 (App)
                 </div>
               </div>
 
