@@ -150,7 +150,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
 
   const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
-  const [mdSaveTarget, setMdSaveTarget] = useState<'ipad' | 'pc'>('pc');
+  const [mdSaveTarget, setMdSaveTarget] = useState<'ipad' | 'pc'>(process.env.NEXT_PUBLIC_APP_MODE === 'local' ? 'pc' : 'ipad');
   
   // Draft save effect
   useEffect(() => {
@@ -583,7 +583,7 @@ export default function Home() {
       const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2); 
       const filename = `カルテ_${patientInfo}_${dateStr}.md`;
 
-      if (mdSaveTarget === 'pc') {
+      if (mdSaveTarget === 'pc' && process.env.NEXT_PUBLIC_APP_MODE === 'local') {
         // バックエンド（Windows PC）に直接保存する
         const saveRes = await fetch("/api/save-md", {
           method: "POST",
@@ -952,16 +952,18 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-6">
-          <button 
-            onClick={() => {
-              fetchLocalIP();
-              setShowQRModal(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
-          >
-            <Tablet className="w-4 h-4" />
-            iPad連携
-          </button>
+          {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
+            <button 
+              onClick={() => {
+                fetchLocalIP();
+                setShowQRModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+            >
+              <Tablet className="w-4 h-4" />
+              iPad連携
+            </button>
+          )}
           <button 
             onClick={() => handleTabChange("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -1186,23 +1188,25 @@ export default function Home() {
                     {status === "saved" && `保存先: ${savedPath}`}
                   </div>
                   <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
-                    <div className="flex flex-col gap-1 items-center md:items-end mr-2">
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">保存先</span>
-                      <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden p-0.5">
-                        <button
-                          onClick={() => setMdSaveTarget('pc')}
-                          className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'pc' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
-                        >
-                          PC本体
-                        </button>
-                        <button
-                          onClick={() => setMdSaveTarget('ipad')}
-                          className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'ipad' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
-                        >
-                          この端末
-                        </button>
+                    {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
+                      <div className="flex flex-col gap-1 items-center md:items-end mr-2">
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">保存先</span>
+                        <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden p-0.5">
+                          <button
+                            onClick={() => setMdSaveTarget('pc')}
+                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'pc' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                          >
+                            PC本体
+                          </button>
+                          <button
+                            onClick={() => setMdSaveTarget('ipad')}
+                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'ipad' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                          >
+                            この端末
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="flex items-center gap-2 w-full md:w-auto">
                       <User className="w-4 h-4 text-teal-500 hidden md:block" />
                       <input 

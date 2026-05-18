@@ -82,7 +82,6 @@ function startServers() {
 
 function launchCameraUtilities() {
   const isWindows = process.platform === 'win32';
-  const isMac = process.platform === 'darwin';
 
   const utilities = [];
 
@@ -92,11 +91,6 @@ function launchCameraUtilities() {
       '"C:\\Program Files (x86)\\Canon\\EOS Utility 3\\EOS Utility 3.exe"',
       '"C:\\Program Files\\Canon\\EOS Utility 3\\EOS Utility 3.exe"',
       '"C:\\Program Files\\Nikon\\Wireless Transmitter Utility\\Wireless Transmitter Utility.exe"'
-    );
-  } else if (isMac) {
-    utilities.push(
-      'open "/Applications/Canon Utilities/EOS Utility/EOS Utility 3.app"',
-      'open "/Applications/Nikon Software/Wireless Transmitter Utility/Wireless Transmitter Utility.app"'
     );
   }
 
@@ -120,9 +114,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on('quit', () => {

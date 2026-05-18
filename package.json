@@ -7,8 +7,7 @@
     "dev:all": "concurrently \"npm run dev\" \"node src/server/watcher.js\"",
     "dev:electron": "next build && node scripts/build-electron.js && cross-env NODE_ENV=development electron .",
     "build": "next build",
-    "build:win": "next build && node scripts/build-electron.js && electron-builder --win",
-    "build:mac": "next build && node scripts/build-electron.js && electron-builder --mac",
+    "build:win": "cross-env NEXT_PUBLIC_APP_MODE=local next build && node scripts/build-electron.js && electron-builder --win",
     "start": "next start",
     "lint": "eslint"
   },
@@ -44,10 +43,6 @@
           ]
         }
       ]
-    },
-    "mac": {
-      "target": "dmg",
-      "identity": null
     }
   },
   "dependencies": {
