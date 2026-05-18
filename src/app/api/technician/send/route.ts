@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [labEmail],
-      cc: clinicEmail ? [clinicEmail] : undefined,
+      bcc: clinicEmail ? [clinicEmail] : undefined, // CCだとGmail等の仕様でReply-Toが無視される現象を防ぐためBCCに変更
       reply_to: clinicEmail || undefined, // 技工所が返信した時にクリニックへ届くように設定
       subject: subject || `【技工指示書】患者ID: ${patientId || '未入力'} (${labName}様宛)`,
       text: `
