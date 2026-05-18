@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     const patientId = formData.get('patientId') as string;
     const subject = formData.get('subject') as string;
     const shadeDetails = formData.get('shadeDetails') as string;
+    const clinicName = formData.get('clinicName') as string || '当院';
     const clinicEmail = formData.get('clinicEmail') as string;
     
     // 画像ファイルの取得
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       text: `
 ${labName} ご担当者様
 
-いつもお世話になっております。
+お世話になっております。${clinicName}です。
 以下の通り、技工指示書をお送りいたします。
 
 -----------------------------------------
@@ -70,7 +71,10 @@ ${shadeDetails || '特になし'}
 -----------------------------------------
 
 ※詳細な指示内容および画像は添付ファイルをご確認ください。
-※本メールはOralNoteシステムより自動送信されています。
+
+---
+このメールにそのまま返信いただくと、${clinicName}へ自動でメールが送信されます。
+（※本メールはOralNoteシステムより自動送信されています）
       `,
       attachments: attachments,
     });

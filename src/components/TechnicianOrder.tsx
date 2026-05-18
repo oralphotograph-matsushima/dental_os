@@ -50,6 +50,7 @@ export default function TechnicianOrder() {
   const [patientId, setPatientId] = useState('');
   const [subject, setSubject] = useState(''); // 追加: 件名
   const [shadeDetails, setShadeDetails] = useState('');
+  const [clinicName, setClinicName] = useState('');
   const [clinicEmail, setClinicEmail] = useState('');
   
   const [shadePhoto, setShadePhoto] = useState<File | null>(null);
@@ -110,7 +111,14 @@ export default function TechnicianOrder() {
 
     fetchLabs();
     fetchClinicSettings();
+    
+    const savedClinicName = localStorage.getItem('dental_os_clinic_name');
+    if (savedClinicName) setClinicName(savedClinicName);
   }, []);
+
+  const handleClinicNameBlur = () => {
+    localStorage.setItem('dental_os_clinic_name', clinicName);
+  };
 
   const handleClinicEmailBlur = async () => {
     try {
@@ -161,9 +169,10 @@ export default function TechnicianOrder() {
   const isShadeDetailsMissing = shadeDetails.trim() === '';
   const isShadePhotoMissing = shadePhoto === null;
   const isInstructionPhotoMissing = instructionPhoto === null;
+  const isClinicNameMissing = clinicName.trim() === '';
 
   // isFormValidはUIの警告表示用として残すが、送信ボタンのdisable条件からは外す
-  const isFormValid = !isLabNameMissing && !isLabEmailMissing && !isSubjectMissing && !isShadeDetailsMissing && !isShadePhotoMissing && !isInstructionPhotoMissing;
+  const isFormValid = !isLabNameMissing && !isLabEmailMissing && !isSubjectMissing && !isShadeDetailsMissing && !isShadePhotoMissing && !isInstructionPhotoMissing && !isClinicNameMissing;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'shade' | 'instruction') => {
     const file = e.target.files?.[0];
@@ -195,8 +204,8 @@ export default function TechnicianOrder() {
     e.preventDefault();
     
     // 最低限の必須チェック（宛先と件名）
-    if (isLabNameMissing || isLabEmailMissing || isSubjectMissing) {
-      alert("技工所名、送信先メールアドレス、件名は必須です。入力内容を確認してください。");
+    if (isLabNameMissing || isLabEmailMissing || isSubjectMissing || isClinicNameMissing) {
+      alert("技工所名、送信先メールアドレス、件名、クリニック名は必須です。入力内容を確認してください。");
       return;
     }
 
@@ -219,6 +228,7 @@ export default function TechnicianOrder() {
       formData.append('patientId', patientId);
       formData.append('subject', subject);
       formData.append('shadeDetails', shadeDetails);
+      formData.append('clinicName', clinicName);
       if (clinicEmail) formData.append('clinicEmail', clinicEmail);
       
       // 送信前に画像を圧縮
@@ -560,19 +570,38 @@ export default function TechnicianOrder() {
           </div>
         </div>
 
-        {/* CC受信用アドレス（任意） */}
+        {/* 送信元（クリニック）設定 */}
         <div className="bg-neutral-900/30 border border-neutral-800 rounded-xl p-4">
-          <label className="block text-sm font-medium mb-1.5 text-neutral-400">
-            医院控えCCアドレス (未入力の場合はシステム設定のアドレスに届きます)
-          </label>
-          <input
-            type="email"
-            value={clinicEmail}
-            onChange={(e) => setClinicEmail(e.target.value)}
-            onBlur={handleClinicEmailBlur}
-            placeholder="clinic@example.com"
-            className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-teal-500 transition-colors"
-          />
+          <h4 className="text-white font-bold mb-3 text-sm flex items-center gap-2">送信元クリニック情報</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5 flex justify-between items-center text-neutral-400">
+                <span>クリニック名 <span className="text-red-400">*</span></span>
+                {isClinicNameMissing && <span className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3"/>未入力</span>}
+              </label>
+              <input
+                type="text"
+                value={clinicName}
+                onChange={(e) => setClinicName(e.target.value)}
+                onBlur={handleClinicNameBlur}
+                placeholder="例: ○○歯科クリニック"
+                className={`w-full bg-neutral-950 border ${isClinicNameMissing ? 'border-red-500/50 focus:border-red-500' : 'border-neutral-800 focus:border-teal-500'} rounded-lg px-4 py-2 text-white focus:outline-none transition-colors`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-neutral-400">
+                医院控え・返信用CCアドレス
+              </label>
+              <input
+                type="email"
+                value={clinicEmail}
+                onChange={(e) => setClinicEmail(e.target.value)}
+                onBlur={handleClinicEmailBlur}
+                placeholder="clinic@example.com"
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-teal-500 transition-colors"
+              />
+            </div>
+          </div>
         </div>
 
         {/* 送信ボタン */}
