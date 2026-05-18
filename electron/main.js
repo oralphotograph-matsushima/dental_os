@@ -3,6 +3,7 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { fork, exec } = require('child_process');
 const http = require('http');
+const fs = require('fs');
 
 let mainWindow;
 let nextServerProcess;
@@ -51,9 +52,23 @@ function startServers() {
   const isProd = app.isPackaged;
   
   // Next.js standalone server path
-  const nextServerPath = isProd 
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', '.next', 'standalone', 'server.js')
-    : path.join(__dirname, '..', '.next', 'standalone', 'server.js');
+  const nextStandaloneDir = isProd 
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', '.next', 'standalone')
+    : path.join(__dirname, '..', '.next', 'standalone');
+  const nextServerPath = path.join(nextStandaloneDir, 'server.js');
+
+  // Load .env if it exists
+  const envFilePath = path.join(nextStandaloneDir, '.env');
+  if (fs.existsSync(envFilePath)) {
+    const envContent = fs.readFileSync(envFilePath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        process.env[match[1].trim()] = match[2].trim();
+      }
+    });
+    console.log('Loaded environment variables from .env');
+  }
 
   console.log('Starting Next.js Server at:', nextServerPath);
   try {
