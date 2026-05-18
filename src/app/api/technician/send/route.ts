@@ -48,8 +48,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 送信元アドレス（Nostalgistaのドメインを使用）
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'OralNote <order@nostalgista.co.jp>';
+    // 送信元アドレス（表示名をクリニック名にする）
+    // ※実際の送信元ドメインはNostalgistaのままですが、受信者にはクリニック名が表示されます
+    const senderEmailAddress = process.env.RESEND_FROM_EMAIL || 'order@nostalgista.co.jp';
+    const fromEmail = `${clinicName} <${senderEmailAddress.replace(/.*<(.+)>.*/, '$1')}>`;
 
     // Resendでメール送信
     const { data, error } = await resend.emails.send({

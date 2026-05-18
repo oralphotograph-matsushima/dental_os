@@ -75,37 +75,53 @@ export default function TechnicianOrder() {
   useEffect(() => {
     // サーバーから技工所設定を取得（複数端末で同期）
     const fetchLabs = async () => {
+      let loadedFromApi = false;
       try {
         const res = await fetch('/api/settings/labs');
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
             setPresetLabs(data);
-          } else {
-            // デフォルトサンプル
-            setPresetLabs([
-              { name: '〇〇デンタルラボ', email: 'info@example.com' },
-              { name: '技工所ABC', email: 'order@abc-lab.example' }
-            ]);
+            loadedFromApi = true;
           }
         }
       } catch (e) {
         console.error("Failed to fetch labs:", e);
       }
+
+      // APIから取得できなかった場合（Vercelウェブ版など）はローカルストレージから読み込む
+      if (!loadedFromApi) {
+        const localLabs = localStorage.getItem('dental_os_preset_labs');
+        if (localLabs) {
+          setPresetLabs(JSON.parse(localLabs));
+        } else {
+          setPresetLabs([
+            { name: '〇〇デンタルラボ', email: 'info@example.com' },
+            { name: '技工所ABC', email: 'order@abc-lab.example' }
+          ]);
+        }
+      }
     };
     
     // サーバーから医院控えCCアドレスを取得（複数端末で同期）
     const fetchClinicSettings = async () => {
+      let loadedFromApi = false;
       try {
         const res = await fetch('/api/settings/clinic');
         if (res.ok) {
           const data = await res.json();
           if (data && data.email) {
             setClinicEmail(data.email);
+            loadedFromApi = true;
           }
         }
       } catch (e) {
         console.error("Failed to fetch clinic settings:", e);
+      }
+
+      if (!loadedFromApi) {
+        const localEmail = localStorage.getItem('dental_os_clinic_email');
+        if (localEmail) setClinicEmail(localEmail);
       }
     };
 
@@ -121,6 +137,7 @@ export default function TechnicianOrder() {
   };
 
   const handleClinicEmailBlur = async () => {
+      localStorage.setItem('dental_os_clinic_email', clinicEmail);
     try {
       await fetch('/api/settings/clinic', {
         method: 'POST',
@@ -137,6 +154,8 @@ export default function TechnicianOrder() {
     setNewLabName('');
     setNewLabEmail('');
     
+    localStorage.setItem('dental_os_preset_labs', JSON.stringify(updated));
+    
     // サーバーに保存
     try {
       await fetch('/api/settings/labs', {
@@ -150,6 +169,8 @@ export default function TechnicianOrder() {
   const removeLab = async (index: number) => {
     const updated = presetLabs.filter((_, i) => i !== index);
     setPresetLabs(updated);
+    
+    localStorage.setItem('dental_os_preset_labs', JSON.stringify(updated));
     
     // サーバーに保存
     try {
