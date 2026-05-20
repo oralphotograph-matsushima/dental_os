@@ -27,7 +27,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const checkAccess = async () => {
       try {
-        if (!pathname || pathname === '/' || pathname.startsWith('/lp')) {
+        if (!pathname || pathname === '/' || pathname.startsWith('/lp') || pathname.startsWith('/wireless-connect')) {
           setLoading(false);
           return;
         }
@@ -156,7 +156,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           エラー: {errorMsg}
         </div>
       )}
-      {(!pathname || pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp')) ? children : children}
+      {(!pathname || pathname === '/login' || pathname === '/subscription-required' || pathname === '/manage-devices' || pathname.startsWith('/lp') || pathname.startsWith('/wireless-connect')) ? children : children}
     </>
   );
 }

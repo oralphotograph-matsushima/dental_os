@@ -80,8 +80,9 @@ Template Name: OralNote & Wireless Connect LP
           料金・プランを見る
           <i data-lucide="chevron-right" class="w-5 h-5"></i>
         </a>
-        <a href="https://nostalgista.co.jp/lineup" class="w-full sm:w-auto px-8 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700 transition-all flex items-center justify-center gap-2">
-          対応カメラ機材を見る
+        <a href="https://os.nostalgista.co.jp/wireless-connect" class="w-full sm:w-auto px-8 py-4 bg-neutral-800 text-white font-bold rounded-2xl hover:bg-neutral-700 transition-all flex items-center justify-center gap-2 border border-white/10 shadow-lg">
+          <i data-lucide="wifi" class="w-5 h-5 text-teal-400"></i>
+          インフラ構築キット（Wireless Connect）
         </a>
       </div>
     </div>
@@ -109,10 +110,14 @@ Template Name: OralNote & Wireless Connect LP
             SDカードは、もう抜きません。<br />
             撮った瞬間、iPadがカウンセリングツールに。
           </h2>
-          <p class="text-lg text-neutral-300 leading-relaxed mb-4">
+          <p class="text-lg text-neutral-300 leading-relaxed mb-8">
             「写真を撮った後、PCに取り込む手間で『撮りっぱなし』になっていませんか？」<br><br>
-            シャッターを切るだけで、数秒でiPadへ自動転送。患者様を待たせることなく、最高画質の写真で説明が可能です。最もハードルの高い「ネットワーク設定」は、届いた専用ルーターを院内に置くだけで完了します。
+            シャッターを切るだけで、数秒でiPadへ自動転送。患者様を待たせることなく、最高画質の写真で説明が可能です。最もハードルの高い「ネットワーク設定」は、提供される設計図通りに組むだけで完了します。
           </p>
+          <a href="https://os.nostalgista.co.jp/wireless-connect" class="inline-flex w-max items-center gap-2 px-6 py-3 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 font-bold rounded-xl transition-colors border border-teal-500/20">
+            Wireless Connect の詳細・購入はこちら
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
         </div>
       </div>
     </div>
@@ -234,7 +239,7 @@ Template Name: OralNote & Wireless Connect LP
                Clinic Pro 準備中（アプリ版へ移行）
              </button>
              <p class="text-xs text-center text-neutral-500 mt-2">
-                ※画像自動連携のご利用には、別途<a href="https://nostalgista.co.jp/lineup" class="underline hover:text-teal-400">設定済みカメラ・ルーターセット</a>が必要です。
+                ※画像自動連携のご利用には、別途<a href="https://os.nostalgista.co.jp/wireless-connect" class="text-teal-400 hover:text-teal-300 font-semibold underline">専用インフラ構築キット（Wireless Connect）</a>の導入が必要です。
              </p>
           </div>
         </div>

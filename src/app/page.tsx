@@ -839,11 +839,11 @@ export default function Home() {
             
             <div className="space-y-4">
               <a 
-                href="https://buy.stripe.com/3cI6oH0QH3qMehKbeQ33W01" 
+                href="https://os.nostalgista.co.jp/wireless-connect" 
                 target="_blank" rel="noopener noreferrer"
                 className="w-full bg-teal-500 text-white font-bold rounded-xl py-4 hover:bg-teal-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-500/25"
               >
-                Clinic Pro を申し込む
+                Wireless Connect の詳細を見る
               </a>
               <button 
                 onClick={() => setShowClinicProUpsell(false)}
