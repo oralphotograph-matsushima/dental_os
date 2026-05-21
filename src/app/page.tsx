@@ -22,6 +22,10 @@ interface CustomTerm {
 export default function Home() {
   // Web Version Check
   const [isPublicWeb, setIsPublicWeb] = useState(false);
+  const [downloadCode, setDownloadCode] = useState("");
+  const [isCodeUnlocked, setIsCodeUnlocked] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [showDesktopMigrationModal, setShowDesktopMigrationModal] = useState(false);
 
   useEffect(() => {
     // クライアントサイドでのみ実行してホスト名をチェック
@@ -33,6 +37,22 @@ export default function Home() {
     
     setIsPublicWeb(!isLocal);
   }, []);
+
+  const handleUnlockDownload = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = downloadCode.trim().toLowerCase();
+    
+    // 許可するダウンロード認証コード一覧
+    const validCodes = ['oralnote-setup', 'matsushima-vip', 'coupon-free', 'oralnote2026'];
+    
+    if (validCodes.includes(code)) {
+      setIsCodeUnlocked(true);
+      setCodeError("");
+    } else {
+      setCodeError("無効なコードです。コードを正しく入力いただくか、下記よりお問い合わせください。");
+      setIsCodeUnlocked(false);
+    }
+  };
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -695,6 +715,12 @@ export default function Home() {
   };
 
   const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "technician" | "settings") => {
+    // パブリックWeb（Vercelなど）では「AIカルテ入力」以外のタブはデスクトップ版専用とする
+    if (isPublicWeb && tab !== "input") {
+      setShowDesktopMigrationModal(true);
+      return;
+    }
+
     if (!isAuthenticated && tab !== "input") {
       setShowUnlockModal(true);
       return;
@@ -716,102 +742,6 @@ export default function Home() {
   };
 
   // --- Renders ---
-
-  if (isPublicWeb) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden selection:bg-teal-500/30">
-        {/* Background gradient effects */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="w-full max-w-2xl bg-neutral-900/60 border border-neutral-800 rounded-3xl p-8 md:p-10 shadow-2xl backdrop-blur-xl z-10 relative animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-500 via-blue-500 to-teal-500"></div>
-          
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20 mb-6">
-              <svg className="w-9 h-9 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 14c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z" />
-                <path d="M12 18c-4.42 0-8 2.24-8 5h16c0-2.76-3.58-5-8-5z" />
-              </svg>
-            </div>
-            
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-300 bg-clip-text text-transparent">
-              OralNote
-            </h1>
-            <p className="text-teal-400 font-bold mt-2 text-sm md:text-base px-4 py-1 bg-teal-500/10 rounded-full border border-teal-500/20">
-              サービス統合・移行のご案内
-            </p>
-          </div>
-
-          <div className="space-y-6 text-neutral-300 text-sm md:text-base leading-relaxed">
-            <p className="text-center font-medium text-white">
-              いつもOralNoteをご利用いただき、誠にありがとうございます。
-            </p>
-            
-            <div className="p-5 bg-neutral-950/50 border border-neutral-800 rounded-2xl">
-              <p className="font-bold text-white text-base mb-2 flex items-center gap-2">
-                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
-                デスクトップアプリ版への統合について
-              </p>
-              <p className="text-neutral-400 text-sm leading-relaxed">
-                より高いデータセキュリティ、高速な接続安定性、および電子カルテデータ（Obsidian等）とのシームレスな自動ファイル連携を提供するため、**Web版OralNoteのすべての機能は「PC専用デスクトップアプリ版（Windows版）」へと完全統合いたしました。**
-              </p>
-              <p className="text-neutral-400 text-sm leading-relaxed mt-2">
-                これに伴い、Webブラウザからアクセスする現在のWeb版サービスの提供は終了いたしました。
-              </p>
-            </div>
-
-            <div className="p-5 bg-teal-500/5 border border-teal-500/20 rounded-2xl">
-              <p className="font-bold text-teal-400 text-base mb-2 flex items-center gap-2">
-                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
-                クーポン・お試しコードをご利用中のユーザー様へ
-              </p>
-              <p className="text-neutral-300 text-sm">
-                現在サービスクーポン（無料お試しコード）をご利用いただいているユーザー様も、**そのままPCデスクトップアプリ版にて引き続きすべての機能をご利用いただけます。** 追加料金等は一切発生いたしません。
-              </p>
-            </div>
-
-            <div>
-              <p className="font-bold text-white mb-3">移行手順は非常にシンプルです：</p>
-              <ol className="space-y-3 pl-2 text-sm text-neutral-400">
-                <li className="flex gap-2">
-                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
-                  <span>下記のボタンから**PCデスクトップアプリ版（Windows）**をダウンロードしてインストールします。</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
-                  <span>アプリを起動し、ログイン（またはクーポン等での認証）を行います。</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
-                  <span>アプリ上の「QR接続」から、iPadやスマホでQRコードを読み取るだけで、これまで通り音声入力や写真転送を安全にワイヤレスで行えます！</span>
-                </li>
-              </ol>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col items-center gap-4">
-            <a
-              href="https://drive.google.com/drive/folders/1Y9FkzWJG28WG65s7SHqQDw2W48VYrSbf?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-4 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-black font-extrabold rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-teal-500/10 hover:shadow-teal-500/25 transition-all text-center hover:scale-[1.01]"
-            >
-              <Download className="w-5 h-5" />
-              Windowsデスクトップ版（v1.1.1）をダウンロード
-            </a>
-            <p className="text-xs text-neutral-500 text-center">
-              ※ダウンロード後、インストーラーを実行して起動してください。Windows 10/11対応。
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 text-neutral-600 text-xs tracking-wider">
-          © {new Date().getFullYear()} OralNote. All rights reserved.
-        </div>
-      </div>
-    );
-  }
 
   if (isAuthenticated && !hasAgreedDisclaimer) {
     return (
@@ -927,6 +857,130 @@ export default function Home() {
               >
                 あとで更新する
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Migration Modal */}
+      {showDesktopMigrationModal && (
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 my-8">
+            <button 
+              onClick={() => setShowDesktopMigrationModal(false)} 
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors z-20"
+            >
+              ✕
+            </button>
+
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-500 via-blue-500 to-teal-500 rounded-t-3xl"></div>
+            
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20 mb-4">
+                <Download className="w-8 h-8 text-black" />
+              </div>
+              
+              <h2 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-300 bg-clip-text text-transparent">
+                Windowsデスクトップ版専用機能
+              </h2>
+              <p className="text-teal-400 font-bold mt-1 text-xs md:text-sm px-3 py-1 bg-teal-500/10 rounded-full border border-teal-500/20">
+                ライセンス認証・移行のご案内
+              </p>
+            </div>
+
+            <div className="space-y-5 text-neutral-300 text-xs md:text-sm leading-relaxed max-h-[60dvh] overflow-y-auto pr-1">
+              <p className="text-center font-medium text-white">
+                この機能（カルテ検索、Wireless Connect、スライド生成、技工指示書、設定）は、**「PC専用デスクトップアプリ版（Windows版）」専用**となっております。
+              </p>
+              
+              <div className="p-4 bg-neutral-950/50 border border-neutral-800 rounded-2xl">
+                <p className="font-bold text-white text-sm mb-1.5 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
+                  PCデスクトップ版の強力なメリット
+                </p>
+                <ul className="space-y-1.5 text-neutral-400 text-xs pl-4 list-disc">
+                  <li><strong>Obsidianフォルダ全自動連携</strong>: ブラウザのセキュリティ制限なく、電子カルテフォルダと全自動でファイル同期。</li>
+                  <li><strong>院内Wireless Connect</strong>: 同一Wi-Fi上のスマホ/iPadから撮影画像をPCへ瞬時に自動転送。</li>
+                  <li><strong>オフライン高速動作</strong>: 院内クローズド環境でも軽快かつ安全に稼働。</li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-teal-500/5 border border-teal-500/20 rounded-2xl">
+                <p className="font-bold text-teal-400 text-sm mb-1 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
+                  すでにクーポン・お試しコードをお持ちの方
+                </p>
+                <p className="text-neutral-300 text-xs leading-relaxed">
+                  お手元のコードを入力することで、Windowsデスクトップ版インストーラーのダウンロードリンクが表示されます。移行に伴う追加料金等は一切発生しません。
+                </p>
+              </div>
+              
+              <div className="pt-4 border-t border-neutral-800 w-full">
+                {!isCodeUnlocked ? (
+                  <div className="space-y-5">
+                    <form onSubmit={handleUnlockDownload} className="space-y-3">
+                      <label className="block text-xs font-medium text-neutral-300 text-center">
+                        ライセンスキーまたはクーポンコードを入力
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={downloadCode}
+                          onChange={(e) => setDownloadCode(e.target.value)}
+                          placeholder="例: クーポンコードを入力"
+                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-teal-500 transition-colors text-center text-xs"
+                        />
+                        <button
+                          type="submit"
+                          className="bg-teal-500 hover:bg-teal-400 text-black font-extrabold px-5 rounded-xl text-xs transition-colors flex items-center justify-center whitespace-nowrap"
+                        >
+                          認証する
+                        </button>
+                      </div>
+                      {codeError && (
+                        <p className="text-[11px] text-red-400 text-center mt-1">
+                          {codeError}
+                        </p>
+                      )}
+                    </form>
+
+                    <div className="bg-neutral-950/40 border border-neutral-800/60 rounded-2xl p-4 text-center space-y-2">
+                      <p className="text-xs font-bold text-neutral-300">
+                        ライセンスをお持ちでない新規の方・無料体験のご案内
+                      </p>
+                      <p className="text-[11px] text-neutral-400 leading-relaxed">
+                        OralNote デスクトップ版の新規ご利用・無料お試しをご希望の先生は、お手数ですが開発代表の松島まで直接ご連絡いただくか、以下よりお問い合わせください。
+                      </p>
+                      <a
+                        href="mailto:order@nostalgista.co.jp?subject=OralNotePC版の利用申込みについて"
+                        className="inline-flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-300 font-bold bg-teal-500/10 px-3.5 py-2 rounded-xl border border-teal-500/20 transition-colors mt-1"
+                      >
+                        松島へ直接問い合わせる
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 animate-in fade-in zoom-in-95 duration-300 w-full">
+                    <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl px-4 py-2 text-teal-400 text-xs font-bold flex items-center gap-2 mb-1 w-full justify-center">
+                      <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
+                      認証に成功しました！ダウンロードリンクが解除されました。
+                    </div>
+                    <a
+                      href="https://drive.google.com/drive/folders/1Y9FkzWJG28WG65s7SHqQDw2W48VYrSbf?usp=sharing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/10 hover:shadow-teal-500/25 transition-all text-center hover:scale-[1.01]"
+                    >
+                      <Download className="w-4 h-4" />
+                      Windowsデスクトップ版（v1.1.1）をダウンロード
+                    </a>
+                    <p className="text-[11px] text-neutral-500 text-center">
+                      ※Windows 10/11対応。ダウンロード後、インストーラーを実行してください。
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1062,6 +1116,15 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-6">
+          {isPublicWeb && (
+            <button 
+              onClick={() => setShowDesktopMigrationModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 text-teal-400 border border-teal-500/20 bg-teal-500/10 hover:bg-teal-500/20"
+            >
+              <Download className="w-4 h-4" />
+              Windows版移行・DL
+            </button>
+          )}
           {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
             <button 
               onClick={() => {
@@ -1098,6 +1161,28 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-auto p-6 md:p-10">
         <div className="max-w-6xl mx-auto">
+          {isPublicWeb && (
+            <div className="w-full bg-gradient-to-r from-teal-500/10 via-blue-500/10 to-teal-500/10 border border-teal-500/20 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-teal-500/20 p-2 rounded-xl text-teal-400">
+                  <Download className="w-5 h-5 flex-shrink-0" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">より快適に使えるWindowsデスクトップ版のご案内</h4>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    電子カルテ連携（Obsidian自動保存）やiPadからのワイヤレス撮影画像転送にはPCインストール版が必要です。
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDesktopMigrationModal(true)}
+                className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-black text-xs font-extrabold rounded-xl transition-colors whitespace-nowrap"
+              >
+                移行・ダウンロード手順を見る
+              </button>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="p-4 mb-6 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
               {errorMessage}
@@ -1294,8 +1379,20 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between pt-2 flex-shrink-0 gap-4 mb-4 md:mb-0">
-                  <div className="text-xs text-neutral-500 truncate w-full md:max-w-xs text-center md:text-left order-2 md:order-1">
-                    {status === "saved" && `保存先: ${savedPath}`}
+                  <div className="text-xs text-neutral-500 w-full md:max-w-xs text-center md:text-left order-2 md:order-1 flex flex-col gap-1">
+                    {status === "saved" && (
+                      <>
+                        <span className="truncate block">保存先: {savedPath}</span>
+                        {isPublicWeb && (
+                          <button
+                            onClick={() => setShowDesktopMigrationModal(true)}
+                            className="text-[10px] text-teal-400 hover:text-teal-300 font-semibold text-center md:text-left transition-colors flex items-center gap-1 mt-0.5 justify-center md:justify-start"
+                          >
+                            <span>💡 Windowsデスクトップ版ならObsidian等へ完全自動保存 ➔</span>
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                   <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
                     {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
