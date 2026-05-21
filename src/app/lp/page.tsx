@@ -250,29 +250,7 @@ export default function LandingPage() {
             <p className="text-[0.85rem] md:text-base text-neutral-400">用途に合わせて最適なプランをお選びください。</p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {/* Personal Plan */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-teal-500/50 transition-all flex flex-col relative group">
-              <h3 className="text-xl font-bold text-white mb-2">Personal <span className="text-xs font-normal text-neutral-400">/ クラウド利用</span></h3>
-              <p className="text-xs text-neutral-400 mb-6">個人でのスマートカルテ利用（端末2台まで）</p>
-              <div className="mb-6">
-                <span className="text-3xl font-extrabold text-white">¥3,300</span>
-                <span className="text-neutral-500 text-xs"> / 月額(税込)</span>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" /> <span><strong>音声カルテ入力メイン</strong><br/><span className="text-[10px] text-neutral-500">（クラウド型Webアプリからのアクセス）</span></span></li>
-                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" /> 記録アシスト機能（無制限）</li>
-                <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" /> スライド自動作成機能</li>
-              </ul>
-              <a 
-                href="https://buy.stripe.com/dRmdR9fLB2mIb5yfv633W00" 
-                target="_blank" rel="noreferrer"
-                className="w-full text-center py-3 bg-neutral-800 group-hover:bg-teal-600 text-white font-bold rounded-xl transition-all block text-sm"
-              >
-                申し込む
-              </a>
-            </div>
-
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Clinic Pro Plan */}
             <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-teal-500/50 transition-all flex flex-col relative group">
               <h3 className="text-xl font-bold text-white mb-2">Clinic Pro <span className="text-xs font-normal text-teal-300">/ アプリ単体</span></h3>
