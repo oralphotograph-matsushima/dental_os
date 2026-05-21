@@ -144,7 +144,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
         <p className="text-gray-400">認証情報を確認中...</p>
-        <p className="text-xs text-gray-600 mt-2">v1.0.0 (Path: {pathname || 'null'})</p>
+        <p className="text-xs text-gray-600 mt-2">v1.1.1 (Path: {pathname || 'null'})</p>
       </div>
     );
   }

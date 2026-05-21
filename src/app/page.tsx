@@ -20,6 +20,20 @@ interface CustomTerm {
 }
 
 export default function Home() {
+  // Web Version Check
+  const [isPublicWeb, setIsPublicWeb] = useState(false);
+
+  useEffect(() => {
+    // クライアントサイドでのみ実行してホスト名をチェック
+    const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || 
+                    hostname === '127.0.0.1' || 
+                    hostname.endsWith('.local') ||
+                    /^(192\.168\.|10\.|172\.)/.test(hostname);
+    
+    setIsPublicWeb(!isLocal);
+  }, []);
+
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasAgreedDisclaimer, setHasAgreedDisclaimer] = useState(false);
@@ -63,7 +77,7 @@ export default function Home() {
       
       if (isLocal) {
         try {
-          const CURRENT_VERSION = "1.0.0"; // 現在のアプリのバージョン
+          const CURRENT_VERSION = "1.1.1"; // 現在のアプリのバージョン
           const res = await fetch("https://oralnote.nostalgista.co.jp/api/app-version", { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
@@ -703,6 +717,102 @@ export default function Home() {
 
   // --- Renders ---
 
+  if (isPublicWeb) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden selection:bg-teal-500/30">
+        {/* Background gradient effects */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-2xl bg-neutral-900/60 border border-neutral-800 rounded-3xl p-8 md:p-10 shadow-2xl backdrop-blur-xl z-10 relative animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-500 via-blue-500 to-teal-500"></div>
+          
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20 mb-6">
+              <svg className="w-9 h-9 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 14c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z" />
+                <path d="M12 18c-4.42 0-8 2.24-8 5h16c0-2.76-3.58-5-8-5z" />
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-neutral-100 to-neutral-300 bg-clip-text text-transparent">
+              OralNote
+            </h1>
+            <p className="text-teal-400 font-bold mt-2 text-sm md:text-base px-4 py-1 bg-teal-500/10 rounded-full border border-teal-500/20">
+              サービス統合・移行のご案内
+            </p>
+          </div>
+
+          <div className="space-y-6 text-neutral-300 text-sm md:text-base leading-relaxed">
+            <p className="text-center font-medium text-white">
+              いつもOralNoteをご利用いただき、誠にありがとうございます。
+            </p>
+            
+            <div className="p-5 bg-neutral-950/50 border border-neutral-800 rounded-2xl">
+              <p className="font-bold text-white text-base mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
+                デスクトップアプリ版への統合について
+              </p>
+              <p className="text-neutral-400 text-sm leading-relaxed">
+                より高いデータセキュリティ、高速な接続安定性、および電子カルテデータ（Obsidian等）とのシームレスな自動ファイル連携を提供するため、**Web版OralNoteのすべての機能は「PC専用デスクトップアプリ版（Windows版）」へと完全統合いたしました。**
+              </p>
+              <p className="text-neutral-400 text-sm leading-relaxed mt-2">
+                これに伴い、Webブラウザからアクセスする現在のWeb版サービスの提供は終了いたしました。
+              </p>
+            </div>
+
+            <div className="p-5 bg-teal-500/5 border border-teal-500/20 rounded-2xl">
+              <p className="font-bold text-teal-400 text-base mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
+                クーポン・お試しコードをご利用中のユーザー様へ
+              </p>
+              <p className="text-neutral-300 text-sm">
+                現在サービスクーポン（無料お試しコード）をご利用いただいているユーザー様も、**そのままPCデスクトップアプリ版にて引き続きすべての機能をご利用いただけます。** 追加料金等は一切発生いたしません。
+              </p>
+            </div>
+
+            <div>
+              <p className="font-bold text-white mb-3">移行手順は非常にシンプルです：</p>
+              <ol className="space-y-3 pl-2 text-sm text-neutral-400">
+                <li className="flex gap-2">
+                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
+                  <span>下記のボタンから**PCデスクトップアプリ版（Windows）**をダウンロードしてインストールします。</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
+                  <span>アプリを起動し、ログイン（またはクーポン等での認証）を行います。</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="bg-neutral-800 text-white font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
+                  <span>アプリ上の「QR接続」から、iPadやスマホでQRコードを読み取るだけで、これまで通り音声入力や写真転送を安全にワイヤレスで行えます！</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <a
+              href="https://drive.google.com/drive/folders/1Y9FkzWJG28WG65s7SHqQDw2W48VYrSbf?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-4 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-black font-extrabold rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-teal-500/10 hover:shadow-teal-500/25 transition-all text-center hover:scale-[1.01]"
+            >
+              <Download className="w-5 h-5" />
+              Windowsデスクトップ版（v1.1.1）をダウンロード
+            </a>
+            <p className="text-xs text-neutral-500 text-center">
+              ※ダウンロード後、インストーラーを実行して起動してください。Windows 10/11対応。
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-8 text-neutral-600 text-xs tracking-wider">
+          © {new Date().getFullYear()} OralNote. All rights reserved.
+        </div>
+      </div>
+    );
+  }
+
   if (isAuthenticated && !hasAgreedDisclaimer) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 font-sans selection:bg-teal-500/30">
@@ -896,7 +1006,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.0.0 (App)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.1.1 (App)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1433,7 +1543,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.0.0 (App)
+                  v1.1.1 (App)
                 </div>
               </div>
 
