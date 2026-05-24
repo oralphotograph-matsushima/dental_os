@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi, HelpCircle, X, ExternalLink } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi, HelpCircle, X, ExternalLink, Plus, Trash2, ChevronRight } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -18,6 +18,31 @@ interface CustomTerm {
   reading: string;
   term: string;
 }
+
+interface TodayPatient {
+  id: string; // ナンバー（患者ID）
+  name: string; // "患者ID_名前"
+  addedAt: number;
+  completed?: boolean;
+}
+
+// ひらがなを全角カタカナに変換する関数
+const toKatakana = (str: string): string => {
+  return str.replace(/[\u3041-\u3096]/g, (match) => {
+    return String.fromCharCode(match.charCodeAt(0) + 0x60);
+  });
+};
+
+// 苗字（スペースの前の部分）を切り出し、カタカナに変換する関数
+const formatToKatakanaLastName = (name: string): string => {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  // 半角・全角スペースで分割して最初の要素（苗字）を取得
+  const parts = trimmed.split(/[\s　]+/);
+  const lastName = parts[0] || trimmed;
+  // ひらがなをカタカナに変換
+  return toKatakana(lastName);
+};
 
 export default function Home() {
   // Web Version Check
@@ -64,7 +89,11 @@ export default function Home() {
   const deviceIdRef = useRef<string>("");
 
   // App Tabs
-  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "technician" | "settings">("input");
+  const [activeTab, setActiveTab] = useState<"input" | "search" | "qr" | "slide" | "technician" | "settings">("search");
+  const [todayQueue, setTodayQueue] = useState<TodayPatient[]>([]);
+  const [inputPatientId, setInputPatientId] = useState("");
+  const [inputPatientName, setInputPatientName] = useState("");
+  const [sidebarTab, setSidebarTab] = useState<"today" | "history">("today");
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [trialCount, setTrialCount] = useState(0);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -299,6 +328,16 @@ export default function Home() {
         setShowUnlockModal(true);
       }
     }
+
+    // Restore todayQueue
+    const storedQueue = localStorage.getItem("dental_os_today_queue");
+    if (storedQueue) {
+      try {
+        setTodayQueue(JSON.parse(storedQueue));
+      } catch (e) {
+        console.error("Failed to parse today queue", e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -398,6 +437,74 @@ export default function Home() {
       console.error(err);
       if (err.name !== 'AbortError') setErrorMessage("フォルダの選択に失敗しました。");
     }
+  };
+
+  // --- Today's Patient Queue Logic ---
+  const handleToggleTodayPatientComplete = (id: string) => {
+    const updated = todayQueue.map(p => {
+      if (p.id === id) {
+        return { ...p, completed: !p.completed };
+      }
+      return p;
+    });
+    setTodayQueue(updated);
+    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+  };
+
+  const handleDeleteTodayPatient = (id: string) => {
+    const updated = todayQueue.filter(p => p.id !== id);
+    setTodayQueue(updated);
+    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    if (wirelessPatientId === id) {
+      setWirelessPatientId("");
+      setPatientInfo("");
+    }
+  };
+
+  const handleAddTodayPatient = (idStr: string, nameStr: string) => {
+    const trimmedId = idStr.trim();
+    const trimmedName = nameStr.trim();
+    if (!trimmedId) return;
+
+    const kanaLastName = formatToKatakanaLastName(trimmedName);
+    const displayName = kanaLastName ? `${trimmedId}_${kanaLastName}` : trimmedId;
+
+    if (todayQueue.some(p => p.id === trimmedId)) {
+      alert("すでに登録されている患者IDです。");
+      return;
+    }
+
+    const newPatient: TodayPatient = {
+      id: trimmedId,
+      name: displayName,
+      addedAt: Date.now(),
+      completed: false
+    };
+
+    const updated = [...todayQueue, newPatient];
+    setTodayQueue(updated);
+    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    setInputPatientId("");
+    setInputPatientName("");
+  };
+
+  const handleSelectTodayPatient = (patient: TodayPatient) => {
+    setPatientInfo(patient.name);
+    setWirelessPatientId(patient.id);
+    setIsWirelessActive(true);
+    setActiveTab("input");
+  };
+
+  const triggerPatientCompleted = (patientNameOrId: string) => {
+    if (!patientNameOrId) return;
+    const updated = todayQueue.map(p => {
+      if (p.name === patientNameOrId || p.id === patientNameOrId || patientNameOrId.startsWith(p.id)) {
+        return { ...p, completed: true };
+      }
+      return p;
+    });
+    setTodayQueue(updated);
+    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
   };
 
   // --- Search Tab Logic ---
@@ -631,6 +738,7 @@ export default function Home() {
         localStorage.setItem("dental_os_staff_name", staffName);
         setStatus("saved");
         setSavedPath(`PCへ保存完了 (${saveData.filePath})`);
+        triggerPatientCompleted(patientInfo);
         return;
       }
 
@@ -644,6 +752,7 @@ export default function Home() {
         localStorage.setItem("dental_os_staff_name", staffName);
         setStatus("saved");
         setSavedPath(`Obsidianアプリへ転送完了`);
+        triggerPatientCompleted(patientInfo);
       } else if (isFSApiSupported) {
         let dirHandle: any = await get("obsidianDirHandle");
         if (!dirHandle) {
@@ -685,6 +794,7 @@ export default function Home() {
 
         setStatus("saved");
         setSavedPath(`${dirHandle.name} / カルテ / ${filename} および ${patientFilename}`);
+        triggerPatientCompleted(patientInfo);
       } else {
         const doctorInfo = staffName ? `担当者：${staffName}\n` : "";
         const fallbackText = `患者ページ: #${patientInfo}\n${doctorInfo}${displaySoapText}`;
@@ -702,6 +812,7 @@ export default function Home() {
         
         setStatus("saved");
         setSavedPath(`ダウンロードフォルダ（手動で保存してください）`);
+        triggerPatientCompleted(patientInfo);
       }
     } catch (err: any) {
       console.error(err);
@@ -1065,6 +1176,24 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
             <button
+              onClick={() => handleTabChange("search")}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "search" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              患者
+            </button>
+            <button
+              onClick={() => handleTabChange("input")}
+              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                activeTab === "input" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+              }`}
+            >
+              <Mic className="w-4 h-4" />
+              カルテ
+            </button>
+            <button
               onClick={() => handleTabChange("qr")}
               className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 activeTab === "qr" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
@@ -1075,24 +1204,6 @@ export default function Home() {
                 <span>Wireless</span>
                 <span>Connect</span>
               </div>
-            </button>
-            <button
-              onClick={() => handleTabChange("input")}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === "input" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
-              }`}
-            >
-              <Mic className="w-4 h-4" />
-              AIカルテ入力
-            </button>
-            <button
-              onClick={() => handleTabChange("search")}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                activeTab === "search" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
-              }`}
-            >
-              <Search className="w-4 h-4" />
-              カルテ検索
             </button>
             <button
               onClick={() => handleTabChange("slide")}
@@ -1109,8 +1220,11 @@ export default function Home() {
                 activeTab === "technician" ? "bg-white/10 text-white shadow-lg shadow-black/50" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
-              <Clipboard className="w-4 h-4" />
-              技工指示書
+              <Clipboard className="w-4 h-4 flex-shrink-0" />
+              <div className="flex flex-col text-left leading-tight text-[11px] sm:text-[13px]">
+                <span>技工</span>
+                <span>指示書</span>
+              </div>
             </button>
           </div>
         </div>
@@ -1191,7 +1305,7 @@ export default function Home() {
 
           {/* === WIRELESS CONNECT TAB === */}
           {activeTab === "qr" && (
-            <CameraMode />
+            <CameraMode activePatient={patientInfo} />
           )}
 
           {/* === INPUT TAB === */}
@@ -1252,6 +1366,62 @@ export default function Home() {
               </div>
 
               <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
+                {/* Active Patient Target Banner */}
+                <div className={`p-4 rounded-2xl border transition-all ${
+                  patientInfo 
+                    ? "bg-teal-500/10 border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.05)] animate-in fade-in slide-in-from-top-2" 
+                    : "bg-neutral-900/40 border-neutral-800"
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative flex items-center justify-center">
+                        <span className={`absolute inline-flex h-2.5 w-2.5 rounded-full ${patientInfo ? 'bg-teal-400 opacity-75 animate-ping' : 'bg-neutral-600'}`}></span>
+                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${patientInfo ? 'bg-teal-500' : 'bg-neutral-500'}`}></span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">カルテ記載対象</span>
+                        {patientInfo ? (
+                          <span className="text-sm font-black text-teal-300 font-sans tracking-wide">
+                            {patientInfo.includes('_') ? `ID: ${patientInfo.split('_')[0]} | ${patientInfo.split('_')[1]} 様` : `${patientInfo} 様`}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-neutral-400">患者が指定されていません（リストから選択するか下記に入力してください）</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Patient Input Field */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={patientInfo}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setPatientInfo(val);
+                          if (val.includes('_')) {
+                            setWirelessPatientId(val.split('_')[0]);
+                          } else {
+                            setWirelessPatientId(val);
+                          }
+                        }}
+                        placeholder="例: 1234_ヤマダ"
+                        className="bg-neutral-950 border border-neutral-800 focus:border-teal-500 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-full sm:w-44 transition-colors"
+                      />
+                      {patientInfo && (
+                        <button
+                          onClick={() => {
+                            setPatientInfo("");
+                            setWirelessPatientId("");
+                          }}
+                          className="text-[10px] text-neutral-500 hover:text-red-400 px-2 py-1 bg-black/20 rounded-lg border border-neutral-800 transition-colors"
+                        >
+                          解除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2 flex-shrink-0">
                   <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2 flex justify-between w-full pr-2">
                     <span>メモ入力 / 音声文字起こし</span>
@@ -1481,38 +1651,185 @@ export default function Home() {
                   <div className="flex-1 flex overflow-hidden">
                     {/* Left Sidebar: Patient List */}
                     <div className={`w-full md:w-80 border-r border-neutral-800 bg-neutral-950/50 flex-col ${showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
-                      <div className="p-4 border-b border-neutral-800">
-                        <div className="relative">
-                          <Search className="w-5 h-5 md:w-4 md:h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                          <input 
-                            type="text" 
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            placeholder="患者名やIDで検索..."
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg pl-10 md:pl-9 pr-4 py-3 md:py-2 text-base md:text-sm text-neutral-200 focus:outline-none focus:border-teal-500"
-                          />
+                      {/* Sidebar Tab Switcher */}
+                      <div className="p-3 border-b border-neutral-800">
+                        <div className="flex bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+                          <button
+                            onClick={() => setSidebarTab("today")}
+                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                              sidebarTab === "today"
+                                ? "bg-teal-600 text-white shadow-lg shadow-teal-950/50"
+                                : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                          >
+                            本日の診療 ({todayQueue.length})
+                          </button>
+                          <button
+                            onClick={() => setSidebarTab("history")}
+                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                              sidebarTab === "history"
+                                ? "bg-teal-600 text-white shadow-lg shadow-teal-950/50"
+                                : "text-neutral-400 hover:text-neutral-200"
+                            }`}
+                          >
+                            過去のカルテ
+                          </button>
                         </div>
                       </div>
-                      <div className="flex-1 overflow-y-auto p-2">
-                        {filteredPatients.length === 0 ? (
-                          <div className="text-center text-sm text-neutral-500 mt-10">患者が見つかりません</div>
-                        ) : (
-                          filteredPatients.map(p => (
-                            <button
-                              key={p}
-                              onClick={() => selectPatient(p)}
-                              className={`w-full text-left px-4 py-4 md:py-3 rounded-xl transition-colors mb-1 ${
-                                selectedPatient === p ? "bg-teal-500/20 text-teal-300" : "text-neutral-300 hover:bg-neutral-800"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <User className="w-5 h-5 md:w-4 md:h-4 opacity-70" />
-                                <span className="truncate text-base md:text-sm font-bold md:font-medium">{p}</span>
-                              </div>
-                            </button>
-                          ))
-                        )}
-                      </div>
+
+                      {/* Content Area */}
+                      {sidebarTab === "today" ? (
+                        <div className="flex-1 flex flex-col overflow-hidden p-3">
+                          {/* Add Patient UI */}
+                          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-3 mb-3 space-y-2">
+                            <div className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">患者を本日の予定に追加</div>
+                            <div className="flex gap-1.5">
+                              <input 
+                                type="text" 
+                                value={inputPatientId}
+                                onChange={e => setInputPatientId(e.target.value)}
+                                placeholder="ID"
+                                className="w-16 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-teal-500"
+                              />
+                              <input 
+                                type="text" 
+                                value={inputPatientName}
+                                onChange={e => setInputPatientName(e.target.value)}
+                                placeholder="苗字 (カタカナ自動)"
+                                className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-teal-500"
+                              />
+                              <button 
+                                onClick={() => handleAddTodayPatient(inputPatientId, inputPatientName)}
+                                className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors flex-shrink-0 active:scale-95"
+                                title="追加"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Queue List */}
+                          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+                            {(() => {
+                              const sortedQueue = [...todayQueue].sort((a, b) => {
+                                if (a.completed === b.completed) {
+                                  return a.addedAt - b.addedAt;
+                                }
+                                return a.completed ? 1 : -1;
+                              });
+
+                              if (sortedQueue.length === 0) {
+                                return (
+                                  <div className="text-center text-xs text-neutral-500 py-10 border border-dashed border-neutral-800 rounded-2xl">
+                                    診療予定はありません
+                                  </div>
+                                );
+                              }
+
+                              return sortedQueue.map(p => {
+                                const isCurrent = wirelessPatientId === p.id || patientInfo === p.name || patientInfo.startsWith(p.id);
+                                return (
+                                  <div
+                                    key={p.id}
+                                    className={`flex items-center justify-between p-3 rounded-xl transition-all border ${
+                                      isCurrent 
+                                        ? "bg-teal-500/10 border-teal-500/30 text-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.1)]" 
+                                        : p.completed 
+                                          ? "bg-neutral-950/20 border-transparent text-neutral-500 opacity-40" 
+                                          : "bg-neutral-900/40 border-transparent text-neutral-300 hover:bg-neutral-800"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                      {/* Circle Toggle Checkbox */}
+                                      <button 
+                                        onClick={() => handleToggleTodayPatientComplete(p.id)}
+                                        className="flex-shrink-0 focus:outline-none transition-transform active:scale-90"
+                                      >
+                                        {p.completed ? (
+                                          <CheckCircle2 className="w-5 h-5 text-teal-500 fill-teal-500/10" />
+                                        ) : (
+                                          <div className="w-5 h-5 rounded-full border-2 border-neutral-600 hover:border-teal-500 transition-colors" />
+                                        )}
+                                      </button>
+                                      
+                                      <div className="min-w-0 flex-1">
+                                        <div className={`text-[10px] text-neutral-500 font-mono leading-none ${p.completed ? 'line-through' : ''}`}>
+                                          ID: {p.id}
+                                        </div>
+                                        <div className={`text-sm font-bold truncate leading-snug ${p.completed ? 'line-through' : ''}`}>
+                                          {p.name.includes('_') ? p.name.split('_')[1] : p.name}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      {!p.completed ? (
+                                        <button
+                                          onClick={() => handleSelectTodayPatient(p)}
+                                          className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                                            isCurrent
+                                              ? "bg-teal-500 text-neutral-950 shadow-md scale-95"
+                                              : "bg-neutral-800 hover:bg-teal-600 hover:text-white"
+                                          }`}
+                                        >
+                                          {isCurrent ? "診療中" : "開始"}
+                                        </button>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-[9px] text-neutral-600 font-bold rounded">
+                                          記載済
+                                        </span>
+                                      )}
+                                      
+                                      <button
+                                        onClick={() => handleDeleteTodayPatient(p.id)}
+                                        className="p-1 hover:text-red-400 text-neutral-600 transition-colors"
+                                        title="予定から削除"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                          <div className="p-3 border-b border-neutral-800">
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="患者名やIDで検索..."
+                                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-9 pr-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-teal-500"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-2 space-y-1 pr-1 scrollbar-thin">
+                            {filteredPatients.length === 0 ? (
+                              <div className="text-center text-sm text-neutral-500 mt-10">患者が見つかりません</div>
+                            ) : (
+                              filteredPatients.map(p => (
+                                <button
+                                  key={p}
+                                  onClick={() => selectPatient(p)}
+                                  className={`w-full text-left px-4 py-3 rounded-xl transition-colors mb-1 ${
+                                    selectedPatient === p ? "bg-teal-500/20 text-teal-300" : "text-neutral-300 hover:bg-neutral-800"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <User className="w-4 h-4 opacity-70" />
+                                    <span className="truncate text-xs font-medium">{p}</span>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Right Content: Patient History */}
@@ -1946,13 +2263,13 @@ export default function Home() {
       {/* Bottom Navigation (Mobile Only) */}
       <nav className="md:hidden flex bg-neutral-900/80 backdrop-blur-xl border-t border-white/5 pb-safe z-50">
         <button
-          onClick={() => handleTabChange("qr")}
+          onClick={() => handleTabChange("search")}
           className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
-            activeTab === "qr" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+            activeTab === "search" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
-          <Camera className="w-6 h-6" />
-          <span className="text-[10px] font-bold">撮影QR</span>
+          <Search className="w-6 h-6" />
+          <span className="text-[10px] font-bold">患者</span>
         </button>
         <button
           onClick={() => handleTabChange("input")}
@@ -1961,16 +2278,16 @@ export default function Home() {
           }`}
         >
           <Mic className="w-6 h-6" />
-          <span className="text-[10px] font-bold">AI入力</span>
+          <span className="text-[10px] font-bold">カルテ</span>
         </button>
         <button
-          onClick={() => handleTabChange("search")}
+          onClick={() => handleTabChange("qr")}
           className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
-            activeTab === "search" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
+            activeTab === "qr" ? "text-teal-400" : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
-          <Search className="w-6 h-6" />
-          <span className="text-[10px] font-bold">検索</span>
+          <Camera className="w-6 h-6" />
+          <span className="text-[10px] font-bold">ワイヤレス</span>
         </button>
         <button
           onClick={() => handleTabChange("slide")}
@@ -1979,7 +2296,7 @@ export default function Home() {
           }`}
         >
           <Presentation className="w-6 h-6" />
-          <span className="text-[10px] font-bold">スライド</span>
+          <span className="text-[10px] font-bold">スライド生成</span>
         </button>
         <button
           onClick={() => handleTabChange("technician")}
@@ -1988,7 +2305,7 @@ export default function Home() {
           }`}
         >
           <Clipboard className="w-6 h-6" />
-          <span className="text-[10px] font-bold">技工指示</span>
+          <span className="text-[10px] font-bold text-center leading-tight">技工<br/>指示書</span>
         </button>
         <button
           onClick={() => handleTabChange("settings")}

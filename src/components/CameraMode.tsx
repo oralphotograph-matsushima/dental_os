@@ -4,7 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Camera, RefreshCw, Image as ImageIcon, Send, X, CheckCircle, AlertCircle, LayoutTemplate, Download } from "lucide-react";
 import * as htmlToImage from 'html-to-image';
 
-export default function CameraModePage() {
+interface CameraModeProps {
+  activePatient?: string;
+}
+
+export default function CameraModePage({ activePatient }: CameraModeProps) {
   const [patientId, setPatientId] = useState("");
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -18,14 +22,32 @@ export default function CameraModePage() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
 
-  // 初回ロード時に現在のActive Patientを取得
+  // activePatient Prop の変化、または初回ロード時に現在のActive Patientを取得
   useEffect(() => {
-    fetchActivePatient();
-    
-    // スリープ復帰時などの自動再接続処理
+    if (activePatient) {
+      const idOnly = activePatient.includes('_') ? activePatient.split('_')[0] : activePatient;
+      setPatientId(idOnly);
+      setActivePatientId(idOnly);
+      fetchImages(idOnly);
+      
+      fetch(`http://${window.location.hostname}:3001/api/patient`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patientId: idOnly })
+      }).then(res => {
+        if (res.ok) {
+          connectSSE();
+        }
+      }).catch(err => console.error("Failed to sync active patient to PC server:", err));
+    } else {
+      fetchActivePatient();
+    }
+  }, [activePatient]);
+
+  // スリープ復帰時などの自動再接続処理
+  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // もし接続が切れていて、かつ activePatientId があれば再接続
         if (!isConnected && activePatientId) {
           connectSSE();
         }
@@ -301,6 +323,39 @@ export default function CameraModePage() {
           <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-2xl flex items-center gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <p>{errorMsg}</p>
+          </div>
+        )}
+
+        {/* Active Patient Indicator Banner */}
+        {activePatient && (
+          <div className="bg-gradient-to-br from-teal-500/10 via-teal-600/10 to-teal-500/10 border border-teal-500/20 rounded-3xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-teal-500/20 rounded-2xl flex items-center justify-center text-teal-400">
+                  <Camera className="w-8 h-8 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded border border-teal-500/20">
+                      No. {activePatient.split('_')[0]}
+                    </span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">ワイヤレス連動中</span>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-white mt-1.5">
+                    {activePatient.split('_')[1] || activePatient} 様 📸 撮影アクティブ
+                  </h3>
+                </div>
+              </div>
+              <div className="text-xs text-neutral-400 leading-relaxed bg-black/40 p-4 rounded-2xl border border-white/5 max-w-sm font-sans">
+                <p className="font-bold text-white mb-1">📸 ワイヤレスカメラ自動格納モード</p>
+                カメラで撮影した写真は、PCのフォルダ <code className="text-teal-400 font-mono">Patients/{activePatient}</code> へリアルタイムで完全自動保存されます。
+              </div>
+            </div>
           </div>
         )}
 

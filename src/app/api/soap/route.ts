@@ -42,7 +42,8 @@ N）：〜〜〜
 }
 
 **タグのルール（※Obsidianの[[リンク]]機能は一切使用せず、すべてハッシュタグにしてください）:**
-- #患者名またはID
+- #患者のカタカナ苗字のみ (例: #ヤマダ。漢字のフルネームや本名はプライバシー保護のため一切使用・記載しないでください)
+- #患者ID (例: #C1000)
 - #疾患名
 - #処置名
 - #部位
@@ -53,7 +54,7 @@ N）：〜〜〜
 
 export async function POST(request: Request) {
   try {
-    const { text, customTerms, outputLength } = await request.json();
+    const { text, customTerms, outputLength, patientName } = await request.json();
 
     if (!text) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 });
@@ -64,6 +65,10 @@ export async function POST(request: Request) {
 
     let systemContent = DENTAL_SOAP_PROMPT + `\n【本日の日付】: ${dateStr}`;
     
+    if (patientName && patientName !== "不明") {
+      systemContent += `\n\n【対象の患者情報】: ${patientName}\nこの音声テキストは、現在診療中の患者「${patientName}」に関するものです。音声の中に患者名が明示されていなくても、この患者の治療記録としてカルテを生成してください。出力結果のJSONの "patientId" や "patientNameKana" フィールドには、可能であればこの提供された患者情報を分析・パースして設定してください。`;
+    }
+
     // 出力長に応じた指示の追加
     if (outputLength === "long") {
       systemContent += "\n\n【出力の長さに関する指示】: 入力された音声のディテールや熱量（細かい説明、雑談に近い補足、詳細な状態説明など）を一切カットせず、すべてカルテ上の適切な項目（OやSなど）に詳細に盛り込んでください。要約しすぎないことが極めて重要です。";
@@ -94,13 +99,16 @@ export async function POST(request: Request) {
     const result = JSON.parse(response.choices[0].message.content || "{}");
     
     // Construct patient info for the filename, defaulting if empty
-    const pid = result.patientId || "不明ID";
-    const pname = result.patientNameKana || "不明カナ";
-    const patientInfo = `${pid}_${pname}`;
+    let finalPatientInfo = patientName || "";
+    if (!finalPatientInfo || finalPatientInfo === "不明") {
+      const pid = result.patientId || "不明ID";
+      const pname = result.patientNameKana || "不明カナ";
+      finalPatientInfo = `${pid}_${pname}`;
+    }
     
     let soapText = result.markdown || "";
 
-    return NextResponse.json({ soap: soapText, patientInfo });
+    return NextResponse.json({ soap: soapText, patientInfo: finalPatientInfo });
   } catch (error: any) {
     console.error("SOAP generation error:", error);
     return NextResponse.json(
