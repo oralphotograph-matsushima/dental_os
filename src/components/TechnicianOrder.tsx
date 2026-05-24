@@ -53,8 +53,8 @@ export default function TechnicianOrder() {
   const [clinicName, setClinicName] = useState('');
   const [clinicEmail, setClinicEmail] = useState('');
   
-  const [shadePhoto, setShadePhoto] = useState<File | null>(null);
-  const [shadePhotoPreview, setShadePhotoPreview] = useState<string | null>(null);
+  const [shadePhotos, setShadePhotos] = useState<File[]>([]);
+  const [shadePhotoPreviews, setShadePhotoPreviews] = useState<string[]>([]);
   
   const [instructionPhoto, setInstructionPhoto] = useState<File | null>(null);
   const [instructionPhotoPreview, setInstructionPhotoPreview] = useState<string | null>(null);
@@ -188,7 +188,7 @@ export default function TechnicianOrder() {
   const isPatientIdMissing = patientId.trim() === '';
   const isSubjectMissing = subject.trim() === '';
   const isShadeDetailsMissing = shadeDetails.trim() === '';
-  const isShadePhotoMissing = shadePhoto === null;
+  const isShadePhotoMissing = shadePhotos.length === 0;
   const isInstructionPhotoMissing = instructionPhoto === null;
   const isClinicNameMissing = clinicName.trim() === '';
 
@@ -201,20 +201,35 @@ export default function TechnicianOrder() {
 
     const previewUrl = URL.createObjectURL(file);
     if (type === 'shade') {
-      setShadePhoto(file);
-      setShadePhotoPreview(previewUrl);
+      if (shadePhotos.length >= 4) {
+        alert("シェード写真は最大4枚まで添付可能です。");
+        return;
+      }
+      setShadePhotos(prev => [...prev, file]);
+      setShadePhotoPreviews(prev => [...prev, previewUrl]);
+      if (shadeInputRef.current) shadeInputRef.current.value = '';
     } else {
       setInstructionPhoto(file);
       setInstructionPhotoPreview(previewUrl);
     }
   };
 
+  const removeShadeFile = (index: number) => {
+    setShadePhotos(prev => prev.filter((_, i) => i !== index));
+    setShadePhotoPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const removeFile = (type: 'shade' | 'instruction') => {
     if (type === 'shade') {
-      setShadePhoto(null);
-      setShadePhotoPreview(null);
+      shadePhotoPreviews.forEach(url => URL.revokeObjectURL(url));
+      setShadePhotos([]);
+      setShadePhotoPreviews([]);
       if (shadeInputRef.current) shadeInputRef.current.value = '';
     } else {
+      if (instructionPhotoPreview) URL.revokeObjectURL(instructionPhotoPreview);
       setInstructionPhoto(null);
       setInstructionPhotoPreview(null);
       if (instructionInputRef.current) instructionInputRef.current.value = '';
@@ -253,9 +268,11 @@ export default function TechnicianOrder() {
       if (clinicEmail) formData.append('clinicEmail', clinicEmail);
       
       // 送信前に画像を圧縮
-      if (shadePhoto) {
-        const compressedShade = await compressImage(shadePhoto);
-        formData.append('shadePhoto', compressedShade);
+      if (shadePhotos.length > 0) {
+        for (let i = 0; i < shadePhotos.length; i++) {
+          const compressedShade = await compressImage(shadePhotos[i]);
+          formData.append('shadePhotos', compressedShade);
+        }
       }
       if (instructionPhoto) {
         const compressedInstruction = await compressImage(instructionPhoto);
@@ -491,10 +508,14 @@ export default function TechnicianOrder() {
               <textarea
                 value={shadeDetails}
                 onChange={(e) => setShadeDetails(e.target.value)}
-                placeholder="シェード、形態についての希望や注意点などを詳しく記載してください。"
+                placeholder="シェード、形態についての希望や注意点などを詳しく記載してください。※4枚を超える多数の写真や動画を送る場合は、Google Drive等の共有フォルダリンクをこちらに貼り付けてください。"
                 rows={4}
                 className={`w-full bg-neutral-950 border ${isShadeDetailsMissing ? 'border-red-500/50 focus:border-red-500' : 'border-neutral-800 focus:border-teal-500'} rounded-xl px-4 py-3 text-white focus:outline-none transition-colors resize-none`}
               />
+              <p className="text-[11px] text-teal-400 mt-1.5 flex items-center gap-1 bg-teal-500/5 p-2 rounded-lg border border-teal-500/10">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span><strong>💡 4枚を超える大量の写真を送る場合</strong>: Google Drive等の共有フォルダリンクを上記の指示内容欄に貼り付けていただくとスムーズです。</span>
+              </p>
             </div>
           </div>
         </div>
@@ -504,52 +525,16 @@ export default function TechnicianOrder() {
           <div className="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="bg-teal-500 text-black text-xs font-black px-2 py-1 rounded-md">STEP 3</span>
-            必須画像の添付
+            画像の添付
           </h3>
-          <p className="text-sm text-neutral-400 mb-6">送信漏れを防ぐため、写真は必ず2種類（シェード・指示書）添付してください。</p>
+          <p className="text-sm text-neutral-400 mb-4">送信漏れを防ぐため、写真は指示書および必要枚数のシェード写真（最大4枚）を添付してください。</p>
+          <p className="text-xs text-teal-400 mb-6 bg-teal-500/5 p-2.5 rounded-lg border border-teal-500/10 flex items-center gap-1.5">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span><strong>💡 5枚以上の大量のシェード画像がある場合</strong>: Google Driveなどのクラウド共有フォルダリンクを『STEP 2：指示内容詳細』の欄にご入力ください。</span>
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* シェード写真 */}
-            <div className={`border-2 border-dashed rounded-xl p-4 transition-all ${isShadePhotoMissing ? 'border-red-500/50 bg-red-500/5' : 'border-neutral-700 bg-neutral-950/50'}`}>
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-teal-400" />
-                  シェード写真 <span className="text-neutral-500 text-xs font-normal">（任意）</span>
-                </h4>
-                {isShadePhotoMissing && <span className="text-xs text-amber-500 flex items-center gap-1 font-bold"><AlertCircle className="w-3 h-3"/>添付なし</span>}
-              </div>
-              
-              {!shadePhotoPreview ? (
-                <button
-                  type="button"
-                  onClick={() => shadeInputRef.current?.click()}
-                  className="w-full h-40 flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-teal-400 hover:bg-white/5 rounded-lg transition-colors"
-                >
-                  <UploadCloud className="w-8 h-8" />
-                  <span className="text-sm">クリックしてシェード写真を選択</span>
-                </button>
-              ) : (
-                <div className="relative group">
-                  <img src={shadePhotoPreview} alt="シェードプレビュー" className="w-full h-40 object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => removeFile('shade')}
-                    className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-              <input
-                type="file"
-                ref={shadeInputRef}
-                onChange={(e) => handleFileChange(e, 'shade')}
-                accept="image/*"
-                className="hidden"
-              />
-            </div>
-
-            {/* 指示書画像 */}
+            {/* 指示書画像 (左側に配置) */}
             <div className={`border-2 border-dashed rounded-xl p-4 transition-all ${isInstructionPhotoMissing ? 'border-red-500/50 bg-red-500/5' : 'border-neutral-700 bg-neutral-950/50'}`}>
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-bold text-white text-sm flex items-center gap-2">
@@ -563,14 +548,14 @@ export default function TechnicianOrder() {
                 <button
                   type="button"
                   onClick={() => instructionInputRef.current?.click()}
-                  className="w-full h-40 flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-teal-400 hover:bg-white/5 rounded-lg transition-colors"
+                  className="w-full h-56 flex flex-col items-center justify-center gap-2 text-neutral-500 hover:text-teal-400 hover:bg-white/5 rounded-lg transition-colors"
                 >
                   <UploadCloud className="w-8 h-8" />
                   <span className="text-sm">クリックして指示書をスキャン/撮影</span>
                 </button>
               ) : (
-                <div className="relative group">
-                  <img src={instructionPhotoPreview} alt="指示書プレビュー" className="w-full h-40 object-cover rounded-lg" />
+                <div className="relative group h-56 w-full">
+                  <img src={instructionPhotoPreview} alt="指示書プレビュー" className="w-full h-full object-cover rounded-lg" />
                   <button
                     type="button"
                     onClick={() => removeFile('instruction')}
@@ -584,6 +569,52 @@ export default function TechnicianOrder() {
                 type="file"
                 ref={instructionInputRef}
                 onChange={(e) => handleFileChange(e, 'instruction')}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+
+            {/* シェード写真 (右側に配置、4枚まで添付可能) */}
+            <div className={`border-2 border-dashed rounded-xl p-4 transition-all ${isShadePhotoMissing ? 'border-red-500/50 bg-red-500/5' : 'border-neutral-700 bg-neutral-950/50'}`}>
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-teal-400" />
+                  シェード写真 <span className="text-teal-500 text-xs font-bold font-mono">({shadePhotos.length}/4枚)</span>
+                </h4>
+                {isShadePhotoMissing && <span className="text-xs text-amber-500 flex items-center gap-1 font-bold"><AlertCircle className="w-3 h-3"/>添付なし</span>}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 min-h-[224px]">
+                {shadePhotoPreviews.map((preview, idx) => (
+                  <div key={idx} className="relative group aspect-video bg-neutral-900 rounded-lg overflow-hidden border border-neutral-800">
+                    <img src={preview} alt={`シェード_${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeShadeFile(idx)}
+                      className="absolute top-1 right-1 bg-black/70 text-white p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                      title="削除"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                
+                {shadePhotos.length < 4 && (
+                  <button
+                    type="button"
+                    onClick={() => shadeInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center gap-1 text-neutral-500 hover:text-teal-400 hover:bg-white/5 rounded-lg border border-dashed border-neutral-800 aspect-video transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs">シェード追加</span>
+                  </button>
+                )}
+              </div>
+              
+              <input
+                type="file"
+                ref={shadeInputRef}
+                onChange={(e) => handleFileChange(e, 'shade')}
                 accept="image/*"
                 className="hidden"
               />

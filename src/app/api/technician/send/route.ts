@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const clinicEmail = formData.get('clinicEmail') as string;
     
     // 画像ファイルの取得
-    const shadePhoto = formData.get('shadePhoto') as File | null;
+    const shadePhotos = formData.getAll('shadePhotos') as File[];
     const instructionPhoto = formData.get('instructionPhoto') as File | null;
 
     if (!labEmail) {
@@ -32,12 +32,18 @@ export async function POST(req: NextRequest) {
     // 添付ファイルの準備
     const attachments = [];
 
-    if (shadePhoto && shadePhoto.size > 0) {
-      const buffer = Buffer.from(await shadePhoto.arrayBuffer());
-      attachments.push({
-        filename: shadePhoto.name || 'shade_photo.jpg',
-        content: buffer,
-      });
+    // シェード写真を添付（複数枚対応）
+    if (shadePhotos && shadePhotos.length > 0) {
+      for (let i = 0; i < shadePhotos.length; i++) {
+        const photo = shadePhotos[i];
+        if (photo && photo.size > 0) {
+          const buffer = Buffer.from(await photo.arrayBuffer());
+          attachments.push({
+            filename: photo.name || `shade_photo_${i + 1}.jpg`,
+            content: buffer,
+          });
+        }
+      }
     }
 
     if (instructionPhoto && instructionPhoto.size > 0) {
@@ -58,7 +64,7 @@ export async function POST(req: NextRequest) {
       from: fromEmail,
       to: [labEmail],
       bcc: clinicEmail ? [clinicEmail] : undefined, // CCだとGmail等の仕様でReply-Toが無視される現象を防ぐためBCCに変更
-      reply_to: clinicEmail || undefined, // 技工所が返信した時にクリニックへ届くように設定
+      replyTo: clinicEmail || undefined, // 技工所が返信した時にクリニックへ届くように設定
       subject: subject || `【技工指示書】患者ID: ${patientId || '未入力'} (${labName}様宛)`,
       text: `
 ${labName} ご担当者様

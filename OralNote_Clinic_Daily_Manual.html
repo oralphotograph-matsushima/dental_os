@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OralNote 院内1日最適活用マニュアル (v1.2.0)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0d0e12;
+      --card-bg: #151720;
+      --text-color: #e3e6ed;
+      --text-muted: #8c95a5;
+      --primary: #14b8a6;
+      --primary-hover: #0d9488;
+      --primary-light: rgba(20, 184, 166, 0.1);
+      --accent: #0ea5e9;
+      --accent-light: rgba(14, 165, 233, 0.15);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.1);
+      --border-color: #232735;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 30px;
+    }
+
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #2dd4bf, #059669);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(to right, #ffffff, #a3a3a3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .version-tag {
+      display: inline-block;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      margin-top: 10px;
+      font-size: 1.1rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      border-left: 4px solid var(--primary);
+      padding-left: 15px;
+      margin: 40px 0 20px 0;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      margin: 25px 0 15px 0;
+      color: #f1f5f9;
+    }
+
+    p {
+      margin-bottom: 15px;
+      color: #cbd5e1;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-accent-teal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: var(--primary);
+    }
+
+    .card-accent-blue::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: var(--accent);
+    }
+
+    .time-badge {
+      display: inline-block;
+      background-color: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-bottom: 15px;
+    }
+
+    ol, ul {
+      margin-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    li {
+      margin-bottom: 10px;
+      color: #cbd5e1;
+    }
+
+    .highlight {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .alert {
+      background-color: var(--warning-light);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .alert-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .alert-content {
+      font-size: 0.9rem;
+      color: #fcd34d;
+    }
+
+    .info-box {
+      background-color: var(--accent-light);
+      border: 1px solid rgba(14, 165, 233, 0.2);
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      font-size: 0.9rem;
+      color: #7dd3fc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background-color: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: rgba(255,255,255,0.02);
+      color: white;
+      font-weight: bold;
+    }
+
+    .step-number {
+      background-color: var(--primary);
+      color: black;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 900;
+      margin-right: 8px;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 50px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        color: black;
+        padding: 0;
+      }
+      .card {
+        background-color: white;
+        border: 1px solid #ddd;
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+      h1, h2, h3, th {
+        color: black !important;
+      }
+      p, li, td {
+        color: #333 !important;
+      }
+      .time-badge {
+        color: #0284c7;
+        border-color: #ddd;
+      }
+      .alert {
+        background-color: #fffbeb;
+        border-color: #fde68a;
+        color: #b45309;
+      }
+      .alert-content {
+        color: #b45309 !important;
+      }
+      .info-box {
+        background-color: #f0f9ff;
+        border-color: #bae6fd;
+        color: #0369a1;
+      }
+      .logo-icon {
+        box-shadow: none;
+        border: 1px solid #059669;
+      }
+      .version-tag {
+        border-color: #0d9488;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">O</div>
+        <h1>OralNote</h1>
+      </div>
+      <p class="subtitle">院内1日最適活用ガイド & 運用マニュアル</p>
+      <span class="version-tag">Version 1.2.0 対応版</span>
+    </header>
+
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 40px;">
+      本書は、臨床現場における「院内完結型セキュリティ」と「iPadによる高速音声カルテ生成」、<br>
+      そして「ワイヤレスカメラ自動転送」を最大活用して、1日の業務を最も効率化するための運用手順書です。
+    </p>
+
+    <!-- 朝のルーティン -->
+    <h2><span class="logo-icon" style="width: 28px; height: 28px; font-size: 14px; border-radius: 8px;">1</span> 朝のスタートアップ (午前 08:30 - 08:50)</h2>
+    
+    <div class="card card-accent-teal">
+      <span class="time-badge">診療開始前</span>
+      <h3>1. 親機PC（Windows）の起動とOralNote立ち上げ</h3>
+      <ol>
+        <li>クリニックの親機PC（Windows）の電源を入れます。</li>
+        <li>デスクトップにある<strong>「OralNote」</strong>ショートカットアイコンをダブルクリックして起動します。</li>
+        <li>アプリが立ち上がると、自動的にローカルサーバー（ポート3000/3001）がバックグラウンドで開始されます。</li>
+      </ol>
+
+      <h3 style="margin-top: 20px;">2. iPad（子機）のWi-Fi接続 & クイックリンク</h3>
+      <ol>
+        <li>診療室の操作用iPadが、親機PCと<strong>同じ院内Wi-Fiルーター</strong>に接続されているか確認します。</li>
+        <li>親機PC画面に表示される<strong>接続用QRコード</strong>を、iPadのカメラでスキャンします。</li>
+        <li>ブラウザ（SafariまたはChrome）が立ち上がり、インストール不要で自動的にOralNoteの診療画面が同期されます。</li>
+      </ol>
+
+      <div class="info-box">
+        <strong>💡 朝の確認ポイント:</strong> iPadの画面に、本日の診療リスト（患者待機列）が表示されていれば、双方向の連携ネットワークは正常に稼働しています。
+      </div>
+    </div>
+
+    <!-- 診療中のルーティン -->
+    <h2><span class="logo-icon" style="width: 28px; height: 28px; font-size: 14px; border-radius: 8px;">2</span> チェアサイド診療中 (午前 09:00 - 午後 18:00)</h2>
+
+    <div class="card card-accent-blue">
+      <span class="time-badge">患者来院ごと</span>
+      <h3>STEP 1: 患者の登録 & 選択 (Katakana-Only Privacy)</h3>
+      <ol>
+        <li>患者様がユニットに案内されたら、iPad画面左側の<strong>「患者」</strong>タブで本日の診療リストに追加します。</li>
+        <li>患者名を入力すると、個人情報保護のためシステムが自動で<strong class="highlight">「カタカナの名字のみ」</strong>（例: ヤマダ）に匿名化フォーマットします。</li>
+        <li>リストから該当する患者を選択し、<strong class="highlight">アクティブ（選択中）状態</strong>にします。</li>
+      </ol>
+
+      <h3 style="margin-top: 25px;">STEP 2: 口腔内撮影と自動仕分け (Wireless Connect)</h3>
+      <ol>
+        <li>Wi-Fi対応カメラで口腔内写真を撮影します。</li>
+        <li>写真は有線/無線LANを通じて自動的に親機PCへ転送され、Watcher機能が現在選択中の<strong class="highlight">「ヤマダ」のフォルダにPC操作不要で自動仕分け保存</strong>します。</li>
+        <li>撮影した写真は、数秒でiPad画面の「新着プレビュー」にリアルタイムでストリーミング表示されます。</li>
+      </ol>
+
+      <h3 style="margin-top: 25px;">STEP 3: 音声入力 & AI SOAPカルテ生成 (Obsidian自動連携)</h3>
+      <ol>
+        <li>治療中、または治療直後にiPadの<strong>「カルテ」</strong>タブを選択します。</li>
+        <li>マイクアイコンをタップし、「右下6番遠心隣接面C2、軟化象牙質除去後にCR充填完了...」のように、日常会話レベルで処置内容を音声入力（吹き込み）します。</li>
+        <li>音声テキストを確認し、<strong>「SOAP生成」</strong>をタップします。AIが瞬時に綺麗な歯科専門SOAP文章に変換します。</li>
+        <li><strong>「カルテ保存」</strong>ボタンをタップします。データは親機PC内のObsidian（Markdown形式カルテ）に瞬時に自動保存されます。</li>
+        <li>保存と同時に、本日の診療リスト内の患者ステータスが自動的に「完了」に変更され、リスト下部にスライドします。</li>
+      </ol>
+
+      <h3 style="margin-top: 25px;">STEP 4: 技工指示書のメール送信 (★v1.2.0 新機能)</h3>
+      <ol>
+        <li><strong>「技工指示書」</strong>タブを選択します。</li>
+        <li>よく送る技工所の一覧から選択するか、直接宛先メールアドレスを入力します。</li>
+        <li><strong>STEP 3（画像添付）</strong>の強化されたレイアウトで写真を用意します：
+          <ul>
+            <li><strong>左側：</strong> スキャン/撮影した「手書き指示書」の写真をアップロードします。</li>
+            <li><strong>右側：</strong> 必要枚数（最大4枚）の「シェード写真」をグリッド部分から追加・プレビューします。</li>
+          </ul>
+        </li>
+        <li>処置詳細を記載し、送信を実行します。
+          <ul>
+            <li><strong>自動画像圧縮：</strong> 送信前に自動で画像が最適化（JPEG/最大幅1600px）されるため、エラーにならず高速で届きます。</li>
+            <li><strong>CC/Reply-To自動化：</strong> 送信時に医院のメールアドレスがBCCに自動追加され、技工所からの返信も医院の受信トレイに直接届くよう設計されています。</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="alert">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <strong>重要：5枚以上の大量のシェード画像がある場合</strong><br>
+          メール添付の容量上限による送信エラーを防ぐため、5枚以上の画像を添付したい場合は、画像をGoogle Driveなどの共有フォルダにアップロードし、そのリンクを<strong>「STEP 2：指示内容詳細」</strong>の欄に貼り付けて送信してください。
+        </div>
+      </div>
+    </div>
+
+    <!-- 一日の終わり -->
+    <h2><span class="logo-icon" style="width: 28px; height: 28px; font-size: 14px; border-radius: 8px;">3</span> 診療終了後・一日の終わりに (午後 18:00 - 18:30)</h2>
+
+    <div class="card card-accent-teal">
+      <span class="time-badge">終業時</span>
+      <h3>1. 本日のカルテ送信状況のチェック</h3>
+      <ul>
+        <li>iPadまたはPCの診療リストで、本日の患者がすべて「完了」ステータスになっているか確認します。</li>
+        <li>もし書き忘れているカルテがあれば、履歴をもとに追記して保存を完了させます。</li>
+      </ul>
+
+      <h3 style="margin-top: 20px;">2. Obsidianを開いてローカルバックアップの確認</h3>
+      <ul>
+        <li>親機PCでカルテ表示エディタ「Obsidian」を開き、本日追加したカルテ（Markdownファイル）が自動同期され、一元化されていることを目視確認します。これにより、完全な院内保管カルテデータベースが構築されます。</li>
+      </ul>
+
+      <h3 style="margin-top: 20px;">3. アプリの安全な終了</h3>
+      <ul>
+        <li>親機PCのOralNoteウィンドウを閉じます。バックグラウンドサーバー（Next.jsおよびWatcher）も自動的に安全にキルされます。</li>
+        <li>PCのシャットダウンを行います。</li>
+      </ul>
+    </div>
+
+    <!-- トラブルシューティング -->
+    <h2><span class="logo-icon" style="width: 28px; height: 28px; font-size: 14px; border-radius: 8px;">4</span> 困った時のトラブルシューティング (不具合クリア)</h2>
+
+    <div class="card card-accent-blue" style="border-color: rgba(239, 68, 68, 0.2);">
+      <span class="time-badge" style="color: #ef4444; border-color: rgba(239,68,68,0.2);">トラブル解決</span>
+      
+      <h3>症状 A: iPadの接続が切れた、またはQRコードで繋がらない</h3>
+      <ul>
+        <li><strong>対策1:</strong> iPadが親機PCと同じWi-Fiルーター（同一SSID）に繋がっているか確認してください。</li>
+        <li><strong>対策2:</strong> Wi-Fiルーターの「プライバシーセパレーター（AP分離）」機能がオンになっていないか確認してください（オンの場合、機器同士の通信が遮断されます）。</li>
+        <li><strong>対策3:</strong> Windowsの「ファイアウォール」が、Node.js / Electron のネットワークアクセスを遮断していないか許可を確認してください。</li>
+      </ul>
+
+      <h3 style="margin-top: 25px;">症状 B: アプリの動作が遅い、または前の競合エラーが残っている</h3>
+      <p>古いアプリのキャッシュやハングプロセスが原因で不具合が生じている可能性があります。</p>
+      
+      <div class="info-box" style="background-color: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: #fca5a5;">
+        <strong>🏥 Windowsクリーンアップの実行手順:</strong><br>
+        <ol style="margin-top: 8px; margin-left: 15px;">
+          <li>OralNoteアプリを完全に閉じます。</li>
+          <li>配布フォルダ内の <strong>`OralNote_Cleanup`</strong> フォルダを開きます。</li>
+          <li>中にある <strong>`cleanup-oralnote.bat`</strong> をダブルクリックして実行します。</li>
+          <li>黒い画面が表示され、古いキャッシュや競合する裏プロセス（ポート3000/3001占有プロセス）が完全に安全消去されます。<br>※カルテデータなどの実データは完全に保護されます。</li>
+          <li>完了後、インストーラー（`OralNote Setup 1.2.0.exe`）を実行し、アプリを起動し直します。</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <p>OralNote AI カルテ & 臨床LANシステム 仕様適合書</p>
+      <p style="font-size: 0.75rem; margin-top: 5px;">© 2026 Matsushima Orthograph / Powered by Antigravity IDE</p>
+    </div>
+
+  </div>
+</body>
+</html>
