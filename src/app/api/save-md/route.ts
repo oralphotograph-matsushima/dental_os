@@ -11,9 +11,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'filename and content are required' }, { status: 400 });
     }
 
-    // デスクトップの OralNote_Data/Patients フォルダを基準にする
-    const desktopPath = path.join(os.homedir(), 'Desktop');
+    // 1. clinic.json からカスタムパスを取得する
+    const homedir = os.homedir();
+    const settingsFilePath = path.join(homedir, 'Desktop', 'OralNote_Data', 'Settings', 'clinic.json');
+    let vaultPath = '';
     
+    if (fs.existsSync(settingsFilePath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+        if (config && config.vaultPath) {
+          vaultPath = config.vaultPath;
+        }
+      } catch (e) {
+        console.error('Failed to parse clinic.json for vaultPath in save-md:', e);
+      }
+    }
+
     // ファイル名から患者フォルダ名を抽出 (例: カルテ_1234_山田太郎_260524.md -> 1234_山田太郎)
     let patientFolder = "Unassigned";
     if (filename.startsWith("カルテ_")) {
@@ -29,7 +42,12 @@ export async function POST(req: Request) {
       patientFolder = filename.replace(".md", "");
     }
 
-    const patientDir = path.join(desktopPath, 'OralNote_Data', 'Patients', patientFolder);
+    // 保存先フォルダの特定
+    const basePatientsDir = vaultPath 
+      ? path.join(vaultPath, 'Patients')
+      : path.join(homedir, 'Desktop', 'OralNote_Data', 'Patients');
+
+    const patientDir = path.join(basePatientsDir, patientFolder);
 
     // フォルダが存在しない場合は作成
     if (!fs.existsSync(patientDir)) {

@@ -211,6 +211,24 @@ export default function Home() {
   const [isFSApiSupported, setIsFSApiSupported] = useState(true);
   const [isIOS, setIsIOS] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [vaultPath, setVaultPath] = useState("");
+
+  const saveVaultPath = async (pathStr: string) => {
+    try {
+      let currentSettings = { email: "" };
+      const getRes = await fetch('/api/settings/clinic');
+      if (getRes.ok) {
+        currentSettings = await getRes.json();
+      }
+      await fetch('/api/settings/clinic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentSettings, vaultPath: pathStr })
+      });
+    } catch(e) {
+      console.error("Failed to save vault path:", e);
+    }
+  };
 
   const [status, setStatus] = useState<"idle" | "recording" | "transcribing" | "formatting" | "saving" | "saved" | "error">("idle");
   const [mdSaveTarget, setMdSaveTarget] = useState<'ipad' | 'pc'>(process.env.NEXT_PUBLIC_APP_MODE === 'local' ? 'pc' : 'ipad');
@@ -317,8 +335,10 @@ export default function Home() {
     }
 
     const ua = navigator.userAgent;
-    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    const isMobileDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isMobileDevice) {
       setIsIOS(true);
+      setMdSaveTarget('pc'); // Default to PC save for iPad terminals
     }
 
     // Handle login=true URL parameter
@@ -329,22 +349,86 @@ export default function Home() {
       }
     }
 
-    // Restore todayQueue
-    const storedQueue = localStorage.getItem("dental_os_today_queue");
-    if (storedQueue) {
+    // 医院設定（PC保存先フォルダ絶対パス含む）の取得
+    const fetchClinicSettings = async () => {
       try {
-        setTodayQueue(JSON.parse(storedQueue));
+        const res = await fetch('/api/settings/clinic');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.vaultPath) {
+            setVaultPath(data.vaultPath);
+          }
+        }
       } catch (e) {
-        console.error("Failed to parse today queue", e);
+        console.error("Failed to fetch clinic settings:", e);
       }
-    }
+    };
+    fetchClinicSettings();
+
+    // Restore todayQueue from server, fallback to localStorage
+    const restoreQueue = async () => {
+      try {
+        const res = await fetch('/api/settings/queue');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setTodayQueue(data);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load today queue from server, falling back to localStorage", e);
+      }
+      
+      const storedQueue = localStorage.getItem("dental_os_today_queue");
+      if (storedQueue) {
+        try {
+          setTodayQueue(JSON.parse(storedQueue));
+        } catch (e) {
+          console.error("Failed to parse today queue", e);
+        }
+      }
+    };
+    restoreQueue();
+  }, []);
+
+  // Polling todayQueue from server to sync between PC and iPad
+  useEffect(() => {
+    const isLocalMode = process.env.NEXT_PUBLIC_APP_MODE === 'local';
+    if (!isLocalMode) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/settings/queue');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setTodayQueue(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(data)) {
+                localStorage.setItem("dental_os_today_queue", JSON.stringify(data));
+                return data;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Polling today queue failed:", e);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (activeTab === "search" && isFSApiSupported && hasDirectory && patientsList.length === 0) {
-      loadPatients();
+    if (activeTab === "search" && patientsList.length === 0) {
+      if (isFSApiSupported && hasDirectory) {
+        loadPatients();
+      } else if (!isFSApiSupported && process.env.NEXT_PUBLIC_APP_MODE === 'local') {
+        loadPatients();
+      }
     }
-  }, [activeTab, hasDirectory, patientsList.length]);
+  }, [activeTab, hasDirectory, isFSApiSupported, patientsList.length]);
 
   // --- Authentication Logic ---
   const handleLogin = async (e: React.FormEvent) => {
@@ -440,6 +524,20 @@ export default function Home() {
   };
 
   // --- Today's Patient Queue Logic ---
+  const updateQueue = async (updated: TodayPatient[]) => {
+    setTodayQueue(updated);
+    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    try {
+      await fetch('/api/settings/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+    } catch (e) {
+      console.error("Failed to save today queue to server:", e);
+    }
+  };
+
   const handleToggleTodayPatientComplete = (id: string) => {
     const updated = todayQueue.map(p => {
       if (p.id === id) {
@@ -447,14 +545,12 @@ export default function Home() {
       }
       return p;
     });
-    setTodayQueue(updated);
-    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    updateQueue(updated);
   };
 
   const handleDeleteTodayPatient = (id: string) => {
     const updated = todayQueue.filter(p => p.id !== id);
-    setTodayQueue(updated);
-    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    updateQueue(updated);
     if (wirelessPatientId === id) {
       setWirelessPatientId("");
       setPatientInfo("");
@@ -482,8 +578,7 @@ export default function Home() {
     };
 
     const updated = [...todayQueue, newPatient];
-    setTodayQueue(updated);
-    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    updateQueue(updated);
     setInputPatientId("");
     setInputPatientName("");
   };
@@ -503,34 +598,42 @@ export default function Home() {
       }
       return p;
     });
-    setTodayQueue(updated);
-    localStorage.setItem("dental_os_today_queue", JSON.stringify(updated));
+    updateQueue(updated);
   };
 
   // --- Search Tab Logic ---
   const loadPatients = async () => {
     try {
-      const dirHandle: any = await get("obsidianDirHandle");
-      if (!dirHandle) return;
-      
-      if ((await dirHandle.queryPermission({ mode: "read" })) !== "granted") {
-        if ((await dirHandle.requestPermission({ mode: "read" })) !== "granted") return;
-      }
+      if (isFSApiSupported) {
+        const dirHandle: any = await get("obsidianDirHandle");
+        if (!dirHandle) return;
+        
+        if ((await dirHandle.queryPermission({ mode: "read" })) !== "granted") {
+          if ((await dirHandle.requestPermission({ mode: "read" })) !== "granted") return;
+        }
 
-      const patientsSet = new Set<string>();
-      for await (const entry of dirHandle.values()) {
-        if (entry.kind === "file" && entry.name.endsWith(".md")) {
-          if (entry.name.startsWith("カルテ_")) {
-            const parts = entry.name.replace(".md", "").split("_");
-            if (parts.length >= 2) {
-              patientsSet.add(parts[1]);
+        const patientsSet = new Set<string>();
+        for await (const entry of dirHandle.values()) {
+          if (entry.kind === "file" && entry.name.endsWith(".md")) {
+            if (entry.name.startsWith("カルテ_")) {
+              const parts = entry.name.replace(".md", "").split("_");
+              if (parts.length >= 2) {
+                patientsSet.add(parts[1]);
+              }
+            } else {
+              patientsSet.add(entry.name.replace(".md", ""));
             }
-          } else {
-            patientsSet.add(entry.name.replace(".md", ""));
           }
         }
+        setPatientsList(Array.from(patientsSet));
+      } else {
+        // iPad / local network API fallback
+        const res = await fetch("/api/patients");
+        if (res.ok) {
+          const data = await res.json();
+          setPatientsList(Array.isArray(data) ? data : []);
+        }
       }
-      setPatientsList(Array.from(patientsSet));
     } catch (err: any) {
       console.error("Failed to load patients", err);
       if (err.name === 'NotFoundError') {
@@ -546,27 +649,12 @@ export default function Home() {
     setPatientHistory([]);
     setShowMobileDetail(true);
     try {
-      const dirHandle: any = await get("obsidianDirHandle");
-      const history = [];
-      
-      // 1. Scan root directory for flat chart files
-      for await (const entry of dirHandle.values()) {
-        if (entry.kind === "file" && entry.name.startsWith(`カルテ_${patientName}_`) && entry.name.endsWith(".md")) {
-          try {
-            const chartFile = await entry.getFile();
-            const chartContent = await chartFile.text();
-            const parts = entry.name.replace(".md", "").split('_');
-            const dateStr = parts[parts.length - 1];
-            const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
-            history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
-          } catch(e) { console.warn(e); }
-        }
-      }
-
-      // 2. Scan inside 'カルテ' directory for organized chart files
-      try {
-        const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ');
-        for await (const entry of chartDirHandle.values()) {
+      if (isFSApiSupported) {
+        const dirHandle: any = await get("obsidianDirHandle");
+        const history = [];
+        
+        // 1. Scan root directory for flat chart files
+        for await (const entry of dirHandle.values()) {
           if (entry.kind === "file" && entry.name.startsWith(`カルテ_${patientName}_`) && entry.name.endsWith(".md")) {
             try {
               const chartFile = await entry.getFile();
@@ -574,17 +662,41 @@ export default function Home() {
               const parts = entry.name.replace(".md", "").split('_');
               const dateStr = parts[parts.length - 1];
               const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
-              if (!history.find(h => h.filename === entry.name)) {
-                history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
-              }
-            } catch(e) {}
+              history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
+            } catch(e) { console.warn(e); }
           }
         }
-      } catch (e) {}
 
-      // Sort newest first
-      history.sort((a, b) => b.filename.localeCompare(a.filename));
-      setPatientHistory(history);
+        // 2. Scan inside 'カルテ' directory for organized chart files
+        try {
+          const chartDirHandle = await dirHandle.getDirectoryHandle('カルテ');
+          for await (const entry of chartDirHandle.values()) {
+            if (entry.kind === "file" && entry.name.startsWith(`カルテ_${patientName}_`) && entry.name.endsWith(".md")) {
+              try {
+                const chartFile = await entry.getFile();
+                const chartContent = await chartFile.text();
+                const parts = entry.name.replace(".md", "").split('_');
+                const dateStr = parts[parts.length - 1];
+                const formattedDate = dateStr.match(/.{1,2}/g)?.join('/') || dateStr;
+                if (!history.find(h => h.filename === entry.name)) {
+                  history.push({ date: formattedDate, soap: chartContent, filename: entry.name });
+                }
+              } catch(e) {}
+            }
+          }
+        } catch (e) {}
+
+        // Sort newest first
+        history.sort((a, b) => b.filename.localeCompare(a.filename));
+        setPatientHistory(history);
+      } else {
+        // iPad / local network API fallback
+        const res = await fetch(`/api/patients/${encodeURIComponent(patientName)}/history`);
+        if (res.ok) {
+          const data = await res.json();
+          setPatientHistory(Array.isArray(data) ? data : []);
+        }
+      }
     } catch(err) {
       console.error(err);
     } finally {
@@ -598,22 +710,38 @@ export default function Home() {
       return;
     }
     try {
-      const dirHandle: any = await get("obsidianDirHandle");
-      let chartDirHandle = dirHandle;
-      try { chartDirHandle = await dirHandle.getDirectoryHandle('カルテ'); } catch (e) {}
-      
-      const fileHandle = await chartDirHandle.getFileHandle(filename);
-      const file = await fileHandle.getFile();
-      const currentContent = await file.text();
-      
       const now = new Date();
       const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       
-      const newContent = `${currentContent}\n\n### 追記 (${dateStr}) - 担当: ${staffName}\n${appendContent}`;
-      
-      const writable = await fileHandle.createWritable();
-      await writable.write(newContent);
-      await writable.close();
+      if (isFSApiSupported) {
+        const dirHandle: any = await get("obsidianDirHandle");
+        let chartDirHandle = dirHandle;
+        try { chartDirHandle = await dirHandle.getDirectoryHandle('カルテ'); } catch (e) {}
+        
+        const fileHandle = await chartDirHandle.getFileHandle(filename);
+        const file = await fileHandle.getFile();
+        const currentContent = await file.text();
+        
+        const newContent = `${currentContent}\n\n### 追記 (${dateStr}) - 担当: ${staffName}\n${appendContent}`;
+        
+        const writable = await fileHandle.createWritable();
+        await writable.write(newContent);
+        await writable.close();
+      } else {
+        // iPad / local network API fallback
+        const record = patientHistory.find(r => r.filename === filename);
+        if (!record) throw new Error("対象のカルテファイルが見つかりません。");
+        
+        const newContent = `${record.soap}\n\n### 追記 (${dateStr}) - 担当: ${staffName}\n${appendContent}`;
+        
+        const saveRes = await fetch("/api/save-md", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename, content: newContent }),
+        });
+        
+        if (!saveRes.ok) throw new Error("PCへの追記保存に失敗しました");
+      }
       
       localStorage.setItem("dental_os_staff_name", staffName);
       
@@ -1565,7 +1693,7 @@ export default function Home() {
                     )}
                   </div>
                   <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
-                    {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
+                    {process.env.NEXT_PUBLIC_APP_MODE === 'local' && !isIOS && (
                       <div className="flex flex-col gap-1 items-center md:items-end mr-2">
                         <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">保存先</span>
                         <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden p-0.5">
@@ -1627,7 +1755,7 @@ export default function Home() {
           {/* === SEARCH TAB === */}
           {activeTab === "search" && (
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] overflow-hidden flex">
-              {!isFSApiSupported ? (
+              {(!isFSApiSupported && process.env.NEXT_PUBLIC_APP_MODE !== 'local') ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                   <AlertTriangle className="w-16 h-16 text-amber-500/50 mb-6" />
                   <h2 className="text-2xl font-bold text-neutral-200 mb-4">iPad等のモバイルブラウザでは利用できません</h2>
@@ -1636,7 +1764,7 @@ export default function Home() {
                     <br/><br/>過去のカルテを閲覧する場合は、お使いの端末の「Obsidian」などのファイル管理アプリをご利用ください。
                   </p>
                 </div>
-              ) : !hasDirectory ? (
+              ) : (!hasDirectory && isFSApiSupported) ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                   <FolderOpen className="w-16 h-16 text-teal-500/50 mb-6" />
                   <h2 className="text-2xl font-bold text-neutral-200 mb-4">保存先フォルダが設定されていません</h2>
@@ -1996,6 +2124,28 @@ export default function Home() {
                         )}
                       </div>
                     )}
+                  </div>
+
+                  {/* PC保存先フォルダ絶対パス (同期用) */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">PC保存先フォルダ絶対パス (同期用)</div>
+                      <div className="text-xs md:text-sm text-neutral-400">
+                        PC上のカルテ保存フォルダ（Obsidian Vaultなど）の絶対パスを指定します。iPad連携時にこのフォルダが使われます。
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 w-full md:w-auto">
+                      <input 
+                        type="text" 
+                        value={vaultPath}
+                        onChange={(e) => {
+                          setVaultPath(e.target.value);
+                          saveVaultPath(e.target.value);
+                        }}
+                        placeholder="例: C:\Users\Username\Desktop\OralNote_Data"
+                        className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

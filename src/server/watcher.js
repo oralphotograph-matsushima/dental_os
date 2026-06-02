@@ -61,6 +61,15 @@ app.post('/api/patient', (req, res) => {
   const { patientId } = req.body;
   activePatientId = patientId || null;
   console.log(`[API] 🧑‍⚕️ Active patient set to: ${activePatientId || 'None'}`);
+  
+  if (activePatientId) {
+    const targetDir = path.join(PATIENTS_DIR, activePatientId);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+      console.log(`[API] ✅ Created directory: ${targetDir}`);
+    }
+  }
+  
   res.json({ success: true, activePatientId });
 });
 

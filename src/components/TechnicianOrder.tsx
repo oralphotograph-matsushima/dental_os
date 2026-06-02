@@ -103,15 +103,19 @@ export default function TechnicianOrder() {
       }
     };
     
-    // サーバーから医院控えCCアドレスを取得（複数端末で同期）
+    // サーバーから医院情報を取得（複数端末で同期）
     const fetchClinicSettings = async () => {
       let loadedFromApi = false;
       try {
         const res = await fetch('/api/settings/clinic');
         if (res.ok) {
           const data = await res.json();
-          if (data && data.email) {
-            setClinicEmail(data.email);
+          if (data) {
+            if (data.email) setClinicEmail(data.email);
+            if (data.name) {
+              setClinicName(data.name);
+              localStorage.setItem('dental_os_clinic_name', data.name);
+            }
             loadedFromApi = true;
           }
         }
@@ -122,29 +126,45 @@ export default function TechnicianOrder() {
       if (!loadedFromApi) {
         const localEmail = localStorage.getItem('dental_os_clinic_email');
         if (localEmail) setClinicEmail(localEmail);
+        const savedClinicName = localStorage.getItem('dental_os_clinic_name');
+        if (savedClinicName) setClinicName(savedClinicName);
       }
     };
 
     fetchLabs();
     fetchClinicSettings();
-    
-    const savedClinicName = localStorage.getItem('dental_os_clinic_name');
-    if (savedClinicName) setClinicName(savedClinicName);
   }, []);
 
-  const handleClinicNameBlur = () => {
-    localStorage.setItem('dental_os_clinic_name', clinicName);
-  };
-
-  const handleClinicEmailBlur = async () => {
-      localStorage.setItem('dental_os_clinic_email', clinicEmail);
+  const saveClinicSettings = async (updatedName: string, updatedEmail: string) => {
     try {
+      let currentSettings = {};
+      try {
+        const getRes = await fetch('/api/settings/clinic');
+        if (getRes.ok) currentSettings = await getRes.json();
+      } catch(e){}
+
       await fetch('/api/settings/clinic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: clinicEmail })
+        body: JSON.stringify({ 
+          ...currentSettings, 
+          name: updatedName, 
+          email: updatedEmail 
+        })
       });
-    } catch(e) { console.error("Failed to save clinic email:", e); }
+    } catch(e) {
+      console.error("Failed to save clinic settings:", e);
+    }
+  };
+
+  const handleClinicNameBlur = () => {
+    localStorage.setItem('dental_os_clinic_name', clinicName);
+    saveClinicSettings(clinicName, clinicEmail);
+  };
+
+  const handleClinicEmailBlur = () => {
+    localStorage.setItem('dental_os_clinic_email', clinicEmail);
+    saveClinicSettings(clinicName, clinicEmail);
   };
 
   const saveLab = async () => {

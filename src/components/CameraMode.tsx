@@ -27,13 +27,13 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
     if (activePatient) {
       const idOnly = activePatient.includes('_') ? activePatient.split('_')[0] : activePatient;
       setPatientId(idOnly);
-      setActivePatientId(idOnly);
-      fetchImages(idOnly);
+      setActivePatientId(activePatient); // Keep full name (e.g., 1234_ヤマダ) for folder and image sync
+      fetchImages(activePatient);
       
       fetch(`http://${window.location.hostname}:3001/api/patient`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: idOnly })
+        body: JSON.stringify({ patientId: activePatient }) // Create full folder name on PC Watcher
       }).then(res => {
         if (res.ok) {
           connectSSE();
@@ -70,7 +70,8 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
         const data = await res.json();
         if (data.activePatientId) {
           setActivePatientId(data.activePatientId);
-          setPatientId(data.activePatientId);
+          const idOnly = data.activePatientId.includes('_') ? data.activePatientId.split('_')[0] : data.activePatientId;
+          setPatientId(idOnly);
           fetchImages(data.activePatientId);
           connectSSE();
         }
