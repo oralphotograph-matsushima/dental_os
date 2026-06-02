@@ -1,5 +1,6 @@
 # OralNote Clean Reinstallation Script
 # Supported OS: Windows 10 / 11
+# Runs with Administrative Privileges
 
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "  OralNote クリーンアップ & 再インストール準備" -ForegroundColor Cyan
@@ -14,7 +15,7 @@ foreach ($proc in $processes) {
         Stop-Process -Name $proc -Force -ErrorAction SilentlyContinue
         Write-Host "  プロセス終了: $proc" -ForegroundColor Gray
     } catch {
-        # プロセスが走っていなければスキップ
+        # スキップ
     }
 }
 
@@ -25,17 +26,24 @@ Write-Host "[2/3] アプリ本体の残骸およびキャッシュデータを�
 $userProfile = $env:USERPROFILE
 $appData = $env:APPDATA
 $localAppData = $env:LOCALAPPDATA
+$programFiles = $env:ProgramFiles
+$programFilesX86 = ${env:ProgramFiles(x86)}
 
 $targets = @(
-    (Join-Path $appData "OralNote"),                   # Electron AppData
-    (Join-Path $appData "dental-os-prototype"),       # 旧プロトタイプ AppData
-    (Join-Path $localAppData "Programs\OralNote"),     # インストール本体
-    (Join-Path $localAppData "oralnote-updater"),      # 自動アップデートキャッシュ
-    (Join-Path $env:TEMP "oralnote-updater")           # 一時フォルダ
+    # Program Files (for safety if machine-wide installation was attempted)
+    (Join-Path $programFiles "OralNote"),
+    (Join-Path $programFilesX86 "OralNote"),
+
+    # AppData (perUser install, caching, or standard configuration)
+    (Join-Path $appData "OralNote"),
+    (Join-Path $appData "dental-os-prototype"),
+    (Join-Path $localAppData "Programs\OralNote"),
+    (Join-Path $localAppData "oralnote-updater"),
+    (Join-Path $env:TEMP "oralnote-updater")
 )
 
 foreach ($target in $targets) {
-    if (Test-Path $target) {
+    if ($target -and (Test-Path $target)) {
         try {
             Remove-Item -Path $target -Recurse -Force -ErrorAction Stop
             Write-Host "  削除成功: $target" -ForegroundColor Green
@@ -43,7 +51,7 @@ foreach ($target in $targets) {
             Write-Host "  ⚠️ 削除失敗 (使用中か権限不足): $target" -ForegroundColor Red
         }
     } else {
-        Write-Host "  検出なし (スキップ): $target" -ForegroundColor Gray
+        # 検出なしはスキップ
     }
 }
 
@@ -60,9 +68,43 @@ if (Test-Path $startMenuLnk) {
     Write-Host "  スタートメニューショートカット削除: $startMenuLnk" -ForegroundColor Green
 }
 
-# 3. 大切なデータの保護確認
+# 3. レジストリのクリーンアップ (アンインストール情報の削除)
 Write-Host ""
-Write-Host "[3/3] 重要な臨床データの保護状況を確認しています..." -ForegroundColor Yellow
+Write-Host "[3/3] Windows レジストリから古いインストール情報を削除しています..." -ForegroundColor Yellow
+
+$registryPaths = @(
+    # Current User Uninstall Entries
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.oralnote.ai",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\OralNote",
+    "HKCU:\Software\com.oralnote.ai",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run\com.oralnote.ai",
+    
+    # Machine Uninstall Entries (64-bit)
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\com.oralnote.ai",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\OralNote",
+    "HKLM:\Software\com.oralnote.ai",
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run\com.oralnote.ai",
+
+    # Machine Uninstall Entries (32-bit/WOW64)
+    "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\com.oralnote.ai",
+    "HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\OralNote",
+    "HKLM:\Software\Wow6432Node\com.oralnote.ai"
+)
+
+foreach ($regPath in $registryPaths) {
+    if (Test-Path $regPath) {
+        try {
+            Remove-Item -Path $regPath -Recurse -Force -ErrorAction Stop
+            Write-Host "  レジストリ削除成功: $regPath" -ForegroundColor Green
+        } catch {
+            Write-Host "  ⚠️ レジストリ削除失敗: $regPath" -ForegroundColor Red
+        }
+    }
+}
+
+# 4. 大切なデータの保護確認
+Write-Host ""
+Write-Host "重要な臨床データの保護状況を確認しています..." -ForegroundColor Yellow
 $patientDataPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "OralNote_Data"
 if (Test-Path $patientDataPath) {
     Write-Host "  ✅ 検出成功: $patientDataPath" -ForegroundColor Green
