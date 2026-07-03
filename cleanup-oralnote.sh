@@ -12,7 +12,6 @@ echo "[1/3] 競合するバックグラウンドプロセスを終了してい�
 
 # 実行中の OralNote プロセスを終了
 pkill -f "OralNote" 2>/dev/null
-pkill -f "electron" 2>/dev/null
 
 # ポート 3000 と 3001 を占有しているプロセスを終了して競合を回避
 PORT_3000_PID=$(lsof -t -i:3000 2>/dev/null)

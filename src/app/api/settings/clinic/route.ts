@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
-
-const getSettingsFilePath = () => {
-  const desktopPath = path.join(os.homedir(), 'Desktop');
-  const settingsDir = path.join(desktopPath, 'OralNote_Data', 'Settings');
-  if (!fs.existsSync(settingsDir)) {
-    fs.mkdirSync(settingsDir, { recursive: true });
-  }
-  return path.join(settingsDir, 'clinic.json');
-};
+import { getClinicSettingsPath, saveClinicSettingsData } from '@/lib/settingsHelper';
 
 export async function GET() {
   try {
-    const filePath = getSettingsFilePath();
+    const filePath = getClinicSettingsPath();
     if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ email: '' });
+      return NextResponse.json({ email: '', customIP: '' });
     }
     const data = fs.readFileSync(filePath, 'utf8');
     return NextResponse.json(JSON.parse(data));
@@ -29,8 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const filePath = getSettingsFilePath();
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    saveClinicSettingsData(data);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error writing clinic settings:', error);

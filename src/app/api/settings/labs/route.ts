@@ -1,20 +1,10 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
-
-const getSettingsFilePath = () => {
-  const desktopPath = path.join(os.homedir(), 'Desktop');
-  const settingsDir = path.join(desktopPath, 'OralNote_Data', 'Settings');
-  if (!fs.existsSync(settingsDir)) {
-    fs.mkdirSync(settingsDir, { recursive: true });
-  }
-  return path.join(settingsDir, 'labs.json');
-};
+import { getLabsSettingsPath } from '@/lib/settingsHelper';
 
 export async function GET() {
   try {
-    const filePath = getSettingsFilePath();
+    const filePath = getLabsSettingsPath();
     if (!fs.existsSync(filePath)) {
       return NextResponse.json([]);
     }
@@ -29,7 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const labs = await req.json();
-    const filePath = getSettingsFilePath();
+    const filePath = getLabsSettingsPath();
     fs.writeFileSync(filePath, JSON.stringify(labs, null, 2), 'utf8');
     return NextResponse.json({ success: true });
   } catch (error: any) {

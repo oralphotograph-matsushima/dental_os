@@ -10,9 +10,15 @@ let nextServerProcess;
 let watcherProcess;
 
 function createWindow() {
+  const isWindows = process.platform === 'win32';
+  const iconPath = isWindows 
+    ? path.join(__dirname, 'icon.ico')
+    : path.join(__dirname, 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -62,9 +68,16 @@ function startServers() {
   if (fs.existsSync(envFilePath)) {
     const envContent = fs.readFileSync(envFilePath, 'utf8');
     envContent.split('\n').forEach(line => {
-      const match = line.match(/^([^=]+)=(.*)$/);
+      // Ignore comments and empty lines
+      if (line.trim().startsWith('#') || !line.includes('=')) return;
+      
+      const match = line.match(/^\s*([^#=]+)\s*=\s*(.*)$/);
       if (match) {
-        process.env[match[1].trim()] = match[2].trim();
+        const key = match[1].trim();
+        // Remove \r, trim spaces, and strip surrounding double/single quotes
+        let val = match[2].replace(/\r$/, '').trim();
+        val = val.replace(/^["']|["']$/g, '');
+        process.env[key] = val;
       }
     });
     console.log('Loaded environment variables from .env');
@@ -74,6 +87,7 @@ function startServers() {
   try {
     nextServerProcess = fork(nextServerPath, [], {
       execPath: process.execPath,
+      cwd: nextStandaloneDir, // 明示的にカレントディレクトリを指定してサーバー自身の.env自動ロードを支援
       env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: '3000', HOSTNAME: '0.0.0.0' }
     });
     nextServerProcess.on('error', (err) => console.error('Next.js process error:', err));

@@ -59,11 +59,10 @@ export async function POST(req: NextRequest) {
     const senderEmailAddress = process.env.RESEND_FROM_EMAIL || 'order@nostalgista.co.jp';
     const fromEmail = `${clinicName} <${senderEmailAddress.replace(/.*<(.+)>.*/, '$1')}>`;
 
-    // Resendでメール送信
+    // 1. 技工所宛て通常メール送信
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [labEmail],
-      bcc: clinicEmail ? [clinicEmail] : undefined, // CCだとGmail等の仕様でReply-Toが無視される現象を防ぐためBCCに変更
       replyTo: clinicEmail || undefined, // 技工所が返信した時にクリニックへ届くように設定
       subject: subject || `【技工指示書】患者ID: ${patientId || '未入力'} (${labName}様宛)`,
       text: `
@@ -90,8 +89,44 @@ ${shadeDetails || '特になし'}
     });
 
     if (error) {
-      console.error('Resend Error:', error);
+      console.error('Resend Error (Lab):', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // 2. 医院宛て専用の送信控えメール別送
+    if (clinicEmail) {
+      try {
+        const { error: clinicError } = await resend.emails.send({
+          from: fromEmail,
+          to: [clinicEmail],
+          replyTo: clinicEmail,
+          subject: `【送信控え】${subject || `【技工指示書】患者ID: ${patientId || '未入力'} (${labName}様宛)`}`,
+          text: `
+【※本メールは送信控え（コピー）です。】
+
+こちらは、技工所（${labName}）宛てに送信された指示書メールのコピーです。
+
+-----------------------------------------
+【送信先】: ${labName} (${labEmail})
+【患者ID/氏名】: ${patientId || '未入力'}
+【シェード・形態指示詳細】:
+${shadeDetails || '特になし'}
+-----------------------------------------
+
+※実際に技工所宛てに送信された添付画像ファイルがこのメールにも含まれています。
+
+---
+※本メールはOralNoteシステムより自動送信されています。
+          `,
+          attachments: attachments,
+        });
+
+        if (clinicError) {
+          console.error('Resend Warning (Clinic copy failed to send):', clinicError);
+        }
+      } catch (err: any) {
+        console.error('Resend Error during clinic copy sending:', err);
+      }
     }
 
     return NextResponse.json({ success: true, message: 'メールを送信しました', data });

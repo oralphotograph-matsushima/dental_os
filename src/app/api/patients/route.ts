@@ -20,20 +20,18 @@ export async function GET() {
       }
     }
     
-    let basePatientsDir = vaultPath 
-      ? path.join(vaultPath, 'Patients')
-      : path.join(homedir, 'Desktop', 'OralNote_Data', 'Patients');
+    let baseDir = vaultPath || path.join(homedir, 'Desktop', 'OralNote_Data');
       
-    if (!fs.existsSync(basePatientsDir)) {
-      fs.mkdirSync(basePatientsDir, { recursive: true });
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir, { recursive: true });
     }
     
-    const files = fs.readdirSync(basePatientsDir);
+    const files = fs.readdirSync(baseDir);
     const patients = files.filter(file => {
-      const fullPath = path.join(basePatientsDir, file);
-      const isDir = fs.statSync(fullPath).isDirectory();
-      return isDir && !file.startsWith('.');
-    });
+      const fullPath = path.join(baseDir, file);
+      const isFile = fs.statSync(fullPath).isFile();
+      return isFile && file.endsWith('.md') && !file.startsWith('.') && !file.startsWith('カルテ_');
+    }).map(file => file.replace(/\.md$/, ''));
     
     return NextResponse.json(patients);
   } catch (error: any) {

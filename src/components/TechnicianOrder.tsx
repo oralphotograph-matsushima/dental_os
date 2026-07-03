@@ -44,7 +44,7 @@ const compressImage = (file: File, maxWidth = 1600, quality = 0.8): Promise<File
   });
 };
 
-export default function TechnicianOrder() {
+export default function TechnicianOrder({ onGoToSettings }: { onGoToSettings?: () => void }) {
   const [labName, setLabName] = useState('');
   const [labEmail, setLabEmail] = useState('');
   const [patientId, setPatientId] = useState('');
@@ -65,9 +65,6 @@ export default function TechnicianOrder() {
 
   // 技工所設定用ステート
   const [presetLabs, setPresetLabs] = useState<{name: string, email: string}[]>([]);
-  const [showLabSettings, setShowLabSettings] = useState(false);
-  const [newLabName, setNewLabName] = useState('');
-  const [newLabEmail, setNewLabEmail] = useState('');
 
   const shadeInputRef = useRef<HTMLInputElement>(null);
   const instructionInputRef = useRef<HTMLInputElement>(null);
@@ -167,40 +164,7 @@ export default function TechnicianOrder() {
     saveClinicSettings(clinicName, clinicEmail);
   };
 
-  const saveLab = async () => {
-    if(!newLabName || !newLabEmail) return;
-    const updated = [...presetLabs, { name: newLabName, email: newLabEmail }];
-    setPresetLabs(updated);
-    setNewLabName('');
-    setNewLabEmail('');
-    
-    localStorage.setItem('dental_os_preset_labs', JSON.stringify(updated));
-    
-    // サーバーに保存
-    try {
-      await fetch('/api/settings/labs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
-    } catch(e) { console.error(e); }
-  };
 
-  const removeLab = async (index: number) => {
-    const updated = presetLabs.filter((_, i) => i !== index);
-    setPresetLabs(updated);
-    
-    localStorage.setItem('dental_os_preset_labs', JSON.stringify(updated));
-    
-    // サーバーに保存
-    try {
-      await fetch('/api/settings/labs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
-    } catch(e) { console.error(e); }
-  };
 
   // バリデーション状態の計算（新人がパッと見て「穴が空いている」と気づくためのロジック）
   const isLabNameMissing = labName.trim() === '';
@@ -397,56 +361,22 @@ export default function TechnicianOrder() {
               </select>
             </div>
             <div className="flex items-end pb-1">
-              <button
-                type="button"
-                onClick={() => setShowLabSettings(!showLabSettings)}
-                className="text-sm text-teal-400 hover:text-teal-300 flex items-center gap-1 bg-teal-500/10 px-4 py-2.5 rounded-xl border border-teal-500/20 transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                技工所の登録・編集
-              </button>
+              {onGoToSettings ? (
+                <button
+                  type="button"
+                  onClick={onGoToSettings}
+                  className="text-sm text-teal-400 hover:text-teal-300 flex items-center gap-1 bg-teal-500/10 px-4 py-2.5 rounded-xl border border-teal-500/20 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  技工所の登録・編集へ
+                </button>
+              ) : (
+                <span className="text-xs text-neutral-400 pb-2.5">
+                  ※技工所の登録・編集は「設定」タブで行えます。
+                </span>
+              )}
             </div>
           </div>
-
-          {/* 技工所設定パネル */}
-          {showLabSettings && (
-            <div className="mt-4 p-4 bg-black/40 border border-white/10 rounded-xl animate-in fade-in slide-in-from-top-2">
-              <h4 className="text-white font-bold mb-3">登録済みの技工所（ローカル保存）</h4>
-              <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
-                {presetLabs.map((lab, i) => (
-                  <div key={i} className="flex items-center justify-between bg-neutral-900 px-3 py-2 rounded-lg border border-neutral-800">
-                    <div>
-                      <span className="text-white font-bold text-sm block">{lab.name}</span>
-                      <span className="text-neutral-400 text-xs">{lab.email}</span>
-                    </div>
-                    <button type="button" onClick={() => removeLab(i)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {presetLabs.length === 0 && <p className="text-xs text-neutral-500">登録されていません</p>}
-              </div>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="技工所名" 
-                  value={newLabName} 
-                  onChange={e => setNewLabName(e.target.value)} 
-                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
-                />
-                <input 
-                  type="email" 
-                  placeholder="メールアドレス" 
-                  value={newLabEmail} 
-                  onChange={e => setNewLabEmail(e.target.value)} 
-                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
-                />
-                <button type="button" onClick={saveLab} className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-3 py-2 rounded-lg text-sm flex items-center gap-1 transition-colors">
-                  <Plus className="w-4 h-4" /> 追加
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
@@ -528,13 +458,13 @@ export default function TechnicianOrder() {
               <textarea
                 value={shadeDetails}
                 onChange={(e) => setShadeDetails(e.target.value)}
-                placeholder="シェード、形態についての希望や注意点などを詳しく記載してください。※4枚を超える多数の写真や動画を送る場合は、Google Drive等の共有フォルダリンクをこちらに貼り付けてください。"
+                placeholder="シェード、形態についての希望や注意点などを詳しく記載してください。※4枚以上の多数のシェード写真や動画を送る場合は、Google Drive等の共有フォルダリンクをこちらに貼り付けてください。"
                 rows={4}
                 className={`w-full bg-neutral-950 border ${isShadeDetailsMissing ? 'border-red-500/50 focus:border-red-500' : 'border-neutral-800 focus:border-teal-500'} rounded-xl px-4 py-3 text-white focus:outline-none transition-colors resize-none`}
               />
               <p className="text-[11px] text-teal-400 mt-1.5 flex items-center gap-1 bg-teal-500/5 p-2 rounded-lg border border-teal-500/10">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                <span><strong>💡 4枚を超える大量の写真を送る場合</strong>: Google Drive等の共有フォルダリンクを上記の指示内容欄に貼り付けていただくとスムーズです。</span>
+                <span><strong>💡 4枚以上の多数のシェード写真・動画を送る場合</strong>: Google Drive等の共有フォルダリンクを上記の指示内容欄に貼り付けていただくとスムーズです。</span>
               </p>
             </div>
           </div>
@@ -550,7 +480,7 @@ export default function TechnicianOrder() {
           <p className="text-sm text-neutral-400 mb-4">送信漏れを防ぐため、写真は指示書および必要枚数のシェード写真（最大4枚）を添付してください。</p>
           <p className="text-xs text-teal-400 mb-6 bg-teal-500/5 p-2.5 rounded-lg border border-teal-500/10 flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span><strong>💡 5枚以上の大量のシェード画像がある場合</strong>: Google Driveなどのクラウド共有フォルダリンクを『STEP 2：指示内容詳細』の欄にご入力ください。</span>
+            <span><strong>💡 4枚以上の大量のシェード画像・動画を送る場合</strong>: Google Driveなどのクラウド共有フォルダリンクを『STEP 2：指示内容詳細』の欄にご入力ください。</span>
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

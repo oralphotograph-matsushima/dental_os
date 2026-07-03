@@ -43,3 +43,11 @@ next-env.d.ts
 # electron-builder output
 /dist/
 /release/
+
+# Installers and release directories
+*.exe
+*.zip
+*.dmg
+*.blockmap
+*Release*/
+*release*/

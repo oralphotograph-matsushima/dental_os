@@ -26,25 +26,22 @@ export async function GET(
       }
     }
     
-    // 患者フォルダのパスを特定
-    const basePatientsDir = vaultPath 
-      ? path.join(vaultPath, 'Patients')
-      : path.join(homedir, 'Desktop', 'OralNote_Data', 'Patients');
-      
-    const patientDir = path.join(basePatientsDir, patientId);
+    // カルテフォルダのパスを特定（フラット構造では MyVault/カルテ/）
+    const baseDir = vaultPath || path.join(homedir, 'Desktop', 'OralNote_Data');
+    const karteDir = path.join(baseDir, 'カルテ');
     
-    if (!fs.existsSync(patientDir)) {
+    if (!fs.existsSync(karteDir)) {
       return NextResponse.json([]);
     }
     
     // 2. フォルダ内のマークダウンファイルをスキャンする
-    const files = fs.readdirSync(patientDir);
+    const files = fs.readdirSync(karteDir);
     const history: { date: string, soap: string, filename: string }[] = [];
     
     for (const file of files) {
-      if (file.startsWith('カルテ_') && file.endsWith('.md')) {
+      if (file.startsWith('カルテ_') && file.endsWith('.md') && file.includes(patientId)) {
         try {
-          const filePath = path.join(patientDir, file);
+          const filePath = path.join(karteDir, file);
           const chartContent = fs.readFileSync(filePath, 'utf8');
           
           const parts = file.replace('.md', '').split('_');

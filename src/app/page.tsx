@@ -61,6 +61,9 @@ export default function Home() {
                     /^(192\.168\.|10\.|172\.)/.test(hostname);
     
     setIsPublicWeb(!isLocal);
+    if (isLocal) {
+      setMdSaveTarget('pc');
+    }
   }, []);
 
   const handleUnlockDownload = (e: React.FormEvent) => {
@@ -98,6 +101,9 @@ export default function Home() {
   const [trialCount, setTrialCount] = useState(0);
   const [showQRModal, setShowQRModal] = useState(false);
   const [localIP, setLocalIP] = useState("");
+  const [allIps, setAllIps] = useState<{ name: string; address: string }[]>([]);
+  const [customIP, setCustomIP] = useState("");
+  const [isIpRestartNeeded, setIsIpRestartNeeded] = useState(false);
 
   const fetchLocalIP = async () => {
     try {
@@ -105,6 +111,8 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         setLocalIP(data.ip);
+        if (data.allIps) setAllIps(data.allIps);
+        if (data.customIp !== undefined) setCustomIP(data.customIp);
       }
     } catch (e) {
       console.error("Failed to fetch local IP:", e);
@@ -126,7 +134,7 @@ export default function Home() {
       
       if (isLocal) {
         try {
-          const CURRENT_VERSION = "1.3.0"; // 現在のアプリのバージョン
+          const CURRENT_VERSION = "1.3.2"; // 現在のアプリのバージョン
           const res = await fetch("https://oralnote.nostalgista.co.jp/api/app-version", { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
@@ -213,20 +221,87 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [vaultPath, setVaultPath] = useState("");
 
-  const saveVaultPath = async (pathStr: string) => {
+  const [clinicName, setClinicName] = useState("");
+  const [clinicEmail, setClinicEmail] = useState("");
+  const [presetLabs, setPresetLabs] = useState<{ name: string; email: string }[]>([]);
+  const [newLabName, setNewLabName] = useState("");
+  const [newLabEmail, setNewLabEmail] = useState("");
+  const [tagKeywords, setTagKeywords] = useState<string[]>(["写真撮影", "動画撮影", "矯正", "インプラント"]);
+  const [newKeywordInput, setNewKeywordInput] = useState("");
+  const [clinicSaved, setNewClinicSaved] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  const handleSaveClinic = async () => {
     try {
-      let currentSettings = { email: "" };
+      await saveClinicSettings({ name: clinicName, email: clinicEmail });
+      setNewClinicSaved(true);
+      setTimeout(() => setNewClinicSaved(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const [isParsingImage, setIsParsingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const saveClinicSettings = async (updates: { vaultPath?: string; name?: string; email?: string; tagKeywords?: string[]; customIP?: string }) => {
+    try {
+      let currentSettings = {};
       const getRes = await fetch('/api/settings/clinic');
       if (getRes.ok) {
         currentSettings = await getRes.json();
       }
+      const newSettings = { ...currentSettings, ...updates };
       await fetch('/api/settings/clinic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...currentSettings, vaultPath: pathStr })
+        body: JSON.stringify(newSettings)
       });
     } catch(e) {
-      console.error("Failed to save vault path:", e);
+      console.error("Failed to save clinic settings:", e);
+    }
+  };
+
+  const saveVaultPath = async (pathStr: string) => {
+    await saveClinicSettings({ vaultPath: pathStr });
+  };
+
+  const saveLabsSettings = async (updatedLabs: { name: string; email: string }[]) => {
+    try {
+      await fetch('/api/settings/labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedLabs)
+      });
+    } catch(e) {
+      console.error("Failed to save labs settings:", e);
+    }
+  };
+
+  const handleCleanupApp = async () => {
+    if (!window.confirm("本当にアプリを初期化しますか？\n\nこの操作を実行すると、アプリの設定やキャッシュが消去され、アプリは自動的に終了します。次回起動時は初期設定から開始されます。\n（※デスクトップの OralNote_Data 内のカルテや画像データは安全に保護されます）")) {
+      return;
+    }
+    
+    setIsCleaning(true);
+    try {
+      const res = await fetch('/api/settings/clean', { method: 'POST' });
+      if (res.ok) {
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (e) {
+            console.error("Failed to close window:", e);
+          }
+        }, 1500);
+      } else {
+        setIsCleaning(false);
+        alert("クリーンアップ処理の開始に失敗しました。");
+      }
+    } catch (error) {
+      setIsCleaning(false);
+      console.error("Cleanup error:", error);
+      alert("エラーが発生しました。");
     }
   };
 
@@ -272,7 +347,11 @@ export default function Home() {
     deviceIdRef.current = storedDeviceId;
 
     // ローカルネットワーク（iPad等からのアクセス）を判定
-    const isLanIp = /^(192\.168\.\d+\.\d+|10\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)$/.test(window.location.hostname);
+    const hostname = window.location.hostname;
+    const isLanIp = /^(192\.168\.\d+\.\d+|10\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)$/.test(hostname) ||
+                    hostname.endsWith('.local') ||
+                    hostname === 'localhost' ||
+                    hostname === '127.0.0.1';
 
     // マスターバイパスが有効、またはLAN経由（iPad等）なら即座に認証完了とする
     if (localStorage.getItem('master_bypass') === 'true' || isLanIp) {
@@ -355,8 +434,12 @@ export default function Home() {
         const res = await fetch('/api/settings/clinic');
         if (res.ok) {
           const data = await res.json();
-          if (data && data.vaultPath) {
-            setVaultPath(data.vaultPath);
+          if (data) {
+            if (data.vaultPath) setVaultPath(data.vaultPath);
+            if (data.name) setClinicName(data.name);
+            if (data.email) setClinicEmail(data.email);
+            if (data.tagKeywords) setTagKeywords(data.tagKeywords);
+            if (data.customIP) setCustomIP(data.customIP);
           }
         }
       } catch (e) {
@@ -364,6 +447,22 @@ export default function Home() {
       }
     };
     fetchClinicSettings();
+
+    // 登録済み技工所の取得
+    const fetchLabs = async () => {
+      try {
+        const res = await fetch('/api/settings/labs');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setPresetLabs(data);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch labs:", e);
+      }
+    };
+    fetchLabs();
 
     // Restore todayQueue from server, fallback to localStorage
     const restoreQueue = async () => {
@@ -393,9 +492,9 @@ export default function Home() {
   }, []);
 
   // Polling todayQueue from server to sync between PC and iPad
+  // Polling todayQueue from server to sync between PC and iPad
   useEffect(() => {
-    const isLocalMode = process.env.NEXT_PUBLIC_APP_MODE === 'local';
-    if (!isLocalMode) return;
+    if (isPublicWeb) return;
 
     const interval = setInterval(async () => {
       try {
@@ -418,17 +517,23 @@ export default function Home() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isPublicWeb]);
 
   useEffect(() => {
     if (activeTab === "search" && patientsList.length === 0) {
       if (isFSApiSupported && hasDirectory) {
         loadPatients();
-      } else if (!isFSApiSupported && process.env.NEXT_PUBLIC_APP_MODE === 'local') {
+      } else if (!isFSApiSupported && !isPublicWeb) {
         loadPatients();
       }
     }
-  }, [activeTab, hasDirectory, isFSApiSupported, patientsList.length]);
+  }, [activeTab, hasDirectory, isFSApiSupported, patientsList.length, isPublicWeb]);
+
+  useEffect(() => {
+    if (activeTab === "settings") {
+      fetchLocalIP();
+    }
+  }, [activeTab]);
 
   // --- Authentication Logic ---
   const handleLogin = async (e: React.FormEvent) => {
@@ -581,6 +686,84 @@ export default function Home() {
     updateQueue(updated);
     setInputPatientId("");
     setInputPatientName("");
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingImage(true);
+    setErrorMessage("");
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64Data = reader.result as string;
+        try {
+          const res = await fetch("/api/parse-appointment-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: base64Data }),
+          });
+
+          if (!res.ok) {
+            throw new Error("画像の解析に失敗しました。アポイント表が鮮明に写っているかご確認ください。");
+          }
+
+          const data = await res.json();
+          if (data.patients && Array.isArray(data.patients)) {
+            const newPatients: TodayPatient[] = [];
+            const now = Date.now();
+
+            data.patients.forEach((p: { id: string; name: string }) => {
+              const trimmedId = p.id.trim();
+              const trimmedName = p.name.trim();
+
+              if (!trimmedId) return;
+
+              // すでにtodayQueueにある患者はID重複でスキップ
+              if (todayQueue.some(existing => existing.id === trimmedId)) {
+                return;
+              }
+
+              newPatients.push({
+                id: trimmedId,
+                name: trimmedName,
+                addedAt: now,
+                completed: false,
+              });
+            });
+
+            if (newPatients.length > 0) {
+              const updated = [...todayQueue, ...newPatients];
+              updateQueue(updated);
+              alert(`${newPatients.length}名の患者を予定に追加しました。`);
+            } else {
+              alert("新しく追加できる患者は見つかりませんでした（すでに登録されている可能性があります）。");
+            }
+          } else {
+            throw new Error("解析結果から患者データが検出されませんでした。");
+          }
+        } catch (apiErr: any) {
+          console.error(apiErr);
+          setErrorMessage(apiErr.message || "アポイント画像の解析中にエラーが発生しました。");
+        } finally {
+          setIsParsingImage(false);
+        }
+      };
+      reader.onerror = () => {
+        throw new Error("画像の読み込みに失敗しました。");
+      };
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || "エラーが発生しました。");
+      setIsParsingImage(false);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSelectTodayPatient = (patient: TodayPatient) => {
@@ -819,7 +1002,13 @@ export default function Home() {
       const soapRes = await fetch("/api/soap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, customTerms: termsString, outputLength }),
+        body: JSON.stringify({ 
+          text, 
+          customTerms: termsString, 
+          outputLength, 
+          tagKeywords, 
+          patientName: patientInfo 
+        }),
       });
       const soapData = await soapRes.json();
       if (!soapRes.ok) throw new Error(soapData.error || "SOAP formatting failed");
@@ -852,7 +1041,7 @@ export default function Home() {
       const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2); 
       const filename = `カルテ_${patientInfo}_${dateStr}.md`;
 
-      if (mdSaveTarget === 'pc' && process.env.NEXT_PUBLIC_APP_MODE === 'local') {
+      if (mdSaveTarget === 'pc' && !isPublicWeb) {
         // バックエンド（Windows PC）に直接保存する
         const saveRes = await fetch("/api/save-md", {
           method: "POST",
@@ -954,8 +1143,8 @@ export default function Home() {
   };
 
   const handleTabChange = (tab: "input" | "search" | "qr" | "slide" | "technician" | "settings") => {
-    // パブリックWeb（Vercelなど）では「AIカルテ入力」以外のタブはデスクトップ版専用とする
-    if (isPublicWeb && tab !== "input") {
+    // パブリックWeb（Vercelなど）でも「患者(search)」および「設定(settings)」は利用可能とする
+    if (isPublicWeb && tab !== "input" && tab !== "search" && tab !== "settings") {
       setShowDesktopMigrationModal(true);
       return;
     }
@@ -1058,6 +1247,28 @@ export default function Home() {
                 </a>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* App Cleanup Overlay */}
+      {isCleaning && (
+        <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="w-full max-w-md bg-neutral-900 border border-red-500/20 rounded-3xl p-8 shadow-2xl relative text-center">
+            <div className="flex flex-col items-center mb-6">
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-full mb-4 animate-pulse">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">クリーンアップ処理を開始</h2>
+              <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+                アプリケーションの初期化とクリーンアップを行っています。<br />
+                この画面の後、アプリは自動的に終了します。
+              </p>
+              <div className="flex items-center gap-2 text-red-400 text-xs font-bold bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20 shadow-inner">
+                <Loader2 className="w-4 h-4 animate-spin text-red-400" />
+                <span>数秒後に自動で閉じます...</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1212,7 +1423,7 @@ export default function Home() {
                       className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/10 hover:shadow-teal-500/25 transition-all text-center hover:scale-[1.01]"
                     >
                       <Download className="w-4 h-4" />
-                      Windowsデスクトップ版（v1.3.0）をダウンロード
+                      Windowsデスクトップ版（v1.3.2）をダウンロード
                     </a>
                     <p className="text-[11px] text-neutral-500 text-center">
                       ※Windows 10/11対応。ダウンロード後、インストーラーを実行してください。
@@ -1299,7 +1510,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 OralNote
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.0 (App)</span>
+              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.5 (App)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -1367,7 +1578,7 @@ export default function Home() {
               Windows版移行・DL
             </button>
           )}
-          {process.env.NEXT_PUBLIC_APP_MODE === 'local' && (
+          {!isPublicWeb && (
             <button 
               onClick={() => {
                 fetchLocalIP();
@@ -1438,12 +1649,19 @@ export default function Home() {
 
           {/* === INPUT TAB === */}
           {activeTab === "input" && (
-            <div className="flex flex-col md:grid md:grid-cols-12 gap-6 md:gap-8 min-h-[calc(100dvh-200px)] md:h-[600px]">
-              <div className="md:col-span-4 flex flex-col items-center justify-center p-6 md:p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl backdrop-blur-sm relative flex-shrink-0 order-1">
-                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-950/50 border border-neutral-800 text-xs font-medium">
+            <div className="max-w-2xl mx-auto py-4 md:py-8 px-2 md:px-0 space-y-6">
+              
+              {/* Active Patient Target Banner */}
+              <div className={`p-5 rounded-3xl border transition-all relative overflow-hidden bg-neutral-900/60 backdrop-blur-md ${
+                patientInfo 
+                  ? "border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.05)] animate-in fade-in slide-in-from-top-2" 
+                  : "border-neutral-800"
+              }`}>
+                {/* Status Indicator inside the banner */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-950/50 border border-neutral-800 text-[10px] font-bold">
                   {status === "idle" && <span className="text-neutral-400">準備完了</span>}
                   {status === "formatting" && (
-                    <><Loader2 className="w-3 h-3 text-purple-400 animate-spin" /><span className="text-purple-400">整形中</span></>
+                    <><Loader2 className="w-3 h-3 text-purple-400 animate-spin" /><span className="text-purple-400">AI整形中</span></>
                   )}
                   {status === "saving" && (
                     <><Loader2 className="w-3 h-3 text-teal-400 animate-spin" /><span className="text-teal-400">保存中</span></>
@@ -1454,110 +1672,68 @@ export default function Home() {
                   {status === "error" && <span className="text-red-500">エラー</span>}
                 </div>
 
-                {/* 文字数（出力長）切り替えトグル */}
-                <div className="flex w-full items-center justify-center gap-4 text-xs font-semibold px-4 py-2 bg-black/40 rounded-full border border-white/5 mt-4">
-                  <span className="text-neutral-400">出力の長さ:</span>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="outputLength" 
-                      checked={outputLength === 'short'} 
-                      onChange={() => setOutputLength('short')} 
-                      className="accent-teal-500" 
-                    />
-                    <span className={outputLength === 'short' ? 'text-white' : 'text-neutral-500'}>短め(要約)</span>
-                  </label>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="outputLength" 
-                      checked={outputLength === 'long'} 
-                      onChange={() => setOutputLength('long')} 
-                      className="accent-teal-500" 
-                    />
-                    <span className={outputLength === 'long' ? 'text-white' : 'text-neutral-500'}>長め(詳細)</span>
-                  </label>
-                </div>
-
-                <div className="mt-8 w-full p-6 bg-teal-500/10 border border-teal-500/20 rounded-2xl flex flex-col items-center text-center">
-                  <div className="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
-                    <Mic className="w-6 h-6 text-teal-400" />
-                  </div>
-                  <h3 className="text-teal-400 font-bold mb-2">音声入力のご案内</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">
-                    iPadやiPhoneの<br/>
-                    <strong className="text-neutral-200">キーボードのマイク機能（音声認識）</strong><br/>
-                    を使用して右側のテキストエリアに入力してください。
-                  </p>
-
-                </div>
-              </div>
-
-              <div className="md:col-span-8 space-y-6 flex flex-col flex-1 order-2 min-h-[500px] md:min-h-0">
-                {/* Active Patient Target Banner */}
-                <div className={`p-4 rounded-2xl border transition-all ${
-                  patientInfo 
-                    ? "bg-teal-500/10 border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.05)] animate-in fade-in slide-in-from-top-2" 
-                    : "bg-neutral-900/40 border-neutral-800"
-                }`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="relative flex items-center justify-center">
-                        <span className={`absolute inline-flex h-2.5 w-2.5 rounded-full ${patientInfo ? 'bg-teal-400 opacity-75 animate-ping' : 'bg-neutral-600'}`}></span>
-                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${patientInfo ? 'bg-teal-500' : 'bg-neutral-500'}`}></span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">カルテ記載対象</span>
-                        {patientInfo ? (
-                          <span className="text-sm font-black text-teal-300 font-sans tracking-wide">
-                            {patientInfo.includes('_') ? `ID: ${patientInfo.split('_')[0]} | ${patientInfo.split('_')[1]} 様` : `${patientInfo} 様`}
-                          </span>
-                        ) : (
-                          <span className="text-xs font-bold text-neutral-400">患者が指定されていません（リストから選択するか下記に入力してください）</span>
-                        )}
-                      </div>
+                <div className="flex flex-col gap-4 mt-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative flex items-center justify-center">
+                      <span className={`absolute inline-flex h-2.5 w-2.5 rounded-full ${patientInfo ? 'bg-teal-400 opacity-75 animate-ping' : 'bg-neutral-600'}`}></span>
+                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${patientInfo ? 'bg-teal-500' : 'bg-neutral-500'}`}></span>
                     </div>
-                    
-                    {/* Patient Input Field */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={patientInfo}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setPatientInfo(val);
-                          if (val.includes('_')) {
-                            setWirelessPatientId(val.split('_')[0]);
-                          } else {
-                            setWirelessPatientId(val);
-                          }
-                        }}
-                        placeholder="例: 1234_ヤマダ"
-                        className="bg-neutral-950 border border-neutral-800 focus:border-teal-500 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-full sm:w-44 transition-colors"
-                      />
-                      {patientInfo && (
-                        <button
-                          onClick={() => {
-                            setPatientInfo("");
-                            setWirelessPatientId("");
-                          }}
-                          className="text-[10px] text-neutral-500 hover:text-red-400 px-2 py-1 bg-black/20 rounded-lg border border-neutral-800 transition-colors"
-                        >
-                          解除
-                        </button>
+                    <div>
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">カルテ記載対象</span>
+                      {patientInfo ? (
+                        <span className="text-sm font-black text-teal-300 font-sans tracking-wide">
+                          {patientInfo.includes('_') ? `ID: ${patientInfo.split('_')[0]} | ${patientInfo.split('_')[1]} 様` : `${patientInfo} 様`}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-neutral-400">患者が指定されていません</span>
                       )}
                     </div>
                   </div>
+                  
+                  {/* Patient Input Field */}
+                  <div className="flex items-center gap-2 bg-black/20 p-2 rounded-2xl border border-white/5">
+                    <input
+                      type="text"
+                      value={patientInfo}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setPatientInfo(val);
+                        if (val.includes('_')) {
+                          setWirelessPatientId(val.split('_')[0]);
+                        } else {
+                          setWirelessPatientId(val);
+                        }
+                      }}
+                      placeholder="手動入力 (例: 1234_ヤマダ)"
+                      className="bg-neutral-950 border border-neutral-800 focus:border-teal-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none flex-1 transition-colors"
+                    />
+                    {patientInfo && (
+                      <button
+                        onClick={() => {
+                          setPatientInfo("");
+                          setWirelessPatientId("");
+                        }}
+                        className="text-[10px] text-neutral-400 hover:text-red-400 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-xl border border-neutral-700/50 transition-colors font-bold active:scale-95"
+                      >
+                        解除
+                      </button>
+                    )}
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-2 flex-shrink-0">
-                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider pl-2 flex justify-between w-full pr-2">
+              {/* Main Form Area */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-5 md:p-6 shadow-2xl space-y-6">
+                
+                {/* Section 1: Note Input & Tooth Selector */}
+                <div className="space-y-3">
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider pl-1 flex justify-between w-full">
                     <span>メモ入力 / 音声文字起こし</span>
-                    {!isAuthenticated && <span className="text-teal-500">無料体験: 残り {Math.max(0, 5 - trialCount)}回</span>}
+                    {!isAuthenticated && <span className="text-teal-500 text-[10px]">無料体験: 残り {Math.max(0, 5 - trialCount)}回</span>}
                   </label>
                   
                   {/* Tooth Selector UI */}
-                  <div className="flex flex-col items-center font-mono text-sm gap-[2px] bg-black/40 p-2 sm:p-3 rounded-xl border border-white/5 mb-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                  <div className="flex flex-col items-center font-mono text-xs gap-[2px] bg-black/40 p-2.5 sm:p-3 rounded-2xl border border-white/5 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <div className="flex items-center min-w-max">
                       <div className="flex gap-[2px] sm:gap-1 pr-1 border-r-2 border-neutral-600">
                         {renderToothRow([8,7,6,5,4,3,2,1], 'UR')}
@@ -1580,44 +1756,49 @@ export default function Home() {
                   <textarea
                     value={transcribedText}
                     onChange={(e) => setTranscribedText(e.target.value)}
-                    placeholder="ここをタップして、キーボードのマイクボタンを押して録音してください... (例: CR充填)"
-                    className="w-full h-32 p-4 bg-neutral-900 border border-neutral-700/50 focus:border-teal-500/50 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors shadow-inner"
+                    placeholder="ここにメモを入力するか、キーボードの音声入力ボタンを押して喋ってください..."
+                    className="w-full h-32 p-4 bg-neutral-950 border border-neutral-800 focus:border-teal-500 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors shadow-inner"
                   />
-                  <button
-                    onClick={() => generateSOAP(transcribedText)}
-                    disabled={!transcribedText || status === "formatting" || status === "saving"}
-                    className="w-full mt-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <FileText className="w-5 h-5" />
-                    🪄 AIカルテ生成 (SOAP化)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTranscribedText("");
-                      localStorage.removeItem("dental_os_draft_text");
-                    }}
-                    disabled={!transcribedText}
-                    className="w-full mt-2 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
-                  >
-                    入力内容をクリア
-                  </button>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setTranscribedText("");
+                        localStorage.removeItem("dental_os_draft_text");
+                      }}
+                      disabled={!transcribedText}
+                      className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50 active:scale-95 border border-neutral-700"
+                    >
+                      クリア
+                    </button>
+                    <button
+                      onClick={() => generateSOAP(transcribedText)}
+                      disabled={!transcribedText || status === "formatting" || status === "saving"}
+                      className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+                    >
+                      <FileText className="w-4 h-4" />
+                      AIカルテ生成 (SOAP)
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-2 flex-1 flex flex-col min-h-[250px]">
-                  <label className="text-xs font-semibold text-purple-400/80 uppercase tracking-wider flex items-center justify-between pl-2">
-                    <span>AI カルテ生成 (SOAP)</span>
+                {/* Section 2: AI Generated SOAP Result */}
+                <div className="space-y-3 pt-4 border-t border-neutral-800/60">
+                  <label className="text-xs font-bold text-purple-400 uppercase tracking-wider pl-1">
+                    AI 生成カルテ (SOAP)
                   </label>
                   <textarea
                     value={soapText}
                     onChange={(e) => setSoapText(e.target.value)}
-                    placeholder="ここにSOAP形式に整形されたカルテが表示されます。修正も可能です。"
-                    className="flex-1 w-full p-4 bg-neutral-900 border border-neutral-700/50 focus:border-purple-500/50 rounded-2xl text-base md:text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono shadow-inner"
+                    placeholder="AIが生成したSOAPカルテがここに表示されます。自由に編集・修正が可能です。"
+                    className="w-full h-44 p-4 bg-neutral-950 border border-neutral-800 focus:border-purple-500 rounded-2xl text-sm text-neutral-200 outline-none resize-none leading-relaxed transition-colors font-mono shadow-inner"
                   />
+                  
                   {soapText && (
-                    <div className={`mt-2 p-3 sm:p-4 border rounded-xl animate-in fade-in slide-in-from-bottom-2 ${isMaster ? 'bg-amber-500/10 border-amber-500/30' : 'bg-teal-500/10 border-teal-500/30'}`}>
-                      <div className={`text-[10px] sm:text-xs font-bold mb-2 flex items-center gap-1 sm:gap-2 ${isMaster ? 'text-amber-500' : 'text-teal-400'}`}>
-                        <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {isMaster ? "【管理者専用】誤字・専門用語を辞書へスピード登録" : "【AI学習】誤字があれば、あなた専用のローカル辞書に登録できます"}
+                    <div className={`p-4 border rounded-2xl animate-in fade-in slide-in-from-bottom-2 bg-teal-500/5 ${isMaster ? 'border-amber-500/30' : 'border-teal-500/20'}`}>
+                      <div className={`text-[10px] font-bold mb-2.5 flex items-center gap-1.5 ${isMaster ? 'text-amber-500' : 'text-teal-400'}`}>
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {isMaster ? "【管理者専用】誤字・専門用語を辞書へスピード登録" : "【AI辞書学習】音声認識の誤字をあなた専用の辞書へ登録"}
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <input 
@@ -1625,14 +1806,14 @@ export default function Home() {
                           value={reportReading}
                           onChange={e => setReportReading(e.target.value)}
                           placeholder="よみ（誤変換された音）"
-                          className={`flex-1 bg-neutral-950 border rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none ${isMaster ? 'border-amber-500/30 focus:border-amber-500' : 'border-teal-500/30 focus:border-teal-500'}`}
+                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-teal-500"
                         />
                         <input 
                           type="text"
                           value={reportNotation}
                           onChange={e => setReportNotation(e.target.value)}
                           placeholder="正しい表記"
-                          className={`flex-1 bg-neutral-950 border rounded-lg px-3 py-2 text-xs sm:text-sm text-white outline-none ${isMaster ? 'border-amber-500/30 focus:border-amber-500' : 'border-teal-500/30 focus:border-teal-500'}`}
+                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-teal-500"
                         />
                         <button
                           onClick={async () => {
@@ -1667,7 +1848,7 @@ export default function Home() {
                             setReportNotation("");
                             alert("辞書に登録しました！次回から正しく変換されやすくなります。");
                           }}
-                          className={`${isMaster ? 'bg-amber-600 hover:bg-amber-500' : 'bg-teal-600 hover:bg-teal-500'} text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors whitespace-nowrap active:scale-95`}
+                          className={`text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors whitespace-nowrap active:scale-95 ${isMaster ? 'bg-amber-600 hover:bg-amber-500' : 'bg-teal-600 hover:bg-teal-500'}`}
                         >
                           登録
                         </button>
@@ -1676,398 +1857,272 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between pt-2 flex-shrink-0 gap-4 mb-4 md:mb-0">
-                  <div className="text-xs text-neutral-500 w-full md:max-w-xs text-center md:text-left order-2 md:order-1 flex flex-col gap-1">
-                    {status === "saved" && (
-                      <>
-                        <span className="truncate block">保存先: {savedPath}</span>
-                        {isPublicWeb && (
-                          <button
-                            onClick={() => setShowDesktopMigrationModal(true)}
-                            className="text-[10px] text-teal-400 hover:text-teal-300 font-semibold text-center md:text-left transition-colors flex items-center gap-1 mt-0.5 justify-center md:justify-start"
-                          >
-                            <span>💡 Windowsデスクトップ版ならObsidian等へ完全自動保存 ➔</span>
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto order-1 md:order-2">
-                    {process.env.NEXT_PUBLIC_APP_MODE === 'local' && !isIOS && (
-                      <div className="flex flex-col gap-1 items-center md:items-end mr-2">
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">保存先</span>
-                        <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden p-0.5">
+                {/* Bottom Save/Copy buttons */}
+                <div className="flex flex-col gap-4 pt-4 border-t border-neutral-800/60">
+                  
+                  {/* Additional Fields (Staff Name & Save Target) */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <User className="w-4 h-4 text-teal-500" />
+                      <input 
+                        type="text" 
+                        value={staffName}
+                        onChange={e => setStaffName(e.target.value)}
+                        placeholder="担当スタッフ名 (任意)"
+                        className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-white focus:border-teal-500 outline-none w-full sm:w-40"
+                      />
+                    </div>
+
+                    {!isPublicWeb && !isIOS && (
+                      <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-xl p-0.5 w-full sm:w-auto justify-between sm:justify-start">
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-2">保存先</span>
+                        <div className="flex">
                           <button
                             onClick={() => setMdSaveTarget('pc')}
-                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'pc' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-lg ${mdSaveTarget === 'pc' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
                           >
                             PC本体
                           </button>
                           <button
                             onClick={() => setMdSaveTarget('ipad')}
-                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-md ${mdSaveTarget === 'ipad' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
+                            className={`px-3 py-1.5 text-xs font-bold transition-colors rounded-lg ${mdSaveTarget === 'ipad' ? 'bg-teal-500 text-black' : 'text-neutral-400 hover:text-white'}`}
                           >
                             この端末
                           </button>
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      <User className="w-4 h-4 text-teal-500 hidden md:block" />
-                      <input 
-                        type="text" 
-                        value={staffName}
-                        onChange={e => setStaffName(e.target.value)}
-                        placeholder="担当スタッフ名 (任意)"
-                        className="bg-neutral-950 border border-neutral-700 rounded-xl px-4 py-3 md:py-2 text-base md:text-sm text-white focus:border-teal-500 outline-none w-full md:w-40"
-                      />
-                    </div>
-                    <div className="flex w-full md:w-auto gap-2">
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(displaySoapText);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        disabled={!soapText || status === "saving" || status === "formatting"}
-                        className="flex-1 md:flex-none flex justify-center items-center gap-2 px-4 py-4 md:py-3 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Clipboard className="w-5 h-5" />}
-                        <span className="text-base md:text-sm">{copied ? "コピー済" : "コピー"}</span>
-                      </button>
-                      <button
-                        onClick={saveToObsidian}
-                        disabled={!soapText || status === "saving" || status === "formatting"}
-                        className="flex-[2] md:flex-none flex justify-center items-center gap-2 px-6 py-4 md:py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        <Save className="w-5 h-5" />
-                        <span className="text-base md:text-sm">
-                          {mdSaveTarget === 'pc' ? 'PCへ保存' : (isIOS ? "Obsidianへ転送" : (isFSApiSupported ? "データを保存" : "ダウンロード"))}
-                        </span>
-                      </button>
-                    </div>
                   </div>
+
+                  {/* Actions (Copy / Save) */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(displaySoapText);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      disabled={!soapText || status === "saving" || status === "formatting"}
+                      className="flex-1 flex justify-center items-center gap-2 px-4 py-3 bg-neutral-800 text-white font-bold rounded-xl hover:bg-neutral-700 transition-colors disabled:opacity-50 text-xs sm:text-sm border border-neutral-700 active:scale-95"
+                    >
+                      {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Clipboard className="w-4 h-4" />}
+                      <span>{copied ? "コピー済" : "コピー"}</span>
+                    </button>
+                    <button
+                      onClick={saveToObsidian}
+                      disabled={!soapText || status === "saving" || status === "formatting"}
+                      className="flex-[2] flex justify-center items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50 text-xs sm:text-sm active:scale-95 shadow-md"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>
+                        {mdSaveTarget === 'pc' ? 'PCへ保存' : (isIOS ? "Obsidianへ転送" : (isFSApiSupported ? "データを保存" : "ダウンロード"))}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Path indicator */}
+                  {status === "saved" && savedPath && (
+                    <div className="text-[10px] text-neutral-500 text-center font-mono truncate bg-black/20 p-2 rounded-xl border border-white/5">
+                      保存パス: {savedPath}
+                    </div>
+                  )}
+
+                  {status === "saved" && isPublicWeb && (
+                    <button
+                      onClick={() => setShowDesktopMigrationModal(true)}
+                      className="text-[10px] text-teal-400 hover:text-teal-300 font-semibold text-center transition-colors flex items-center gap-1 justify-center"
+                    >
+                      <span>💡 Windowsデスクトップ版ならObsidian等へ完全自動保存 ➔</span>
+                    </button>
+                  )}
                 </div>
+
               </div>
             </div>
           )}
 
           {/* === SEARCH TAB === */}
           {activeTab === "search" && (
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] overflow-hidden flex">
-              {(!isFSApiSupported && process.env.NEXT_PUBLIC_APP_MODE !== 'local') ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                  <AlertTriangle className="w-16 h-16 text-amber-500/50 mb-6" />
-                  <h2 className="text-2xl font-bold text-neutral-200 mb-4">iPad等のモバイルブラウザでは利用できません</h2>
-                  <p className="text-neutral-400 max-w-lg leading-relaxed">
-                    セキュリティ制限のため、ブラウザから直接パソコンのフォルダを検索・閲覧する機能はPC版のChromeやEdge専用となっております。
-                    <br/><br/>過去のカルテを閲覧する場合は、お使いの端末の「Obsidian」などのファイル管理アプリをご利用ください。
-                  </p>
+            <div className="max-w-2xl mx-auto py-4 md:py-8 px-2 md:px-0 space-y-6">
+              {/* Header section with rich gradient */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-neutral-900 via-neutral-900/80 to-transparent p-6 rounded-3xl border border-white/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-teal-500/5 blur-xl pointer-events-none" />
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2.5">
+                    <User className="w-6 h-6 text-teal-500" />
+                    本日の診療予定
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-1">本日来院する患者を追加・選択して、カルテ作成やカメラ撮影を開始します。</p>
                 </div>
-              ) : (!hasDirectory && isFSApiSupported) ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-                  <FolderOpen className="w-16 h-16 text-teal-500/50 mb-6" />
-                  <h2 className="text-2xl font-bold text-neutral-200 mb-4">保存先フォルダが設定されていません</h2>
-                  <p className="text-neutral-400 mb-8">過去のカルテを検索・閲覧するには、データが保存されているフォルダを選択してください。</p>
-                  <button onClick={pickDirectory} className="px-8 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl transition-colors">
-                    フォルダを選択する
-                  </button>
+                <div className="flex-shrink-0">
+                  <span className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-3 py-1.5 rounded-full border border-teal-500/20 shadow-inner">
+                    Queue: {todayQueue.length} 名
+                  </span>
                 </div>
-              ) : (
-                <>
-                  {/* Master-Detail Wrapper */}
-                  <div className="flex-1 flex overflow-hidden">
-                    {/* Left Sidebar: Patient List */}
-                    <div className={`w-full md:w-80 border-r border-neutral-800 bg-neutral-950/50 flex-col ${showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
-                      {/* Sidebar Tab Switcher */}
-                      <div className="p-3 border-b border-neutral-800">
-                        <div className="flex bg-neutral-900 p-1 rounded-xl border border-neutral-800">
-                          <button
-                            onClick={() => setSidebarTab("today")}
-                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                              sidebarTab === "today"
-                                ? "bg-teal-600 text-white shadow-lg shadow-teal-950/50"
-                                : "text-neutral-400 hover:text-neutral-200"
-                            }`}
-                          >
-                            本日の診療 ({todayQueue.length})
-                          </button>
-                          <button
-                            onClick={() => setSidebarTab("history")}
-                            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                              sidebarTab === "history"
-                                ? "bg-teal-600 text-white shadow-lg shadow-teal-950/50"
-                                : "text-neutral-400 hover:text-neutral-200"
-                            }`}
-                          >
-                            過去のカルテ
-                          </button>
-                        </div>
-                      </div>
+              </div>
 
-                      {/* Content Area */}
-                      {sidebarTab === "today" ? (
-                        <div className="flex-1 flex flex-col overflow-hidden p-3">
-                          {/* Add Patient UI */}
-                          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-3 mb-3 space-y-2">
-                            <div className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">患者を本日の予定に追加</div>
-                            <div className="flex gap-1.5">
-                              <input 
-                                type="text" 
-                                value={inputPatientId}
-                                onChange={e => setInputPatientId(e.target.value)}
-                                placeholder="ID"
-                                className="w-16 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-teal-500"
-                              />
-                              <input 
-                                type="text" 
-                                value={inputPatientName}
-                                onChange={e => setInputPatientName(e.target.value)}
-                                placeholder="苗字 (カタカナ自動)"
-                                className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-teal-500"
-                              />
-                              <button 
-                                onClick={() => handleAddTodayPatient(inputPatientId, inputPatientName)}
-                                className="p-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors flex-shrink-0 active:scale-95"
-                                title="追加"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
+              {/* Warning Banner inside the panel */}
+              {(isPublicWeb || !isFSApiSupported) && (
+                <div className="p-3.5 bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-400/90 leading-relaxed font-medium">
+                    {isPublicWeb ? (
+                      <span>クラウドWeb版のためPCフォルダへの直接保存は行えません。カルテの「コピー」または「ダウンロード」を利用してください。</span>
+                    ) : (
+                      <span>この端末はフォルダ選択非対応です。カルテ保存時はPC親機に自動転送・保存されます。</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                          {/* Queue List */}
-                          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
-                            {(() => {
-                              const sortedQueue = [...todayQueue].sort((a, b) => {
-                                if (a.completed === b.completed) {
-                                  return a.addedAt - b.addedAt;
-                                }
-                                return a.completed ? 1 : -1;
-                              });
-
-                              if (sortedQueue.length === 0) {
-                                return (
-                                  <div className="text-center text-xs text-neutral-500 py-10 border border-dashed border-neutral-800 rounded-2xl">
-                                    診療予定はありません
-                                  </div>
-                                );
-                              }
-
-                              return sortedQueue.map(p => {
-                                const isCurrent = wirelessPatientId === p.id || patientInfo === p.name || patientInfo.startsWith(p.id);
-                                return (
-                                  <div
-                                    key={p.id}
-                                    className={`flex items-center justify-between p-3 rounded-xl transition-all border ${
-                                      isCurrent 
-                                        ? "bg-teal-500/10 border-teal-500/30 text-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.1)]" 
-                                        : p.completed 
-                                          ? "bg-neutral-950/20 border-transparent text-neutral-500 opacity-40" 
-                                          : "bg-neutral-900/40 border-transparent text-neutral-300 hover:bg-neutral-800"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                      {/* Circle Toggle Checkbox */}
-                                      <button 
-                                        onClick={() => handleToggleTodayPatientComplete(p.id)}
-                                        className="flex-shrink-0 focus:outline-none transition-transform active:scale-90"
-                                      >
-                                        {p.completed ? (
-                                          <CheckCircle2 className="w-5 h-5 text-teal-500 fill-teal-500/10" />
-                                        ) : (
-                                          <div className="w-5 h-5 rounded-full border-2 border-neutral-600 hover:border-teal-500 transition-colors" />
-                                        )}
-                                      </button>
-                                      
-                                      <div className="min-w-0 flex-1">
-                                        <div className={`text-[10px] text-neutral-500 font-mono leading-none ${p.completed ? 'line-through' : ''}`}>
-                                          ID: {p.id}
-                                        </div>
-                                        <div className={`text-sm font-bold truncate leading-snug ${p.completed ? 'line-through' : ''}`}>
-                                          {p.name.includes('_') ? p.name.split('_')[1] : p.name}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                      {!p.completed ? (
-                                        <button
-                                          onClick={() => handleSelectTodayPatient(p)}
-                                          className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                                            isCurrent
-                                              ? "bg-teal-500 text-neutral-950 shadow-md scale-95"
-                                              : "bg-neutral-800 hover:bg-teal-600 hover:text-white"
-                                          }`}
-                                        >
-                                          {isCurrent ? "診療中" : "開始"}
-                                        </button>
-                                      ) : (
-                                        <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 text-[9px] text-neutral-600 font-bold rounded">
-                                          記載済
-                                        </span>
-                                      )}
-                                      
-                                      <button
-                                        onClick={() => handleDeleteTodayPatient(p.id)}
-                                        className="p-1 hover:text-red-400 text-neutral-600 transition-colors"
-                                        title="予定から削除"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                          <div className="p-3 border-b border-neutral-800">
-                            <div className="relative">
-                              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                              <input 
-                                type="text" 
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="患者名やIDで検索..."
-                                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-9 pr-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-teal-500"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 overflow-y-auto p-2 space-y-1 pr-1 scrollbar-thin">
-                            {filteredPatients.length === 0 ? (
-                              <div className="text-center text-sm text-neutral-500 mt-10">患者が見つかりません</div>
-                            ) : (
-                              filteredPatients.map(p => (
-                                <button
-                                  key={p}
-                                  onClick={() => selectPatient(p)}
-                                  className={`w-full text-left px-4 py-3 rounded-xl transition-colors mb-1 ${
-                                    selectedPatient === p ? "bg-teal-500/20 text-teal-300" : "text-neutral-300 hover:bg-neutral-800"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <User className="w-4 h-4 opacity-70" />
-                                    <span className="truncate text-xs font-medium">{p}</span>
-                                  </div>
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Content: Patient History */}
-                    <div className={`flex-1 bg-neutral-900/30 flex-col ${!showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
-                      {!selectedPatient ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 p-8 text-center">
-                          <User className="w-16 h-16 opacity-20 mb-4" />
-                          <p>リストから患者を選択してください</p>
-                        </div>
-                      ) : isSearching ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-neutral-500">
-                          <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-4" />
-                          <p>カルテ履歴を読み込み中...</p>
-                        </div>
-                      ) : (
-                        <div className="flex-1 overflow-y-auto relative">
-                          <div className="sticky top-0 bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800 px-6 py-4 md:px-8 md:py-6 z-10">
-                            <button 
-                              onClick={() => setShowMobileDetail(false)} 
-                              className="md:hidden flex items-center gap-1 text-teal-400 font-bold mb-4 py-1 px-2 -ml-2 rounded-lg hover:bg-teal-900/30 active:bg-teal-900/50 transition-colors"
-                            >
-                              <ChevronLeft className="w-5 h-5" /> 戻る
-                            </button>
-                            <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
-                              <User className="w-6 h-6 text-teal-500" />
-                              {selectedPatient}
-                            </h2>
-                            <p className="text-sm text-neutral-400 mt-1">{patientHistory.length} 件の診療記録</p>
-                          </div>
-                          
-                          <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
-                            {patientHistory.length === 0 ? (
-                              <div className="text-center text-neutral-500 py-10 bg-neutral-900 rounded-2xl border border-neutral-800 border-dashed">
-                                診療記録が見つかりません
-                              </div>
-                            ) : (
-                              <div className="relative border-l-2 border-neutral-800 ml-4 space-y-12 pb-24 md:pb-12">
-                                {patientHistory.map((record, idx) => (
-                                  <div key={idx} className="relative pl-6 md:pl-8">
-                                    {/* Timeline Dot */}
-                                    <div className="absolute w-4 h-4 bg-teal-500 rounded-full -left-[9px] top-1 ring-4 ring-neutral-950" />
-                                    
-                                    <div className="flex items-center gap-2 mb-4">
-                                      <Clock className="w-4 h-4 text-teal-500" />
-                                      <h3 className="text-lg font-bold text-teal-400">{record.date}</h3>
-                                    </div>
-                                    
-                                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 md:p-6 shadow-xl relative group">
-                                      <pre className="whitespace-pre-wrap font-mono text-sm text-neutral-300 leading-relaxed font-medium">
-                                        {record.soap}
-                                      </pre>
-                                      
-                                      {appendingChart === record.filename ? (
-                                        <div className="mt-6 pt-6 border-t border-neutral-800">
-                                          <div className="mb-3 flex flex-col md:flex-row md:items-center gap-3 md:gap-2">
-                                            <div className="flex items-center gap-2">
-                                              <User className="w-4 h-4 text-teal-500" />
-                                              <input 
-                                                type="text" 
-                                                value={staffName}
-                                                onChange={e => setStaffName(e.target.value)}
-                                                placeholder="担当スタッフ名"
-                                                className="bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white focus:border-teal-500 outline-none w-full md:w-48"
-                                              />
-                                            </div>
-                                          </div>
-                                          <textarea
-                                            value={appendContent}
-                                            onChange={e => setAppendContent(e.target.value)}
-                                            placeholder="※追記内容を入力してください。元の記録は上書きされず、末尾に追記されます。"
-                                            className="w-full h-24 bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-sm text-white focus:border-teal-500 outline-none resize-none mb-3 font-mono leading-relaxed"
-                                          />
-                                          <div className="flex flex-col-reverse md:flex-row gap-2 justify-end">
-                                            <button 
-                                              onClick={() => setAppendingChart(null)}
-                                              className="px-4 py-3 md:py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors font-bold"
-                                            >
-                                              キャンセル
-                                            </button>
-                                            <button 
-                                              onClick={() => record.filename && handleAppendSave(record.filename)}
-                                              className="px-6 py-3 md:py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                                            >
-                                              <Save className="w-4 h-4" /> 追記を保存
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <button 
-                                          onClick={() => {
-                                            setAppendingChart(record.filename || null);
-                                            setAppendContent("");
-                                          }}
-                                          className="mt-4 md:absolute md:top-4 md:right-4 md:mt-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-neutral-800 hover:bg-neutral-700 text-neutral-300 w-full md:w-auto px-4 py-3 md:px-3 md:py-1.5 rounded-xl md:rounded-lg text-sm md:text-xs font-bold md:font-medium flex items-center justify-center gap-2 border border-neutral-700"
-                                        >
-                                          <FileText className="w-4 h-4 md:w-3 md:h-3" /> 追記する
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+              {/* Central Premium Card */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-5 md:p-6 shadow-2xl space-y-6">
+                
+                {/* Add Patient Section */}
+                <div className="bg-black/30 border border-neutral-800/80 rounded-2xl p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">患者を本日の予定に追加</span>
+                    <div>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isParsingImage}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500/10 border border-teal-500/20 hover:bg-teal-500/20 text-teal-400 rounded-xl transition-all font-bold text-[10px] disabled:opacity-50 disabled:pointer-events-none active:scale-95 shadow-inner"
+                      >
+                        {isParsingImage ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin text-teal-400" />
+                            <span>解析中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-3 h-3" />
+                            <span>画像から登録</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                </>
-              )}
+                  
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={inputPatientId}
+                      onChange={e => setInputPatientId(e.target.value)}
+                      placeholder="ID"
+                      className="w-20 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-neutral-200 outline-none focus:border-teal-500 transition-colors"
+                    />
+                    <input 
+                      type="text" 
+                      value={inputPatientName}
+                      onChange={e => setInputPatientName(e.target.value)}
+                      placeholder="苗字 (カタカナに自動変換)"
+                      className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-neutral-200 outline-none focus:border-teal-500 transition-colors"
+                    />
+                    <button 
+                      onClick={() => handleAddTodayPatient(inputPatientId, inputPatientName)}
+                      className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl transition-all flex items-center justify-center flex-shrink-0 active:scale-95 font-bold text-xs"
+                      title="追加"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      追加
+                    </button>
+                  </div>
+                </div>
+
+                {/* Patient List Queue */}
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+                  {(() => {
+                    const sortedQueue = [...todayQueue].sort((a, b) => {
+                      if (a.completed === b.completed) {
+                        return a.addedAt - b.addedAt;
+                      }
+                      return a.completed ? 1 : -1;
+                    });
+
+                    if (sortedQueue.length === 0) {
+                      return (
+                        <div className="text-center text-neutral-500 py-12 border border-dashed border-neutral-800 rounded-2xl bg-neutral-950/20">
+                          <User className="w-8 h-8 text-neutral-600 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">診療予定の患者が登録されていません</p>
+                        </div>
+                      );
+                    }
+
+                    return sortedQueue.map(p => {
+                      const isCurrent = wirelessPatientId === p.id || patientInfo === p.name || patientInfo.startsWith(p.id);
+                      return (
+                        <div
+                          key={p.id}
+                          className={`flex items-center justify-between p-3.5 rounded-2xl transition-all border ${
+                            isCurrent 
+                              ? "bg-teal-500/10 border-teal-500/30 text-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.08)]" 
+                              : p.completed 
+                                ? "bg-neutral-950/20 border-transparent text-neutral-500 opacity-40" 
+                                : "bg-neutral-900/40 border-neutral-800/50 text-neutral-300 hover:bg-neutral-800"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Circle Toggle Checkbox */}
+                            <button 
+                              onClick={() => handleToggleTodayPatientComplete(p.id)}
+                              className="flex-shrink-0 focus:outline-none transition-transform active:scale-90"
+                            >
+                              {p.completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-teal-500 fill-teal-500/10" />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border-2 border-neutral-600 hover:border-teal-500 transition-colors" />
+                              )}
+                            </button>
+                            
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-[10px] text-neutral-500 font-mono leading-none ${p.completed ? 'line-through' : ''}`}>
+                                ID: {p.id}
+                              </div>
+                              <div className={`text-sm font-bold truncate leading-snug ${p.completed ? 'line-through' : ''}`}>
+                                {p.name.includes('_') ? p.name.split('_')[1] : p.name}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {!p.completed ? (
+                              <button
+                                onClick={() => handleSelectTodayPatient(p)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                  isCurrent
+                                    ? "bg-teal-500 text-neutral-950 shadow-md scale-95"
+                                    : "bg-neutral-800 hover:bg-teal-600 hover:text-white"
+                                }`}
+                              >
+                                {isCurrent ? "診療中" : "開始"}
+                              </button>
+                            ) : (
+                              <span className="px-3.5 py-1.5 bg-neutral-900 border border-neutral-800 text-[10px] text-neutral-600 font-bold rounded-xl">
+                                記載済
+                              </span>
+                            )}
+                            
+                            <button
+                              onClick={() => handleDeleteTodayPatient(p.id)}
+                              className="p-2 hover:text-red-400 text-neutral-600 hover:bg-red-500/10 rounded-xl transition-colors"
+                              title="予定から削除"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
             </div>
           )}
 
@@ -2085,7 +2140,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.3.0 (App)
+                  v1.3.5 (App)
                 </div>
               </div>
 
@@ -2145,6 +2200,74 @@ export default function Home() {
                         placeholder="例: C:\Users\Username\Desktop\OralNote_Data"
                         className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
                       />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Network Settings (iPad sync IP) */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-teal-500" />
+                  iPad連携用 ネットワーク設定
+                </h3>
+                
+                <div className="space-y-4">
+                  {isIpRestartNeeded && (
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong>IPアドレスの設定を変更しました。</strong><br />
+                        変更内容を通信サーバーに反映させるには、一度アプリを完全に終了して再起動してください。
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">接続用IPアドレス</div>
+                      <div className="text-xs md:text-sm text-neutral-400">
+                        通常は自動検出で動作しますが、PCに複数のネットワーク（VPN、仮想マシンなど）がある場合は、iPadが接続可能なIPを手動で選択または入力してください。
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 w-full md:w-auto flex flex-col gap-2">
+                      <select
+                        value={customIP}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomIP(val);
+                          saveClinicSettings({ customIP: val });
+                          setIsIpRestartNeeded(true);
+                        }}
+                        className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
+                      >
+                        <option value="">自動検出 (推奨)</option>
+                        {allIps.map((ip) => (
+                          <option key={ip.address} value={ip.address}>
+                            {ip.address} ({ip.name})
+                          </option>
+                        ))}
+                        {customIP && !allIps.some(ip => ip.address === customIP) && (
+                          <option value={customIP}>{customIP} (手動入力値)</option>
+                        )}
+                      </select>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={customIP}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCustomIP(val);
+                          }}
+                          onBlur={() => {
+                            saveClinicSettings({ customIP });
+                            setIsIpRestartNeeded(true);
+                          }}
+                          placeholder="または手動でIPアドレスを入力..."
+                          className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-xs text-white outline-none transition-colors"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2312,7 +2435,7 @@ export default function Home() {
               <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
                 <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-500" />
-                  ユーザー・クリニック情報
+                  ユーザー設定
                 </h3>
                 
                 <div className="space-y-4">
@@ -2337,6 +2460,248 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {/* Clinic Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                    <Presentation className="w-5 h-5 text-teal-500" />
+                    クリニック基本設定
+                  </h3>
+                  <button 
+                    onClick={handleSaveClinic}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-md ${
+                      clinicSaved 
+                        ? "bg-emerald-600 text-white" 
+                        : "bg-teal-600 hover:bg-teal-500 text-white"
+                    }`}
+                  >
+                    {clinicSaved ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                        保存しました！
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        設定を保存
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">クリニック名</div>
+                      <div className="text-xs md:text-sm text-neutral-400">技工指示書の作成やメールの送信元として使われます。</div>
+                    </div>
+                    <div className="flex-shrink-0 w-full md:w-auto">
+                      <input 
+                        type="text" 
+                        value={clinicName}
+                        onChange={(e) => setClinicName(e.target.value)}
+                        onBlur={() => saveClinicSettings({ name: clinicName })}
+                        placeholder="例: ○○歯科クリニック"
+                        className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex-1">
+                      <div className="font-semibold text-neutral-200 mb-1">医院控え・返信用CCメールアドレス</div>
+                      <div className="text-xs md:text-sm text-neutral-400">送信された技工指示書の控え（送信控え）や、返信先の指定に使用されます。</div>
+                    </div>
+                    <div className="flex-shrink-0 w-full md:w-auto">
+                      <input 
+                        type="email" 
+                        value={clinicEmail}
+                        onChange={(e) => setClinicEmail(e.target.value)}
+                        onBlur={() => saveClinicSettings({ email: clinicEmail })}
+                        placeholder="clinic@example.com"
+                        className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tag Keywords Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Clipboard className="w-5 h-5 text-emerald-500" />
+                  自動挿入タグ用キーワード
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="mb-4">
+                      <div className="font-semibold text-neutral-200 mb-1">ハッシュタグ自動生成キーワード</div>
+                      <div className="text-xs md:text-sm text-neutral-400">
+                        音声文字起こし内にこれらのキーワード（例:「写真撮影」「インプラント」）が含まれていた場合のみ、カルテMarkdownの末尾に自動的にタグ（例: `#写真撮影`）を出力します。不要な自動タグの出力を抑止します。
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mb-4">
+                      <input 
+                        type="text" 
+                        value={newKeywordInput}
+                        onChange={(e) => setNewKeywordInput(e.target.value)}
+                        placeholder="例: 写真撮影"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-emerald-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (!newKeywordInput.trim()) return;
+                            const updated = [...tagKeywords, newKeywordInput.trim()];
+                            setTagKeywords(updated);
+                            saveClinicSettings({ tagKeywords: updated });
+                            setNewKeywordInput("");
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          if (!newKeywordInput.trim()) return;
+                          const updated = [...tagKeywords, newKeywordInput.trim()];
+                          setTagKeywords(updated);
+                          saveClinicSettings({ tagKeywords: updated });
+                          setNewKeywordInput("");
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" /> 追加
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {tagKeywords.length === 0 ? (
+                        <div className="text-neutral-500 text-xs py-2 w-full text-center">登録されているキーワードはありません</div>
+                      ) : (
+                        tagKeywords.map((kw, idx) => (
+                          <span key={idx} className="flex items-center gap-1 bg-neutral-800 border border-neutral-700 text-neutral-200 px-3 py-1 rounded-full text-xs">
+                            #{kw}
+                            <button 
+                              onClick={() => {
+                                const updated = tagKeywords.filter((_, i) => i !== idx);
+                                setTagKeywords(updated);
+                                saveClinicSettings({ tagKeywords: updated });
+                              }}
+                              className="text-neutral-400 hover:text-red-400 transition-colors ml-1 text-[10px] font-bold"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preset Labs Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-amber-500" />
+                  登録済み技工所一覧
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="mb-4">
+                      <div className="font-semibold text-neutral-200 mb-1">発注先技工所</div>
+                      <div className="text-xs md:text-sm text-neutral-400">
+                        技工指示書を送信する発注先メールアドレスと技工所名を事前に登録できます。
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-2 mb-4">
+                      <input 
+                        type="text" 
+                        value={newLabName}
+                        onChange={(e) => setNewLabName(e.target.value)}
+                        placeholder="技工所名"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
+                      />
+                      <input 
+                        type="email" 
+                        value={newLabEmail}
+                        onChange={(e) => setNewLabEmail(e.target.value)}
+                        placeholder="メールアドレス"
+                        className="flex-1 bg-neutral-950 border border-neutral-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-white outline-none"
+                      />
+                      <button 
+                        onClick={() => {
+                          if (!newLabName.trim() || !newLabEmail.trim()) return;
+                          const updated = [...presetLabs, { name: newLabName.trim(), email: newLabEmail.trim() }];
+                          setPresetLabs(updated);
+                          saveLabsSettings(updated);
+                          setNewLabName("");
+                          setNewLabEmail("");
+                        }}
+                        className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" /> 追加
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {presetLabs.length === 0 ? (
+                        <div className="text-neutral-500 text-xs py-4 text-center border border-dashed border-neutral-800 rounded-xl">登録されている技工所はありません</div>
+                      ) : (
+                        presetLabs.map((lab, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-neutral-800/40 p-3 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-colors">
+                            <div>
+                              <span className="text-white font-bold text-sm block">{lab.name}</span>
+                              <span className="text-neutral-400 text-xs">{lab.email}</span>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                const updated = presetLabs.filter((_, i) => i !== idx);
+                                setPresetLabs(updated);
+                                saveLabsSettings(updated);
+                              }}
+                              className="p-2 text-neutral-500 hover:text-red-400 transition-colors"
+                              title="削除"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Application Cleanup Settings */}
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                  アプリケーションのクリーンアップ・初期化
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="mb-4">
+                      <div className="font-semibold text-neutral-200 mb-1">アプリの初期化 (クリーンリインストール準備)</div>
+                      <div className="text-xs md:text-sm text-neutral-400 leading-relaxed">
+                        アプリが正常に動作しない場合や、アンインストールする前に実行します。この機能は、アプリのキャッシュファイル、環境設定、自動アップデートの一時データ、およびOSのレジストリ設定を安全にクリーンアップします。<br />
+                        <span className="text-emerald-400 font-bold">※デスクトップにある「OralNote_Data」フォルダ（カルテや画像データ）は安全に保護され、削除されません。</span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={handleCleanupApp}
+                      className="bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 px-5 rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 active:scale-95 text-xs"
+                    >
+                      <Trash2 className="w-4 h-4" /> アプリを初期化する
+                    </button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 

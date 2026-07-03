@@ -19,4 +19,4 @@ if %errorlevel% neq 0 (
 cd /d "%~dp0"
 
 :: PowerShell スクリプトを実行
-powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\cleanup-oralnote.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\cleanup-oralnote.ps1"

@@ -42,24 +42,51 @@ export async function POST(req: Request) {
       patientFolder = filename.replace(".md", "");
     }
 
-    // 保存先フォルダの特定
-    const basePatientsDir = vaultPath 
-      ? path.join(vaultPath, 'Patients')
-      : path.join(homedir, 'Desktop', 'OralNote_Data', 'Patients');
+    const baseDir = vaultPath || path.join(homedir, 'Desktop', 'OralNote_Data');
+    const karteDir = path.join(baseDir, 'カルテ');
 
-    const patientDir = path.join(basePatientsDir, patientFolder);
-
-    // フォルダが存在しない場合は作成
-    if (!fs.existsSync(patientDir)) {
-      fs.mkdirSync(patientDir, { recursive: true });
+    if (!fs.existsSync(karteDir)) {
+      fs.mkdirSync(karteDir, { recursive: true });
     }
 
     // セキュリティ対策: パストラバーサルを防ぐため、basename のみを使用
     const safeFilename = path.basename(filename);
-    const filePath = path.join(patientDir, safeFilename);
+    const filePath = path.join(karteDir, safeFilename);
 
-    // ファイルに書き込む
+    // 1. カルテファイルの保存
     fs.writeFileSync(filePath, content, 'utf8');
+
+    // 2. ファイル名から患者名を抽出 (例: カルテ_1234_ヤマダ_260524.md -> 1234_ヤマダ)
+    let patientInfo = "不明";
+    if (safeFilename.startsWith("カルテ_")) {
+      const parts = safeFilename.replace(".md", "").split("_");
+      if (parts.length >= 3) {
+        patientInfo = `${parts[1]}_${parts[2]}`;
+      } else if (parts.length === 2) {
+        patientInfo = parts[1];
+      }
+    } else {
+      patientInfo = safeFilename.replace(".md", "");
+    }
+
+    // 3. 患者ページの更新または作成 (MyVault/[患者名].md)
+    const patientFilename = `${patientInfo}.md`;
+    const patientFilePath = path.join(baseDir, patientFilename);
+    let patientContent = "";
+    
+    if (fs.existsSync(patientFilePath)) {
+      patientContent = fs.readFileSync(patientFilePath, 'utf8');
+    }
+
+    const chartNameWithoutExt = safeFilename.replace('.md', '');
+    let newPatientContent = "";
+    if (patientContent) {
+      newPatientContent = patientContent.trimEnd() + `\n- ${chartNameWithoutExt}`;
+    } else {
+      newPatientContent = `# ${patientInfo}\n\n## 診療記録\n- ${chartNameWithoutExt}`;
+    }
+
+    fs.writeFileSync(patientFilePath, newPatientContent, 'utf8');
 
     return NextResponse.json({ success: true, filePath });
   } catch (error: any) {

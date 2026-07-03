@@ -1,11 +1,12 @@
 {
   "name": "dental-os-prototype",
-  "version": "1.3.0",
+  "version": "1.3.5",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev",
-    "dev:all": "concurrently \"npm run dev\" \"node src/server/watcher.js\"",
+    "dev": "next dev -H 0.0.0.0",
+    "dev:all": "concurrently \"next dev -H 0.0.0.0\" \"node src/server/watcher.js\"",
     "dev:electron": "next build && node scripts/build-electron.js && cross-env NODE_ENV=development electron .",
+    "clean": "node scripts/clean.js",
     "build": "next build",
     "build:win": "cross-env NEXT_PUBLIC_APP_MODE=local next build && node scripts/build-electron.js && electron-builder --win",
     "build:mac": "cross-env NEXT_PUBLIC_APP_MODE=local next build && node scripts/build-electron.js && electron-builder --mac",
@@ -20,7 +21,7 @@
       "output": "dist"
     },
     "files": [
-      "electron/main.js",
+      "electron/**/*",
       "package.json",
       ".next/standalone/**/*",
       "src/server/**/*"
@@ -36,6 +37,7 @@
       }
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -58,6 +60,7 @@
       ]
     },
     "mac": {
+      "icon": "build/icon.icns",
       "target": [
         "dmg"
       ],

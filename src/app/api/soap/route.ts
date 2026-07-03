@@ -41,12 +41,7 @@ N）：〜〜〜
   "markdown": "カルテ（または治療計画）の本文。見出し（# など）は書かず、いきなり項目名から書き始めること。末尾にタグを入れること。"
 }
 
-**タグのルール（※Obsidianの[[リンク]]機能は一切使用せず、すべてハッシュタグにしてください）:**
-- #患者のカタカナ苗字のみ (例: #ヤマダ。漢字のフルネームや本名はプライバシー保護のため一切使用・記載しないでください)
-- #患者ID (例: #C1000)
-- #疾患名
-- #処置名
-- #部位
+__TAG_RULES_PLACEHOLDER__
 
 以下の音声をカルテ化してください（本日の日付YYMMDDは、指示がなくても今日の日付を使用）：
 
@@ -54,7 +49,7 @@ N）：〜〜〜
 
 export async function POST(request: Request) {
   try {
-    const { text, customTerms, outputLength, patientName } = await request.json();
+    const { text, customTerms, outputLength, patientName, tagKeywords } = await request.json();
 
     if (!text) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 });
@@ -63,7 +58,16 @@ export async function POST(request: Request) {
     const now = new Date();
     const dateStr = now.toISOString().split("T")[0].replace(/-/g, "").substring(2);
 
-    let systemContent = DENTAL_SOAP_PROMPT + `\n【本日の日付】: ${dateStr}`;
+    const keywords = (tagKeywords && Array.isArray(tagKeywords))
+      ? tagKeywords
+      : ["写真撮影", "動画撮影", "矯正", "インプラント"];
+
+    const tagRules = `**タグのルール（※Obsidianの[[リンク]]機能は一切使用せず、すべてハッシュタグにしてください）:**
+1. 患者名、患者ID、疾患名、処置名、部位などのハッシュタグは一切出力「しないで」ください。
+2. 入力された音声テキスト内に、以下のキーワードリストのいずれかが明確に含まれている場合のみ、そのキーワードをそのままハッシュタグ（例：#動画撮影）としてMarkdown本文の最後の行に半角スペース区切りで出力してください。それ以外のハッシュタグは一切出力しないでください。
+キーワードリスト：[ ${keywords.map(k => `「${k}」`).join(', ')} ]`;
+
+    let systemContent = DENTAL_SOAP_PROMPT.replace('__TAG_RULES_PLACEHOLDER__', tagRules) + `\n【本日の日付】: ${dateStr}`;
     
     if (patientName && patientName !== "不明") {
       systemContent += `\n\n【対象の患者情報】: ${patientName}\nこの音声テキストは、現在診療中の患者「${patientName}」に関するものです。音声の中に患者名が明示されていなくても、この患者の治療記録としてカルテを生成してください。出力結果のJSONの "patientId" や "patientNameKana" フィールドには、可能であればこの提供された患者情報を分析・パースして設定してください。`;

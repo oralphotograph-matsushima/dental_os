@@ -6,7 +6,49 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+function getDesktopPath() {
+  const homedir = os.homedir();
+  if (process.platform === 'win32') {
+    const pathsToCheck = [
+      path.join(homedir, 'OneDrive', 'Desktop'),
+      path.join(homedir, 'OneDrive', 'デスクトップ'),
+      path.join(homedir, 'Desktop')
+    ];
+    for (const p of pathsToCheck) {
+      if (fs.existsSync(p)) {
+        return p;
+      }
+    }
+  }
+  return path.join(homedir, 'Desktop');
+}
+
+function getDefaultSettingsDir() {
+  const desktop = getDesktopPath();
+  const defaultDir = path.join(desktop, 'OralNote_Data', 'Settings');
+  if (!fs.existsSync(defaultDir)) {
+    fs.mkdirSync(defaultDir, { recursive: true });
+  }
+  return defaultDir;
+}
+
 function getLocalIpAddress() {
+  // まず clinic.json から手動IP設定があるかチェックする
+  const defaultDir = getDefaultSettingsDir();
+  const settingsFilePath = path.join(defaultDir, 'clinic.json');
+  if (fs.existsSync(settingsFilePath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      if (config && config.customIP) {
+        console.log(`[Watcher] 🌐 Using custom IP from clinic.json: ${config.customIP}`);
+        return config.customIP;
+      }
+    } catch (e) {
+      console.error('[Watcher] Failed to parse clinic.json for customIP:', e);
+    }
+  }
+
+  // なければ自動検出
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
@@ -28,18 +70,53 @@ app.use(express.json());
 // ==========================================
 let activePatientId = null;
 
-// ==========================================
-// 2. ディレクトリ設定 (Directories)
-// ==========================================
-const homedir = require('os').homedir();
-const STAGING_DIR = path.join(homedir, 'Desktop', 'EOS_Utility_Photos');
-const BASE_DATA_DIR = path.join(homedir, 'Desktop', 'OralNote_Data');
-const PATIENTS_DIR = path.join(BASE_DATA_DIR, 'Patients');
-const UNASSIGNED_DIR = path.join(BASE_DATA_DIR, 'Unassigned');
+const homedir = os.homedir();
+const STAGING_DIR = path.join(getDesktopPath(), 'EOS_Utility_Photos');
 
-[STAGING_DIR, PATIENTS_DIR, UNASSIGNED_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+function getVaultPath() {
+  const defaultDir = getDefaultSettingsDir();
+  const settingsFilePath = path.join(defaultDir, 'clinic.json');
+  if (fs.existsSync(settingsFilePath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
+      if (config && config.vaultPath) {
+        return config.vaultPath;
+      }
+    } catch (e) {
+      console.error('[Watcher] Failed to parse clinic.json for vaultPath:', e);
+    }
+  }
+  return '';
+}
+
+function getPatientsDir() {
+  const vaultPath = getVaultPath();
+  const dir = vaultPath 
+    ? path.join(vaultPath, 'Patients')
+    : path.join(getDesktopPath(), 'OralNote_Data', 'Patients');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+function getUnassignedDir() {
+  const vaultPath = getVaultPath();
+  const dir = vaultPath 
+    ? path.join(vaultPath, 'Unassigned')
+    : path.join(getDesktopPath(), 'OralNote_Data', 'Unassigned');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+// 初期化時に必要なディレクトリを作成
+if (!fs.existsSync(STAGING_DIR)) {
+  fs.mkdirSync(STAGING_DIR, { recursive: true });
+}
+getPatientsDir();
+getUnassignedDir();
 
 // SSE接続クライアントの管理
 let clients = [];
@@ -48,7 +125,9 @@ const sendToClients = (data) => {
 };
 
 // 画像フォルダをWeb経由で直接アクセスできるようにする
-app.use('/images', express.static(PATIENTS_DIR));
+app.use('/images', (req, res, next) => {
+  express.static(getPatientsDir())(req, res, next);
+});
 
 // ==========================================
 // 3. APIサーバー (Express - iPad等からの操作用)
@@ -63,7 +142,7 @@ app.post('/api/patient', (req, res) => {
   console.log(`[API] 🧑‍⚕️ Active patient set to: ${activePatientId || 'None'}`);
   
   if (activePatientId) {
-    const targetDir = path.join(PATIENTS_DIR, activePatientId);
+    const targetDir = path.join(getPatientsDir(), activePatientId);
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
       console.log(`[API] ✅ Created directory: ${targetDir}`);
@@ -74,7 +153,7 @@ app.post('/api/patient', (req, res) => {
 });
 
 app.get('/api/patients/:id/images', (req, res) => {
-  const patientDir = path.join(PATIENTS_DIR, req.params.id);
+  const patientDir = path.join(getPatientsDir(), req.params.id);
   if (!fs.existsSync(patientDir)) {
     return res.json({ images: [] });
   }
@@ -144,9 +223,9 @@ watcher.on('add', (filePath) => {
   let targetDir;
 
   if (activePatientId) {
-    targetDir = path.join(PATIENTS_DIR, activePatientId);
+    targetDir = path.join(getPatientsDir(), activePatientId);
   } else {
-    targetDir = UNASSIGNED_DIR;
+    targetDir = getUnassignedDir();
     console.log(`[Watcher] ⚠️ No active patient. Routing to unassigned.`);
   }
 

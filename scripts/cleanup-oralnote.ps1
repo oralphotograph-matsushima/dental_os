@@ -9,7 +9,7 @@ Write-Host ""
 
 # 1. 競合プロセスの強制終了
 Write-Host "[1/3] 競合するバックグラウンドプロセスを終了しています..." -ForegroundColor Yellow
-$processes = @("OralNote", "node", "EOS Utility", "EOS Utility 3", "EOSWebService", "Wireless Transmitter Utility")
+$processes = @("OralNote", "EOS Utility", "EOS Utility 3", "EOSWebService", "Wireless Transmitter Utility")
 foreach ($proc in $processes) {
     try {
         Stop-Process -Name $proc -Force -ErrorAction SilentlyContinue
@@ -56,10 +56,26 @@ foreach ($target in $targets) {
 }
 
 # ショートカットのクリーンアップ
-$desktopLnk = Join-Path ([Environment]::GetFolderPath("Desktop")) "OralNote.lnk"
-if (Test-Path $desktopLnk) {
-    Remove-Item $desktopLnk -Force -ErrorAction SilentlyContinue
-    Write-Host "  デスクトップショートカット削除: $desktopLnk" -ForegroundColor Green
+$desktopLocations = @(
+    [Environment]::GetFolderPath("Desktop"),
+    "C:\Users\Public\Desktop",
+    (Join-Path $env:USERPROFILE "Desktop"),
+    (Join-Path $env:USERPROFILE "OneDrive\Desktop")
+)
+if (Test-Path $env:USERPROFILE) {
+    Get-ChildItem -Path $env:USERPROFILE -Filter "OneDrive*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $desktopLocations += Join-Path $_.FullName "Desktop"
+    }
+}
+
+foreach ($dir in ($desktopLocations | Select-Object -Unique)) {
+    if ($dir -and (Test-Path $dir)) {
+        $lnk = Join-Path $dir "OralNote.lnk"
+        if (Test-Path $lnk) {
+            Remove-Item $lnk -Force -ErrorAction SilentlyContinue
+            Write-Host "  デスクトップショートカット削除: $lnk" -ForegroundColor Green
+        }
+    }
 }
 
 $startMenuLnk = Join-Path $appData "Microsoft\Windows\Start Menu\Programs\OralNote.lnk"
@@ -105,12 +121,31 @@ foreach ($regPath in $registryPaths) {
 # 4. 大切なデータの保護確認
 Write-Host ""
 Write-Host "重要な臨床データの保護状況を確認しています..." -ForegroundColor Yellow
-$patientDataPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "OralNote_Data"
-if (Test-Path $patientDataPath) {
-    Write-Host "  ✅ 検出成功: $patientDataPath" -ForegroundColor Green
+
+$patientDataFound = $false
+$patientDataLocations = @(
+    (Join-Path ([Environment]::GetFolderPath("Desktop")) "OralNote_Data"),
+    (Join-Path $env:USERPROFILE "Desktop\OralNote_Data"),
+    "C:\Users\Public\Desktop\OralNote_Data",
+    (Join-Path $env:USERPROFILE "OneDrive\Desktop\OralNote_Data")
+)
+if (Test-Path $env:USERPROFILE) {
+    Get-ChildItem -Path $env:USERPROFILE -Filter "OneDrive*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $patientDataLocations += Join-Path $_.FullName "Desktop\OralNote_Data"
+    }
+}
+
+foreach ($loc in ($patientDataLocations | Select-Object -Unique)) {
+    if ($loc -and (Test-Path $loc)) {
+        Write-Host "  ✅ 検出成功: $loc" -ForegroundColor Green
+        $patientDataFound = $true
+    }
+}
+
+if ($patientDataFound) {
     Write-Host "  🛡️ カルテおよび画像データは完全に保護されています。(削除されていません)" -ForegroundColor Green
 } else {
-    Write-Host "  ℹ️ フォルダなし: $patientDataPath (新規インストールと同等の状態です)" -ForegroundColor Gray
+    Write-Host "  ℹ️ 保存データフォルダは検出されませんでした。(新規インストールと同等の状態です)" -ForegroundColor Gray
 }
 
 Write-Host ""
