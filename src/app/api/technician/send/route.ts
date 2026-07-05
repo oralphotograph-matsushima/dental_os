@@ -86,7 +86,7 @@ ${shadeDetails || '特になし'}
 このメールにそのまま返信いただくと、システム経由で「${clinicName}」へメールが送信されます。
 （※宛先: ${clinicEmail || 'システム設定アドレス'}）
 
-※本メールはOralNoteシステムより自動送信されています。
+※本メールはWireless Connectシステムより自動送信されています。
       `,
       attachments: attachments,
     });

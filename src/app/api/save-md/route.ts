@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     // 1. clinic.json からカスタムパスを取得する
     const homedir = os.homedir();
-    const settingsFilePath = path.join(homedir, 'Desktop', 'OralNote_Data', 'Settings', 'clinic.json');
+    const settingsFilePath = path.join(homedir, 'Desktop', 'WirelessConnect_Data', 'Settings', 'clinic.json');
     let vaultPath = '';
     
     if (fs.existsSync(settingsFilePath)) {
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       patientFolder = filename.replace(".md", "");
     }
 
-    const baseDir = vaultPath || path.join(homedir, 'Desktop', 'OralNote_Data');
+    const baseDir = vaultPath || path.join(homedir, 'Desktop', 'WirelessConnect_Data');
     const karteDir = path.join(baseDir, 'カルテ');
 
     if (!fs.existsSync(karteDir)) {

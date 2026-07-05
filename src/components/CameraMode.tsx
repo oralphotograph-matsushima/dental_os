@@ -115,6 +115,14 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
           }
           return currentId;
         });
+      } else if (data.type === "REFRESH_IMAGES") {
+        // 画像を自動振り分けした後の再読み込み
+        setActivePatientId(currentId => {
+          if (currentId && data.patientId === currentId) {
+            fetchImages(currentId);
+          }
+          return currentId;
+        });
       }
     };
 
@@ -370,7 +378,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
               患者番号を指定して同期を開始
             </h2>
             <p className="text-xs text-neutral-400 mb-6 flex items-center gap-1.5 bg-black/40 p-2.5 rounded-lg border border-white/5 inline-flex">
-              <span className="text-teal-500 font-bold">📌 保存先:</span> PCのデスクトップ / OralNote_Data / Patients / [患者番号]
+              <span className="text-teal-500 font-bold">📌 保存先:</span> PCのデスクトップ / WirelessConnect_Data / Patients / [患者番号]
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">

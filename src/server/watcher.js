@@ -23,9 +23,26 @@ function getDesktopPath() {
   return path.join(homedir, 'Desktop');
 }
 
+function migrateDataDirectoryName() {
+  try {
+    const desktop = getDesktopPath();
+    const oldDir = path.join(desktop, 'OralNote_Data');
+    const newDir = path.join(desktop, 'WirelessConnect_Data');
+    if (fs.existsSync(oldDir) && !fs.existsSync(newDir)) {
+      console.log(`[Watcher Migration] Migrating folder from ${oldDir} to ${newDir}`);
+      fs.renameSync(oldDir, newDir);
+    }
+  } catch (e) {
+    console.error('[Watcher Migration] Failed to migrate folder:', e);
+  }
+}
+
+// 起動時に移行処理を自動実行
+migrateDataDirectoryName();
+
 function getDefaultSettingsDir() {
   const desktop = getDesktopPath();
-  const defaultDir = path.join(desktop, 'OralNote_Data', 'Settings');
+  const defaultDir = path.join(desktop, 'WirelessConnect_Data', 'Settings');
   if (!fs.existsSync(defaultDir)) {
     fs.mkdirSync(defaultDir, { recursive: true });
   }
@@ -93,7 +110,7 @@ function getPatientsDir() {
   const vaultPath = getVaultPath();
   const dir = vaultPath 
     ? path.join(vaultPath, 'Patients')
-    : path.join(getDesktopPath(), 'OralNote_Data', 'Patients');
+    : path.join(getDesktopPath(), 'WirelessConnect_Data', 'Patients');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -104,7 +121,7 @@ function getUnassignedDir() {
   const vaultPath = getVaultPath();
   const dir = vaultPath 
     ? path.join(vaultPath, 'Unassigned')
-    : path.join(getDesktopPath(), 'OralNote_Data', 'Unassigned');
+    : path.join(getDesktopPath(), 'WirelessConnect_Data', 'Unassigned');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -146,6 +163,45 @@ app.post('/api/patient', (req, res) => {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
       console.log(`[API] ✅ Created directory: ${targetDir}`);
+    }
+
+    // 【新機能】直近30分以内に転送された未分類画像をアクティブ患者フォルダに自動的に移動
+    try {
+      const unassignedDir = getUnassignedDir();
+      if (fs.existsSync(unassignedDir)) {
+        const files = fs.readdirSync(unassignedDir);
+        const now = Date.now();
+        const THRESHOLD = 5 * 60 * 1000; // 5分（ミリ秒）
+        let movedCount = 0;
+
+        for (const file of files) {
+          if (file.startsWith('.')) continue;
+          const srcPath = path.join(unassignedDir, file);
+          const destPath = path.join(targetDir, file);
+
+          try {
+            const stat = fs.statSync(srcPath);
+            if (stat.isFile()) {
+              // ファイルの最終更新日時（転送完了時刻）が30分以内であるか検証
+              if (now - stat.mtime.getTime() < THRESHOLD) {
+                fs.renameSync(srcPath, destPath);
+                movedCount++;
+                console.log(`[API] 🔄 Auto-routed recent unassigned file to patient: ${file}`);
+              }
+            }
+          } catch (fileErr) {
+            console.error(`[API] Failed to process file ${file} during auto-routing:`, fileErr);
+          }
+        }
+
+        if (movedCount > 0) {
+          console.log(`[API] ✅ Automatically moved ${movedCount} recent files to patient: ${activePatientId}`);
+          // SSEクライアントへ画像の更新通知を送信（ギャラリーを自動リロードさせる）
+          sendToClients({ type: 'REFRESH_IMAGES', patientId: activePatientId });
+        }
+      }
+    } catch (routeErr) {
+      console.error('[API] Failed to perform auto-routing for unassigned files:', routeErr);
     }
   }
   

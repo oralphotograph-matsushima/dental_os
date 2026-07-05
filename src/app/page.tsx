@@ -279,7 +279,7 @@ export default function Home() {
   };
 
   const handleCleanupApp = async () => {
-    if (!window.confirm("本当にアプリを初期化しますか？\n\nこの操作を実行すると、アプリの設定やキャッシュが消去され、アプリは自動的に終了します。次回起動時は初期設定から開始されます。\n（※デスクトップの OralNote_Data 内のカルテや画像データは安全に保護されます）")) {
+    if (!window.confirm("本当にアプリを初期化しますか？\n\nこの操作を実行すると、アプリの設定やキャッシュが消去され、アプリは自動的に終了します。次回起動時は初期設定から開始されます。\n（※デスクトップの WirelessConnect_Data 内のカルテや画像データは安全に保護されます）")) {
       return;
     }
     
@@ -1399,10 +1399,10 @@ export default function Home() {
                         ライセンスをお持ちでない新規の方・無料体験のご案内
                       </p>
                       <p className="text-[11px] text-neutral-400 leading-relaxed">
-                        OralNote デスクトップ版の新規ご利用・無料お試しをご希望の先生は、お手数ですが開発代表の松島まで直接ご連絡いただくか、以下よりお問い合わせください。
+                        Wireless Connect デスクトップ版の新規ご利用・無料お試しをご希望の先生は、お手数ですが開発代表の松島まで直接ご連絡いただくか、以下よりお問い合わせください。
                       </p>
                       <a
-                        href="mailto:order@nostalgista.co.jp?subject=OralNotePC版の利用申込みについて"
+                        href="mailto:order@nostalgista.co.jp?subject=WirelessConnectPC版の利用申込みについて"
                         className="inline-flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-300 font-bold bg-teal-500/10 px-3.5 py-2 rounded-xl border border-teal-500/20 transition-colors mt-1"
                       >
                         松島へ直接問い合わせる
@@ -1503,14 +1503,14 @@ export default function Home() {
       <nav className="hidden md:flex bg-neutral-900/60 backdrop-blur-xl border-b border-white/5 px-6 py-4 items-center justify-between z-10 shadow-2xl">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 mr-4">
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50 border border-teal-400/20">
-              <FileText className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-2 rounded-xl shadow-lg shadow-orange-950/50 border border-orange-400/20">
+              <Wifi className="w-5 h-5 text-white animate-pulse" />
             </div>
             <div className="flex items-baseline gap-2">
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
-                OralNote
+                Wireless Connect
               </h1>
-              <span className="text-[10px] text-teal-500/50 font-mono tracking-wider">v1.3.5 (App)</span>
+              <span className="text-[10px] text-orange-500/50 font-mono tracking-wider">v1.4.0 (App)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -2197,7 +2197,7 @@ export default function Home() {
                           setVaultPath(e.target.value);
                           saveVaultPath(e.target.value);
                         }}
-                        placeholder="例: C:\Users\Username\Desktop\OralNote_Data"
+                        placeholder="例: C:\Users\Username\Desktop\WirelessConnect_Data"
                         className="w-full md:w-80 bg-neutral-950 border border-neutral-700 focus:border-teal-500 rounded-xl md:rounded-lg px-4 py-3 md:py-2 text-sm text-white outline-none transition-colors"
                       />
                     </div>
@@ -2688,7 +2688,7 @@ export default function Home() {
                       <div className="font-semibold text-neutral-200 mb-1">アプリの初期化 (クリーンリインストール準備)</div>
                       <div className="text-xs md:text-sm text-neutral-400 leading-relaxed">
                         アプリが正常に動作しない場合や、アンインストールする前に実行します。この機能は、アプリのキャッシュファイル、環境設定、自動アップデートの一時データ、およびOSのレジストリ設定を安全にクリーンアップします。<br />
-                        <span className="text-emerald-400 font-bold">※デスクトップにある「OralNote_Data」フォルダ（カルテや画像データ）は安全に保護され、削除されません。</span>
+                        <span className="text-emerald-400 font-bold">※デスクトップにある「WirelessConnect_Data」フォルダ（カルテや画像データ）は安全に保護され、削除されません。</span>
                       </div>
                     </div>
 

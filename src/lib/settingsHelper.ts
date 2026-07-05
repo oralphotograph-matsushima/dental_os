@@ -3,6 +3,45 @@ import path from 'path';
 import os from 'os';
 
 /**
+ * 旧フォルダ名 OralNote_Data が存在し、新フォルダ名 WirelessConnect_Data が存在しない場合、
+ * 自動的にフォルダ名を変更（マイグレーション）してデータを引き継ぎます。
+ */
+export const migrateDataDirectoryName = () => {
+  try {
+    const homedir = os.homedir();
+    // デスクトップパスの特定ロジック（getDesktopPathのインライン展開）
+    let desktop = path.join(homedir, 'Desktop');
+    if (process.platform === 'win32') {
+      const pathsToCheck = [
+        path.join(homedir, 'OneDrive', 'Desktop'),
+        path.join(homedir, 'OneDrive', 'デスクトップ'),
+        path.join(homedir, 'Desktop')
+      ];
+      for (const p of pathsToCheck) {
+        if (fs.existsSync(p)) {
+          desktop = p;
+          break;
+        }
+      }
+    }
+    
+    const oldDir = path.join(desktop, 'OralNote_Data');
+    const newDir = path.join(desktop, 'WirelessConnect_Data');
+    
+    if (fs.existsSync(oldDir) && !fs.existsSync(newDir)) {
+      console.log(`[Migration] Migrating data folder name from ${oldDir} to ${newDir}`);
+      fs.renameSync(oldDir, newDir);
+      console.log('[Migration] Folder migrated successfully.');
+    }
+  } catch (e) {
+    console.error('[Migration] Failed to migrate folder name:', e);
+  }
+};
+
+// モジュール読み込み時に自動で移行処理を走らせる
+migrateDataDirectoryName();
+
+/**
  * OneDrive等の同期フォルダが有効な場合に備え、存在する正しいデスクトップパスを特定して返します。
  */
 export const getDesktopPath = (): string => {
@@ -27,7 +66,7 @@ export const getDesktopPath = (): string => {
  */
 export const getDefaultSettingsDir = (): string => {
   const desktop = getDesktopPath();
-  const defaultDir = path.join(desktop, 'OralNote_Data', 'Settings');
+  const defaultDir = path.join(desktop, 'WirelessConnect_Data', 'Settings');
   if (!fs.existsSync(defaultDir)) {
     fs.mkdirSync(defaultDir, { recursive: true });
   }
@@ -75,7 +114,7 @@ export const getTermsSettingsPath = (): string => {
  */
 export const getOrdersDir = (): string => {
   const defaultDesktopDir = getDesktopPath();
-  let baseDir = path.join(defaultDesktopDir, 'OralNote_Data');
+  let baseDir = path.join(defaultDesktopDir, 'WirelessConnect_Data');
   
   const defaultDir = getDefaultSettingsDir();
   const defaultClinicJson = path.join(defaultDir, 'clinic.json');

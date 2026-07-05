@@ -5,7 +5,7 @@ import os from 'os';
 
 const getQueueFilePath = () => {
   const desktopPath = path.join(os.homedir(), 'Desktop');
-  const settingsDir = path.join(desktopPath, 'OralNote_Data', 'Settings');
+  const settingsDir = path.join(desktopPath, 'WirelessConnect_Data', 'Settings');
   if (!fs.existsSync(settingsDir)) {
     fs.mkdirSync(settingsDir, { recursive: true });
   }

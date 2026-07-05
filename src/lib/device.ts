@@ -31,5 +31,5 @@ export function getDeviceName(): string {
   if (ua.indexOf('Mac') !== -1) os = 'Mac';
   if (ua.indexOf('Linux') !== -1) os = 'Linux';
   
-  return os + ' (OralNote)';
+  return os + ' (Wireless Connect)';
 }

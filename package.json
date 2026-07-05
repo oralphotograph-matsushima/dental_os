@@ -1,6 +1,6 @@
 {
-  "name": "dental-os-prototype",
-  "version": "1.3.6",
+  "name": "wireless-connect",
+  "version": "1.4.0",
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
@@ -15,8 +15,8 @@
   },
   "build": {
     "npmRebuild": false,
-    "appId": "com.oralnote.ai",
-    "productName": "OralNote",
+    "appId": "com.wirelessconnect.app",
+    "productName": "Wireless Connect",
     "directories": {
       "output": "dist"
     },

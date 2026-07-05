@@ -6,7 +6,7 @@ import os from 'os';
 export async function GET() {
   try {
     const homedir = os.homedir();
-    const settingsFilePath = path.join(homedir, 'Desktop', 'OralNote_Data', 'Settings', 'clinic.json');
+    const settingsFilePath = path.join(homedir, 'Desktop', 'WirelessConnect_Data', 'Settings', 'clinic.json');
     let vaultPath = '';
     
     if (fs.existsSync(settingsFilePath)) {
@@ -20,7 +20,7 @@ export async function GET() {
       }
     }
     
-    let baseDir = vaultPath || path.join(homedir, 'Desktop', 'OralNote_Data');
+    let baseDir = vaultPath || path.join(homedir, 'Desktop', 'WirelessConnect_Data');
       
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
