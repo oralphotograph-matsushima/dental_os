@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import fs from 'fs';
+import path from 'path';
+import { getOrdersDir } from '@/lib/settingsHelper';
 
 export async function POST(req: NextRequest) {
   try {
@@ -127,6 +130,63 @@ ${shadeDetails || '特になし'}
       } catch (err: any) {
         console.error('Resend Error during clinic copy sending:', err);
       }
+    }
+
+    // 3. ローカルデータベース（ファイルシステム）へ発注履歴を保存
+    try {
+      const orderId = `order_${Date.now()}`;
+      const ordersDir = getOrdersDir();
+      const photosDir = path.join(ordersDir, 'photos', orderId);
+      
+      const savedShadePhotos: string[] = [];
+      let savedInstructionPhoto = '';
+      
+      // 画像をローカルに保存
+      if (shadePhotos && shadePhotos.length > 0) {
+        fs.mkdirSync(photosDir, { recursive: true });
+        for (let i = 0; i < shadePhotos.length; i++) {
+          const photo = shadePhotos[i];
+          if (photo && photo.size > 0) {
+            const buffer = Buffer.from(await photo.arrayBuffer());
+            const fileName = photo.name || `shade_photo_${i + 1}.jpg`;
+            fs.writeFileSync(path.join(photosDir, fileName), buffer);
+            savedShadePhotos.push(fileName);
+          }
+        }
+      }
+      
+      if (instructionPhoto && instructionPhoto.size > 0) {
+        fs.mkdirSync(photosDir, { recursive: true });
+        const buffer = Buffer.from(await instructionPhoto.arrayBuffer());
+        const fileName = instructionPhoto.name || 'instruction_photo.jpg';
+        fs.writeFileSync(path.join(photosDir, fileName), buffer);
+        savedInstructionPhoto = fileName;
+      }
+      
+      // JSON ファイルの書き込み
+      const orderJson = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        labName,
+        labEmail,
+        patientId,
+        subject,
+        shadeDetails,
+        clinicName,
+        clinicEmail,
+        shadePhotos: savedShadePhotos,
+        instructionPhoto: savedInstructionPhoto,
+        status: 'pending', // 最初は「製作中」
+      };
+      
+      fs.writeFileSync(
+        path.join(ordersDir, `${orderId}.json`),
+        JSON.stringify(orderJson, null, 2),
+        'utf8'
+      );
+    } catch (dbError) {
+      console.error('Failed to save order copy locally:', dbError);
+      // メールの送信自体は成功しているため、エラーレスポンスは返さない
     }
 
     return NextResponse.json({ success: true, message: 'メールを送信しました', data });

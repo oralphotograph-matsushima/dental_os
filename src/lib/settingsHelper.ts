@@ -71,6 +71,33 @@ export const getTermsSettingsPath = (): string => {
 };
 
 /**
+ * 技工指示書データの保存先ディレクトリ (vaultPath/TechnicianOrders) を取得します。
+ */
+export const getOrdersDir = (): string => {
+  const defaultDesktopDir = getDesktopPath();
+  let baseDir = path.join(defaultDesktopDir, 'OralNote_Data');
+  
+  const defaultDir = getDefaultSettingsDir();
+  const defaultClinicJson = path.join(defaultDir, 'clinic.json');
+  if (fs.existsSync(defaultClinicJson)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(defaultClinicJson, 'utf8'));
+      if (data && data.vaultPath) {
+        baseDir = data.vaultPath;
+      }
+    } catch (e) {
+      console.error('[SettingsHelper] Failed to read clinic.json for vaultPath in getOrdersDir:', e);
+    }
+  }
+  
+  const ordersDir = path.join(baseDir, 'TechnicianOrders');
+  if (!fs.existsSync(ordersDir)) {
+    fs.mkdirSync(ordersDir, { recursive: true });
+  }
+  return ordersDir;
+};
+
+/**
  * 保存先フォルダが変更された場合に、既存の設定ファイルを自動的にお引越し（コピー）します。
  */
 export const migrateSettings = (newVaultPath: string) => {

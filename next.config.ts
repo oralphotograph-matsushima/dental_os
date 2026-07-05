@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    webpackBuildWorker: false,
+  },
   allowedDevOrigins: devOrigins,
   serverExternalPackages: ['ftp-srv', 'chokidar', 'express', 'cors'],
   outputFileTracingExcludes: {
