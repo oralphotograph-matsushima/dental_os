@@ -60,18 +60,18 @@ export default function WirelessConnectLP() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
             </span>
-            Dental Infrastructure, Redefined
+            次世代の歯科ネットワークインフラ
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-150">
-            Cut the cables.<br className="hidden md:block"/>
+            ケーブルをなくす。<br className="hidden md:block"/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-600">
-              Elevate your clinic.
+              クリニックが進化する。
             </span>
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            Transform your dental practice with zero-latency wireless video transmission. Seamlessly integrated with OralNote for the ultimate clinical experience.
+            ゼロ遅延のワイヤレス転送で、歯科診療のワークフローを根本から変革。撮った瞬間から、シームレスなデータ連携が始まります。
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -81,7 +81,7 @@ export default function WirelessConnectLP() {
               rel="noopener noreferrer"
               className="px-8 py-4 rounded-full bg-teal-600 text-white font-bold text-lg hover:bg-teal-500 transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_40px_rgba(13,148,136,0.4)]"
             >
-              Get Started for $499
+              システムを導入する
               <ArrowRight className="w-5 h-5" />
             </a>
           </div>
@@ -100,21 +100,21 @@ export default function WirelessConnectLP() {
           <div className="flex flex-col md:flex-row gap-16 items-center">
             
             <div className="w-full md:w-1/2 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold">The chaos of traditional setups.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold">従来の煩雑なシステムの終わり。</h2>
               <p className="text-neutral-400 text-lg leading-relaxed">
-                Expensive hardware, complex wiring, and constant technical issues. Traditional dental camera systems are not built for modern, fast-paced clinical workflows. They clutter your operatory and cause unnecessary stress for you and your staff.
+                高価な機材、複雑な配線、そして絶え間ない通信トラブル。従来のカメラシステムは、現代のスピードに合っていません。Wireless Connectは、足元の配線やSDカードの抜き差しによるストレスを排除し、スマートで洗練された診療環境を実現します。
               </p>
               <div className="space-y-4 pt-4">
                 {[
-                  "Eliminate trip hazards and messy cables",
-                  "No need for expensive external contractors",
-                  "Set it up yourself in under 30 minutes"
+                  "足元の配線やSDカードの抜き差しを完全に排除",
+                  "既存の不安定なWi-Fi環境に依存しない専用構築",
+                  "専門業者不要、届いたその日から機能するシンプルさ"
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="mt-1 bg-red-500/20 p-1 rounded-full">
                       <X className="w-4 h-4 text-red-500" />
                     </div>
-                    <span className="text-neutral-300">{item.replace("Eliminate", "Eliminated").replace("No need for", "No").replace("Set it up", "Easy")}</span>
+                    <span className="text-neutral-300">{item}</span>
                   </div>
                 ))}
               </div>
@@ -148,8 +148,8 @@ export default function WirelessConnectLP() {
       <section className="py-24 bg-neutral-900 border-y border-neutral-800">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Built for the Modern Dentist</h2>
-            <p className="text-neutral-400">Everything you need to seamlessly integrate high-quality video into your daily workflow, without the IT headaches.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">モダンな歯科医院のためのインフラ設計</h2>
+            <p className="text-neutral-400">ITの専門知識は不要です。日常の診療に、魔法のような画像連携ワークフローをもたらします。</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -158,9 +158,9 @@ export default function WirelessConnectLP() {
               <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Zap className="w-6 h-6 text-teal-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Zero Latency</h3>
+              <h3 className="text-xl font-bold mb-3">ゼロ遅延のデータ転送</h3>
               <p className="text-neutral-400 leading-relaxed">
-                Experience crystal-clear, real-time video transmission. Perfect for live patient consultations and precise clinical documentation.
+                シャッターを切った瞬間、データは安全かつ高速にPCやiPadへ転送されます。患者様を待たせることはもうありません。
               </p>
             </div>
 
@@ -169,9 +169,9 @@ export default function WirelessConnectLP() {
               <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <MonitorPlay className="w-6 h-6 text-teal-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">OralNote Ecosystem</h3>
+              <h3 className="text-xl font-bold mb-3">アプリとのシームレス連携</h3>
               <p className="text-neutral-400 leading-relaxed">
-                Wireless Connect acts as the perfect infrastructure layer. It feeds directly into the OralNote software for an unmatched presentation experience.
+                Wireless Connect は堅牢なインフラ層として機能します。専用アプリ「Wireless Connect App」と組み合わせれば、自動スライド生成などの高度な機能も利用可能です。
               </p>
             </div>
 
@@ -180,9 +180,9 @@ export default function WirelessConnectLP() {
               <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="w-6 h-6 text-teal-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">DIY Simplicity</h3>
+              <h3 className="text-xl font-bold mb-3">独立した強靭なネットワーク</h3>
               <p className="text-neutral-400 leading-relaxed">
-                Follow our detailed, step-by-step blueprints. You don't need to hire expensive local tech support to achieve a state-of-the-art setup.
+                院内の既存Wi-Fiとは独立した、カメラ専用のネットワーク環境を構築します。電子カルテ等のシステムに影響を与えることなく、安定した通信を保証します。
               </p>
             </div>
           </div>
@@ -196,25 +196,25 @@ export default function WirelessConnectLP() {
             
             <div className="w-full md:w-1/2 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold uppercase tracking-wider mb-2">
-                The Perfect Match
+                Ultimate Synchronization
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold">Empower your OralNote software.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold">アプリとの相乗効果。</h2>
               <p className="text-neutral-400 text-lg leading-relaxed">
-                While OralNote provides the beautiful interface for patient presentation and charting, Wireless Connect provides the robust, invisible hardware infrastructure. Together, they create a flawless clinical environment.
+                Wireless Connect は、目に見えない強靭なハードウェア・インフラとして機能します。ここに連携アプリをアドオンすることで、データは単なる「画像」から、患者様の心を動かす「プレゼンテーション」へと昇華されます。
               </p>
               
               <ul className="space-y-4 pt-4">
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
-                  <span>Instant image transfer to iPad/Desktop</span>
+                  <span>PC・iPadへのリアルタイムな画像同期</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
-                  <span>No SD cards, no USB cables</span>
+                  <span>AIによるカルテ・スライドの自動生成（オプション）</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
-                  <span>WOW your patients with immediate visualization</span>
+                  <span>圧倒的なスピードによる感動的な患者体験の提供</span>
                 </li>
               </ul>
             </div>
@@ -249,14 +249,13 @@ export default function WirelessConnectLP() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-teal-500/20 blur-[100px] rounded-full z-0 pointer-events-none"></div>
         
         <div className="container mx-auto px-6 relative z-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to upgrade your clinic?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">クリニックを次の次元へ。</h2>
           <p className="text-xl text-neutral-400 mb-10 max-w-2xl mx-auto">
-            Get the complete Wireless Connect blueprint and infrastructure guide today. Start delivering a premium experience to your patients tomorrow.
+            Wireless Connect システムを導入し、スマートで洗練された究極の画像連携インフラを手に入れましょう。
           </p>
           
           <div className="bg-neutral-900/50 backdrop-blur-xl border border-neutral-800 p-8 rounded-3xl max-w-lg mx-auto mb-10 shadow-2xl">
-            <div className="text-5xl font-bold text-white mb-2">$499 <span className="text-lg text-neutral-500 font-normal">USD</span></div>
-            <p className="text-sm text-neutral-400 mb-8">One-time payment. Lifetime access to the blueprints.</p>
+            <h3 className="text-2xl font-bold text-white mb-6">システム構築パッケージ</h3>
             
             <a 
               href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
@@ -264,7 +263,7 @@ export default function WirelessConnectLP() {
               rel="noopener noreferrer"
               className="w-full block py-4 rounded-xl bg-teal-600 text-white font-bold text-lg hover:bg-teal-500 transition-colors shadow-lg"
             >
-              Purchase Now
+              パッケージを購入する
             </a>
             <p className="text-xs text-neutral-500 mt-4 text-center flex items-center justify-center gap-1">
               <Shield className="w-3 h-3" /> Secure payment via Stripe
