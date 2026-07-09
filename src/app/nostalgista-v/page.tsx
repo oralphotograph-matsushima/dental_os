@@ -296,9 +296,9 @@ export default function NostalgistaVTeaser() {
             <a href="https://lin.ee/MBSF2D9" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-4 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-full font-bold transition-all shadow-[0_0_20px_rgba(6,199,85,0.3)] flex items-center justify-center gap-2">
               LINEで最新情報を受け取る
             </a>
-            <Link href="/" className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all backdrop-blur-md border border-white/10">
+            <a href="https://nostalgista.co.jp/lineup/" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold transition-all backdrop-blur-md border border-white/10 text-center">
               既存のシステムを見る
-            </Link>
+            </a>
           </div>
         </div>
       </section>
