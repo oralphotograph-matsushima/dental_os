@@ -63,15 +63,16 @@ export default function WirelessConnectLP() {
             次世代の歯科ネットワークインフラ
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-150">
-            ケーブルをなくす。<br className="hidden md:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-600">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-150">
+            ケーブルをなくす。<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-600 block mt-2 md:mt-0 md:inline">
               クリニックが進化する。
             </span>
           </h1>
           
-          <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            ゼロ遅延のワイヤレス転送で、歯科診療のワークフローを根本から変革。撮った瞬間から、シームレスなデータ連携が始まります。
+          <p className="text-base md:text-lg text-neutral-400 max-w-2xl mx-auto mb-10 px-2 md:px-0 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            ゼロ遅延のワイヤレス転送で、歯科診療のワークフローを根本から変革。<br className="hidden md:block" />
+            撮った瞬間から、シームレスなデータ連携が始まります。
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -100,9 +101,9 @@ export default function WirelessConnectLP() {
           <div className="flex flex-col md:flex-row gap-16 items-center">
             
             <div className="w-full md:w-1/2 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold">従来の煩雑なシステムの終わり。</h2>
-              <p className="text-neutral-400 text-lg leading-relaxed">
-                高価な機材、複雑な配線、そして絶え間ない通信トラブル。従来のカメラシステムは、現代のスピードに合っていません。Wireless Connectは、足元の配線やSDカードの抜き差しによるストレスを排除し、スマートで洗練された診療環境を実現します。
+              <h2 className="text-2xl md:text-4xl font-bold leading-tight">従来の煩雑な<br className="block md:hidden" />システムの終わり。</h2>
+              <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
+                高価な機材、複雑な配線、そして絶え間ない通信トラブル。従来のカメラシステムは、現代のスピードに合っていません。<br className="hidden md:block" />Wireless Connectは、足元の配線やSDカードの抜き差しによるストレスを排除し、スマートで洗練された診療環境を実現します。
               </p>
               <div className="space-y-4 pt-4">
                 {[
@@ -147,9 +148,9 @@ export default function WirelessConnectLP() {
       {/* Features Grid */}
       <section className="py-24 bg-neutral-900 border-y border-neutral-800">
         <div className="container mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">モダンな歯科医院のためのインフラ設計</h2>
-            <p className="text-neutral-400">ITの専門知識は不要です。日常の診療に、魔法のような画像連携ワークフローをもたらします。</p>
+          <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight">モダンな歯科医院のための<br className="block md:hidden" />インフラ設計</h2>
+            <p className="text-neutral-400 text-sm md:text-base px-4 md:px-0">ITの専門知識は不要です。<br className="block md:hidden" />日常の診療に、魔法のような画像連携ワークフローをもたらします。</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -198,9 +199,9 @@ export default function WirelessConnectLP() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold uppercase tracking-wider mb-2">
                 Ultimate Synchronization
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold">アプリとの相乗効果。</h2>
-              <p className="text-neutral-400 text-lg leading-relaxed">
-                Wireless Connect は、目に見えない強靭なハードウェア・インフラとして機能します。ここに連携アプリをアドオンすることで、データは単なる「画像」から、患者様の心を動かす「プレゼンテーション」へと昇華されます。
+              <h2 className="text-2xl md:text-4xl font-bold">アプリとの相乗効果。</h2>
+              <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
+                Wireless Connect は、目に見えない強靭なハードウェア・インフラとして機能します。<br className="hidden md:block" />ここに連携アプリをアドオンすることで、データは単なる「画像」から、患者様の心を動かす「プレゼンテーション」へと昇華されます。
               </p>
               
               <ul className="space-y-4 pt-4">
@@ -249,8 +250,8 @@ export default function WirelessConnectLP() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-teal-500/20 blur-[100px] rounded-full z-0 pointer-events-none"></div>
         
         <div className="container mx-auto px-6 relative z-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">クリニックを次の次元へ。</h2>
-          <p className="text-xl text-neutral-400 mb-10 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">クリニックを次の次元へ。</h2>
+          <p className="text-base md:text-xl text-neutral-400 mb-10 max-w-2xl mx-auto px-4 md:px-0">
             Wireless Connect システムを導入し、スマートで洗練された究極の画像連携インフラを手に入れましょう。
           </p>
           
