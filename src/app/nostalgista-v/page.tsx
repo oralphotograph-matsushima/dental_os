@@ -141,14 +141,14 @@ export default function NostalgistaVTeaser() {
       <section className="py-32 md:py-48 px-6 relative">
         <div className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white mb-8">
-            口腔内写真は、<br className="md:hidden" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">動画を活用する</span>ことで<br />
-            次のフェーズに移行する。
+            <span className="inline-block">口腔内写真は、</span><br className="md:hidden" />
+            <span className="inline-block"><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">動画を活用する</span>ことで</span><br />
+            <span className="inline-block">次のフェーズに移行する。</span>
           </h2>
           <p className="text-neutral-400 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-            止まった世界では見えなかったものが、動くことで真実の姿を現す。<br />
-            Nostalgista Vは、動画を記録しながら劇的なビフォーアフターを生成する、<br className="hidden md:block" />
-            まったく新しい歯科診療のインフラです。
+            <span className="inline-block">止まった世界では見えなかったものが、</span><span className="inline-block">動くことで真実の姿を現す。</span><br />
+            <span className="inline-block">Nostalgista Vは、動画を記録しながら</span><span className="inline-block">劇的なビフォーアフターを生成する、</span><br className="hidden md:block" />
+            <span className="inline-block">まったく新しい歯科診療のインフラです。</span>
           </p>
         </div>
       </section>
