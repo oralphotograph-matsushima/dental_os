@@ -93,40 +93,47 @@ export default function NostalgistaVTeaser() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Background glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/10 via-black to-black opacity-50" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-500/10 via-black to-black opacity-50" />
         
         {/* The Giant V */}
-        <div className="relative z-10 flex flex-col items-center">
-          <h1 className={`text-[15rem] md:text-[25rem] font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-400 to-black transition-all duration-[2000ms] ease-out ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`} style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)' }}>
+        <div className="relative z-10 w-full max-w-[1200px] flex flex-col justify-center items-center h-full">
+          <h1 className={`absolute text-[18rem] md:text-[35rem] font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-400 to-black transition-all duration-[2000ms] ease-out ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`} style={{ WebkitTextStroke: '1px rgba(255,255,255,0.05)', transform: 'scaleY(0.8)' }}>
             V
           </h1>
           
-          {/* The 4 V's */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="grid grid-cols-2 gap-x-20 md:gap-x-40 gap-y-12 md:gap-y-24 text-center mt-20">
-              <div className={`transition-all duration-1000 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <p className="text-orange-500 font-bold tracking-[0.2em] text-sm md:text-base">Vision</p>
-                <p className="text-neutral-500 text-xs mt-1">新たな視界</p>
+          {/* The 4 V's (Wider Cinemascope Layout) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none w-full px-6 md:px-20">
+            <div className="w-full flex flex-col justify-between h-[50vh] md:h-[40vh]">
+              {/* Top Row */}
+              <div className="w-full flex justify-between items-center px-4 md:px-12">
+                <div className={`transition-all duration-1000 delay-500 text-left ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+                  <p className="text-orange-500 font-bold tracking-[0.4em] md:tracking-[0.6em] text-sm md:text-xl uppercase">Vision</p>
+                  <p className="text-neutral-500 text-xs md:text-sm mt-2 tracking-wider">新たな視界</p>
+                </div>
+                <div className={`transition-all duration-1000 delay-700 text-right ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
+                  <p className="text-orange-500 font-bold tracking-[0.4em] md:tracking-[0.6em] text-sm md:text-xl uppercase">Visual</p>
+                  <p className="text-neutral-500 text-xs md:text-sm mt-2 tracking-wider">圧倒的画質</p>
+                </div>
               </div>
-              <div className={`transition-all duration-1000 delay-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <p className="text-orange-500 font-bold tracking-[0.2em] text-sm md:text-base">Visual</p>
-                <p className="text-neutral-500 text-xs mt-1">圧倒的画質</p>
-              </div>
-              <div className={`transition-all duration-1000 delay-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <p className="text-orange-500 font-bold tracking-[0.2em] text-sm md:text-base">Value</p>
-                <p className="text-neutral-500 text-xs mt-1">真の価値</p>
-              </div>
-              <div className={`transition-all duration-1000 delay-[1200ms] ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <p className="text-orange-500 font-bold tracking-[0.2em] text-sm md:text-base">Video</p>
-                <p className="text-neutral-500 text-xs mt-1">動画というインフラ</p>
+
+              {/* Bottom Row */}
+              <div className="w-full flex justify-between items-center px-4 md:px-12">
+                <div className={`transition-all duration-1000 delay-1000 text-left ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+                  <p className="text-orange-500 font-bold tracking-[0.4em] md:tracking-[0.6em] text-sm md:text-xl uppercase">Value</p>
+                  <p className="text-neutral-500 text-xs md:text-sm mt-2 tracking-wider">真の価値</p>
+                </div>
+                <div className={`transition-all duration-1000 delay-[1200ms] text-right ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
+                  <p className="text-orange-500 font-bold tracking-[0.4em] md:tracking-[0.6em] text-sm md:text-xl uppercase">Video</p>
+                  <p className="text-neutral-500 text-xs md:text-sm mt-2 tracking-wider">動画というインフラ</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className={`absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 delay-[2000ms] ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-neutral-500 text-xs tracking-[0.3em] uppercase mb-4">Discover the Next Phase</p>
-          <div className="w-[1px] h-12 bg-gradient-to-b from-orange-500 to-transparent animate-pulse" />
+        <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 delay-[2000ms] ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-neutral-500 text-[10px] tracking-[0.4em] uppercase mb-4">Discover the Next Phase</p>
+          <div className="w-[1px] h-16 bg-gradient-to-b from-orange-500 to-transparent animate-pulse" />
         </div>
       </section>
 
@@ -165,19 +172,22 @@ export default function NostalgistaVTeaser() {
             <div className={`absolute inset-0 transition-opacity duration-500 ${simState === 'idle' || simState === 'recording' ? 'opacity-100' : 'opacity-0'}`}>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 z-10" />
               
-              {/* Dummy Video Background (Using the Before image with zoom effect) */}
-              <img 
-                src="/nostalgista-v/before.png" 
-                alt="Recording Subject" 
-                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-[5000ms] ${simState === 'recording' ? 'scale-110' : 'scale-100'} filter grayscale-[30%]`}
-              />
+              {/* Video Background (Before) */}
+              <div className="absolute inset-0 bg-neutral-900 flex items-center justify-center">
+                <span className="text-white/20 text-sm tracking-widest absolute">VIDEO PLACEHOLDER (BEFORE)</span>
+                <video 
+                  src="/nostalgista-v/demo_before.mp4" 
+                  autoPlay loop muted playsInline
+                  className={`absolute inset-0 w-full h-full object-cover transition-transform duration-[5000ms] ${simState === 'recording' ? 'scale-110' : 'scale-100'} filter grayscale-[30%] opacity-80`}
+                />
+              </div>
 
               {/* UI Overlay */}
               <div className="absolute inset-0 z-20 p-6 md:p-8 flex flex-col justify-between pointer-events-none">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <Video className="w-5 h-5 text-white" />
-                    <span className="font-mono text-sm text-white font-bold drop-shadow-md">4K 60fps</span>
+                    <span className="font-mono text-sm text-white font-bold drop-shadow-md">4K 30fps</span>
                   </div>
                   <div className={`flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full ${simState === 'recording' ? 'animate-pulse' : ''}`}>
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
@@ -187,7 +197,7 @@ export default function NostalgistaVTeaser() {
                 </div>
 
                 {/* Center Reticle */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-64 md:h-64 border-[1px] border-white/30 rounded-full flex items-center justify-center">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 md:w-64 md:h-64 border-[1px] border-white/30 rounded-full flex items-center justify-center transition-transform duration-1000 ease-out">
                   <div className="w-2 h-2 bg-orange-500/80 rounded-full" />
                   <Maximize className="absolute w-8 h-8 text-white/50 top-[-16px] left-[-16px]" strokeWidth={1} />
                   <Maximize className="absolute w-8 h-8 text-white/50 bottom-[-16px] right-[-16px]" strokeWidth={1} />
@@ -205,15 +215,28 @@ export default function NostalgistaVTeaser() {
             {/* 3. Compare State */}
             <div className={`absolute inset-0 z-40 transition-opacity duration-1000 ${simState === 'compare' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               
-              {/* After Image (Background) */}
-              <img src="/nostalgista-v/after.png" alt="After" className="absolute inset-0 w-full h-full object-cover" />
+              {/* After Video (Background) */}
+              <div className="absolute inset-0 bg-neutral-800 flex items-center justify-center">
+                <span className="text-white/20 text-sm tracking-widest absolute">VIDEO PLACEHOLDER (AFTER)</span>
+                <video 
+                  src="/nostalgista-v/demo_after.mp4" 
+                  autoPlay loop muted playsInline
+                  className="absolute inset-0 w-full h-full object-cover" 
+                />
+              </div>
               
-              {/* Before Image (Clipped) */}
+              {/* Before Video (Clipped) */}
               <div 
                 className="absolute inset-0 w-full h-full border-r-2 border-orange-500 shadow-[2px_0_15px_rgba(0,0,0,0.5)] overflow-hidden"
                 style={{ width: `${sliderPosition}%` }}
               >
-                <img src="/nostalgista-v/before.png" alt="Before" className="absolute top-0 left-0 h-full max-w-none object-cover" style={{ width: simulationRef.current?.offsetWidth || '100vw' }} />
+                <div className="absolute top-0 left-0 h-full bg-neutral-900 flex items-center justify-center" style={{ width: simulationRef.current?.offsetWidth || '100vw' }}>
+                  <video 
+                    src="/nostalgista-v/demo_before.mp4" 
+                    autoPlay loop muted playsInline
+                    className="absolute inset-0 w-full h-full object-cover filter grayscale-[30%] opacity-80" 
+                  />
+                </div>
                 
                 {/* Before Label */}
                 <div className="absolute top-6 left-6 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
