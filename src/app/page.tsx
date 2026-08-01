@@ -198,6 +198,17 @@ export default function Home() {
       if (interval) clearInterval(interval);
     };
   }, [activeTab, isWirelessActive, wirelessPatientId]);
+
+  // Sync Active Patient to Watcher Server for automatic image routing
+  useEffect(() => {
+    if (activeTab === "qr" && isWirelessActive && wirelessPatientId) {
+      fetch(`http://${window.location.hostname}:3001/api/patient`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patientId: wirelessPatientId })
+      }).catch(e => console.error("Failed to sync active patient to watcher", e));
+    }
+  }, [activeTab, isWirelessActive, wirelessPatientId]);
   // Append State
   const [appendingChart, setAppendingChart] = useState<string | null>(null);
   const [appendContent, setAppendContent] = useState("");
