@@ -35,6 +35,8 @@ To eliminate double-handling, when a chart file is successfully saved under any 
 For absolute patient privacy, whenever a patient is registered to the daily queue, any Hanzi/Hiragana names MUST be dynamically formatted and converted to **Katakana-only last names** (e.g. `ヤマダ` via `formatToKatakanaLastName`). All vault folder paths, file titles, and wireless transfer directories MUST adhere to this Katakana-only name format.
 
 ## 4. Seamless Prop Sync between Queue and CameraMode
+Selecting a patient in the Today's Queue MUST automatically sync the ID to the `CameraMode` component via the `activePatient` prop. `CameraMode` must monitor this prop and immediately send a POST to the PC Watcher to create folders and activate SSE wait states without secondary user input.
+
 ## 5. Layout confirm on iPad (2026-08-30)
 
 After photos land in the active patient folder, Wireless Connect tab MUST let the clinician confirm layout on the **same-LAN iPad**. Do not send staff to ChatGPT. Copy must say 「この配置でよいですか？」 not model names.
@@ -46,5 +48,13 @@ After photos land in the active patient folder, Wireless Connect tab MUST let th
 - Classification engine is swappable. Photos stay on the clinic PC as the product rule; do not add new cloud uploads of intraoral images.
 
 See `LAYOUT_CONFIRM.md` in this folder.
+
+## 6. Where to put transplant zips
+
+Do not write zip/exe into this source folder or the Antigravity root. Put them only in:
+
+`/Users/matsuchannel/Desktop/Antigravity/Clinic_Distribution_Assets/2. WirelessConnect/`
+
+Root of that folder = current generation only. Older files go to `_past_使わない/`. Filename: `WirelessConnect_vX.Y.Z_ソース移植_YYYYMMDD.zip`. Never use the name `WindowsBuild`. Do not include `.env.local`. Update `00_これだけコピー.txt` when replacing.
 
 <!-- END:oralnote-ui-rules -->
