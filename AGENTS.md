@@ -35,5 +35,16 @@ To eliminate double-handling, when a chart file is successfully saved under any 
 For absolute patient privacy, whenever a patient is registered to the daily queue, any Hanzi/Hiragana names MUST be dynamically formatted and converted to **Katakana-only last names** (e.g. `ヤマダ` via `formatToKatakanaLastName`). All vault folder paths, file titles, and wireless transfer directories MUST adhere to this Katakana-only name format.
 
 ## 4. Seamless Prop Sync between Queue and CameraMode
-Selecting a patient in the Today's Queue MUST automatically sync the ID to the `CameraMode` component via the `activePatient` prop. `CameraMode` must monitor this prop and immediately send a POST to the PC Watcher to create folders and activate SSE wait states without secondary user input.
+## 5. Layout confirm on iPad (2026-08-30)
+
+After photos land in the active patient folder, Wireless Connect tab MUST let the clinician confirm layout on the **same-LAN iPad**. Do not send staff to ChatGPT. Copy must say 「この配置でよいですか？」 not model names.
+
+- Templates: 5 / 7 / 9. Default 7.
+- Vision may propose a slot and a **mirror suspicion**. Never auto-apply flip. Show badge `鏡？` until a human taps 左右反転 / 上下反転 / 90°回転.
+- Grid badges are always visible (正 / 左右 / 上下 / 90° / 鏡？). No hover-only icons. Tap a slot twice (or tap same slot) to open a large edit sheet with finger-sized buttons.
+- Tap slot A then slot B to swap photos. Confirmed layout is saved as `Patients/[id]/layout.json` on the clinic PC.
+- Classification engine is swappable. Photos stay on the clinic PC as the product rule; do not add new cloud uploads of intraoral images.
+
+See `LAYOUT_CONFIRM.md` in this folder.
+
 <!-- END:oralnote-ui-rules -->

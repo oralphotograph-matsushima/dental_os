@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Camera, RefreshCw, Image as ImageIcon, Send, X, CheckCircle, AlertCircle, LayoutTemplate, Download } from "lucide-react";
 import * as htmlToImage from 'html-to-image';
+import LayoutConfirm from "@/components/LayoutConfirm";
+import { LayoutFormat, LayoutSlot, buildSlotsFromAnalysis } from "@/lib/layoutSlots";
 
 interface CameraModeProps {
   activePatient?: string;
@@ -36,7 +38,10 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
   const [showBatchPreviewModal, setShowBatchPreviewModal] = useState(false);
   const [isExecutingBatch, setIsExecutingBatch] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [layoutFormat, setLayoutFormat] = useState<"5" | "7" | "9">("9");
+  const [layoutFormat, setLayoutFormat] = useState<LayoutFormat>("7");
+  const [layoutSlots, setLayoutSlots] = useState<LayoutSlot[]>([]);
+  const [showLayoutConfirm, setShowLayoutConfirm] = useState(false);
+  const [layoutConfirmed, setLayoutConfirmed] = useState(false);
   const scheduleInputRef = useRef<HTMLInputElement>(null);
 
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -184,6 +189,9 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       if (res.ok) {
         setActivePatientId(patientId.trim());
         setImages([]); // リセット
+        setShowLayoutConfirm(false);
+        setLayoutConfirmed(false);
+        setLayoutSlots([]);
         fetchImages(patientId.trim());
         connectSSE();
       }
@@ -336,22 +344,21 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       });
 
       if (!res.ok) {
-        throw new Error("AI判定に失敗しました。OpenAI APIキーが設定されているか確認してください。");
+        throw new Error("配置の判定に失敗しました。PC側の設定を確認してください。");
       }
 
       const data = await res.json();
       const results = data.results || [];
 
       const viewMap: Record<string, string[]> = {
-        front: [], right: [], left: [], upper: [], lower: [], facial: [], smile: [], right_overjet: [], left_overjet: [], other: []
+        front: [], front_half: [], coupling: [], right: [], left: [], upper: [], lower: [], facial: [], smile: [], right_overjet: [], left_overjet: [], other: []
       };
+      const metaByFile: Record<string, { mirrorSuspected?: boolean }> = {};
 
       results.forEach((r: any) => {
-        if (viewMap[r.view]) {
-          viewMap[r.view].push(r.filename);
-        } else {
-          viewMap.other.push(r.filename);
-        }
+        const view = viewMap[r.view] ? r.view : "other";
+        viewMap[view].push(r.filename);
+        metaByFile[r.filename] = { mirrorSuspected: r.mirrorSuspected === true || r.suggestedFlip === "H" || r.suggestedFlip === "V" || r.suggestedFlip === "HV" };
       });
 
       const conflicts: Record<string, string[]> = {};
@@ -362,11 +369,13 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       });
 
       setAnalysisResults(viewMap);
+      setLayoutSlots(buildSlotsFromAnalysis(layoutFormat, viewMap, metaByFile));
+      setLayoutConfirmed(false);
 
       if (Object.keys(conflicts).length > 0) {
         setDuplicateConflicts(conflicts);
       } else {
-        setShowSlidePreview(true);
+        setShowLayoutConfirm(true);
       }
 
     } catch (err: any) {
@@ -380,26 +389,23 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
     setAnalysisResults(prev => {
       if (!prev) return prev;
       const newResults = { ...prev };
-      
-      // 選ばれなかった画像は other に移動
       const unselected = newResults[view].filter(f => f !== selectedFilename);
       newResults.other = [...newResults.other, ...unselected];
-      
-      // 選択された画像のみを残す
       newResults[view] = [selectedFilename];
-      return newResults;
-    });
 
-    setDuplicateConflicts(prev => {
-      if (!prev) return prev;
-      const newConflicts = { ...prev };
-      delete newConflicts[view];
-      
-      if (Object.keys(newConflicts).length === 0) {
-        setShowSlidePreview(true);
-        return null;
-      }
-      return newConflicts;
+      setDuplicateConflicts(currentConflicts => {
+        if (!currentConflicts) return currentConflicts;
+        const newConflicts = { ...currentConflicts };
+        delete newConflicts[view];
+        if (Object.keys(newConflicts).length === 0) {
+          setLayoutSlots(buildSlotsFromAnalysis(layoutFormat, newResults, {}));
+          setShowLayoutConfirm(true);
+          return null;
+        }
+        return newConflicts;
+      });
+
+      return newResults;
     });
   };
 
@@ -420,7 +426,25 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
   };
 
   const viewLabels: Record<string, string> = {
-    front: "正面", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌", smile: "スマイル", right_overjet: "右側オーバージェット", left_overjet: "左側オーバージェット"
+    front: "正面", front_half: "半開口", coupling: "カップリング", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌", smile: "スマイル", right_overjet: "右側オーバージェット", left_overjet: "左側オーバージェット"
+  };
+
+  const saveLayout = async (slots: LayoutSlot[], confirmed: boolean) => {
+    if (!activePatientId) return;
+    try {
+      await fetch(`http://${window.location.hostname}:3001/api/patients/${activePatientId}/layout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: layoutFormat, confirmed, slots })
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleConfirmLayout = async () => {
+    setLayoutConfirmed(true);
+    await saveLayout(layoutSlots, true);
   };
 
   const ImageCell = ({ view, label, fallback }: { view: string, label: string, fallback?: string }) => {
@@ -616,7 +640,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
         </div>
 
         {/* Images Grid or Slide Preview */}
-        {activePatientId && !showSlidePreview && (
+        {activePatientId && !showLayoutConfirm && !showSlidePreview && (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold text-neutral-200 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-sm font-bold">2</span>
@@ -648,6 +672,23 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
               </div>
             )}
           </div>
+        )}
+
+        {activePatientId && showLayoutConfirm && layoutSlots.length > 0 && (
+          <LayoutConfirm
+            slots={layoutSlots}
+            imageUrl={(filename) => `http://${window.location.hostname}:3001/images/${activePatientId}/${filename}`}
+            confirmed={layoutConfirmed}
+            onChange={(next) => {
+              setLayoutSlots(next);
+              saveLayout(next, layoutConfirmed);
+            }}
+            onBack={() => {
+              setShowLayoutConfirm(false);
+              setLayoutConfirmed(false);
+            }}
+            onConfirm={handleConfirmLayout}
+          />
         )}
 
         {/* Slide Preview (Phase 3) */}
@@ -754,7 +795,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       </main>
 
       {/* Floating Action Bar */}
-      {images.length > 0 && !showSlidePreview && (
+      {images.length > 0 && !showSlidePreview && !showLayoutConfirm && (
         <div className="absolute bottom-0 left-0 right-0 p-6 z-40 animate-in slide-in-from-bottom-10 fade-in duration-500 pointer-events-none">
           <div className="max-w-2xl mx-auto pointer-events-auto">
             <div className="bg-slate-800/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-2 shadow-2xl flex items-center justify-between">
@@ -774,7 +815,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-white">計 {images.length} 枚を撮影</span>
-                  <span className="text-xs text-slate-400">撮影が完了したらAI判定へ</span>
+                  <span className="text-xs text-slate-400">撮影が終わったら配置を確認</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -797,7 +838,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
                   ) : (
                     <LayoutTemplate className="w-5 h-5" />
                   )}
-                  <span>AIで自動スライド生成</span>
+                  <span>配置を確認する</span>
                 </button>
               </div>
             </div>

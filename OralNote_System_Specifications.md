@@ -212,8 +212,9 @@ const isPublicWeb = !isLocal;
 *   **二重送信防止：** 送信ボタン押下時に即座にUIを「送信中」としてボタンを無効化。
 *   **CC・返信仕様：** 送信時にクリニックのメールアドレスを自動的に **BCC** に入れ、返信先 (**Reply-To**) をクリニックに設定することで、技工所が返信したメールが直接クリニックに届く設計。
 
-### B. 治療説明スライドジェネレーター (Slide Generator)
-*   **概要：** 患者フォルダに蓄積された口腔内写真を選択し、ワンクリックで患者説明用の美しい PowerPoint (`.pptx`) または `PDF` スライドを自動生成します。
+### B. 配置確認（iPad）＋ 治療説明スライド
+*   **配置確認（2026-08-30）:** 撮影後、同一 LAN の iPad で「この配置でよいですか？」を出す。5 / 7 / 9 枚。ミラーと見た場合は **鏡？** バッジのみ。左右反転・上下反転・90°回転は人が押す。確定後は `Patients/[ID]/layout.json` に保存し、同じ並びにしたまま iPad で見せる。
+*   **スライドジェネレーター:** 患者フォルダの写真から説明用 PowerPoint / PDF を出す従来機能。配置確認のあとに使う。
 
 ---
 
@@ -245,7 +246,10 @@ const isPublicWeb = !isLocal;
 
 ### A. 配布専用パッケージ・公式リリースフォルダ
 ビルドした最新バージョンの配布物やインストーラーは、アンチグラビティフォルダの下層にある公式配布専用フォルダに集約・格納されます。
-*   **公式配置パス:** `Desktop/Antigravity/Clinic_Distribution_Assets/2. OralNote/`
+*   **公式配置パス:** `Desktop/Antigravity/Clinic_Distribution_Assets/2. WirelessConnect/`
+*   **いまコピーするもの:** `WirelessConnect_v1.5.0_ソース移植_20260830.zip`
+*   **旧 OralNote 1.3.5 の exe:** `Clinic_Distribution_Assets/2. OralNote/`（使わない）
+*   **古い zip:** `2. WirelessConnect/_past_使わない/`
 *   **構成内容:**
     1.  `OralNote Setup 1.3.0.exe`：最新の Windows 用デスクトップアプリインストーラー（ビルド完了後、このフォルダへ移動・上書き配置します）。
     2.  `cleanup-oralnote.bat`：Windows 上の競合プロセスをキルし、古いキャッシュを掃除するワンクリックツール。

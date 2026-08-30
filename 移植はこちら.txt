@@ -1,0 +1,8 @@
+# 移植パッケージの場所
+
+このフォルダ直下に zip は置かない。
+
+コピーするもの:
+`../Clinic_Distribution_Assets/2. WirelessConnect/WirelessConnect_v1.5.0_ソース移植_20260830.zip`
+
+古い zip は同フォルダの `_past_使わない/` に隔離済み。

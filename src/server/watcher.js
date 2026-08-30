@@ -593,6 +593,7 @@ app.get('/api/patients/:id/images', (req, res) => {
   const files = fs.readdirSync(patientDir)
     .filter(f => {
       if (f.startsWith('.')) return false;
+      if (f === 'layout.json') return false;
       try {
         return fs.statSync(path.join(patientDir, f)).isFile();
       } catch {
@@ -606,6 +607,36 @@ app.get('/api/patients/:id/images', (req, res) => {
       return statB.mtime.getTime() - statA.mtime.getTime();
     });
   res.json({ images: files });
+});
+
+app.get('/api/patients/:id/layout', (req, res) => {
+  const layoutPath = path.join(getPatientsDir(), req.params.id, 'layout.json');
+  if (!fs.existsSync(layoutPath)) {
+    return res.json({ slots: null });
+  }
+  try {
+    const data = JSON.parse(fs.readFileSync(layoutPath, 'utf8'));
+    res.json(data);
+  } catch {
+    res.json({ slots: null });
+  }
+});
+
+app.post('/api/patients/:id/layout', (req, res) => {
+  const patientDir = path.join(getPatientsDir(), req.params.id);
+  if (!fs.existsSync(patientDir)) {
+    return res.status(404).json({ error: '患者フォルダがありません' });
+  }
+  const layoutPath = path.join(patientDir, 'layout.json');
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    format: req.body.format || '7',
+    confirmed: req.body.confirmed === true,
+    slots: req.body.slots || []
+  };
+  fs.writeFileSync(layoutPath, JSON.stringify(payload, null, 2));
+  sendToClients({ type: 'REFRESH_IMAGES', patientId: req.params.id });
+  res.json({ success: true });
 });
 
 app.get('/api/stream', (req, res) => {
