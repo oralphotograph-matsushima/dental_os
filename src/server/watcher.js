@@ -113,12 +113,90 @@ function loadSchedule() {
   if (fs.existsSync(p)) {
     try {
       currentSchedule = JSON.parse(fs.readFileSync(p, 'utf8'));
-      console.log(`[Schedule] 📅 Loaded today's schedule with ${currentSchedule.length} patients.`);
+      console.log(`[Schedule] Loaded today's schedule with ${currentSchedule.length} patients.`);
     } catch (e) {
       console.error('[Schedule] Failed to load schedule:', e);
       currentSchedule = [];
     }
   }
+}
+
+function getClinicConfig() {
+  const defaultPath = path.join(getDefaultSettingsDir(), 'clinic.json');
+  let config = {};
+  try {
+    if (fs.existsSync(defaultPath)) {
+      config = JSON.parse(fs.readFileSync(defaultPath, 'utf8')) || {};
+    }
+  } catch (e) {
+    console.error('[Watcher] Failed to read clinic.json:', e);
+  }
+  if (config.vaultPath) {
+    const customPath = path.join(config.vaultPath, 'Settings', 'clinic.json');
+    try {
+      if (fs.existsSync(customPath)) {
+        const custom = JSON.parse(fs.readFileSync(customPath, 'utf8')) || {};
+        config = { ...config, ...custom };
+      }
+    } catch (e) {
+      console.error('[Watcher] Failed to read vault clinic.json:', e);
+    }
+  }
+  return config;
+}
+
+function isAutoSortEnabled() {
+  return getClinicConfig().autoSortEnabled === true;
+}
+
+function loadTodayQueue() {
+  const candidates = [];
+  const vault = getVaultPath();
+  if (vault) candidates.push(path.join(vault, 'Settings', 'queue.json'));
+  candidates.push(path.join(getDefaultSettingsDir(), 'queue.json'));
+
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    try {
+      const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+      if (Array.isArray(data)) return data;
+    } catch (e) {
+      console.error('[Watcher] Failed to read queue.json:', e);
+    }
+  }
+  return [];
+}
+
+function getAssignmentTargets() {
+  const byId = new Map();
+
+  for (const slot of currentSchedule) {
+    if (!slot || slot.id == null) continue;
+    const id = String(slot.id);
+    byId.set(id, {
+      id,
+      name: slot.name || id,
+      folder: `${id}_${slot.name || id}`,
+      startTime: slot.startTime || '',
+      source: 'schedule'
+    });
+  }
+
+  for (const p of loadTodayQueue()) {
+    if (!p || p.id == null) continue;
+    const id = String(p.id);
+    if (byId.has(id)) continue;
+    const folder = p.name && String(p.name).includes('_') ? String(p.name) : id;
+    byId.set(id, {
+      id,
+      name: p.name || id,
+      folder,
+      startTime: '',
+      source: 'queue'
+    });
+  }
+
+  return Array.from(byId.values());
 }
 
 function saveSchedule() {
@@ -298,7 +376,9 @@ if (!fs.existsSync(STAGING_DIR)) {
 getPatientsDir();
 migrateUnassignedIntoPatients();
 loadSchedule();
-autoSortInboxIfScheduled();
+if (isAutoSortEnabled()) {
+  autoSortInboxIfScheduled();
+}
 
 // SSE接続クライアントの管理
 let clients = [];
@@ -424,11 +504,14 @@ app.post('/api/schedule/parse', upload.single('image'), async (req, res) => {
   }
 });
 
-app.get('/api/batch-preview', (req, res) => {
-  if (currentSchedule.length === 0) {
-    return res.status(400).json({ success: false, error: 'No schedule available for sorting' });
-  }
+app.get('/api/assignment-targets', (req, res) => {
+  res.json({
+    targets: getAssignmentTargets(),
+    autoSortEnabled: isAutoSortEnabled()
+  });
+});
 
+app.get('/api/batch-preview', (req, res) => {
   const patientsDir = getPatientsDir();
   const files = listInboxPhotos();
   const preview = [];
@@ -443,7 +526,7 @@ app.get('/api/batch-preview', (req, res) => {
 
       preview.push({
         fileName: file,
-        targetPatient,
+        targetPatient: targetPatient || '',
         status: targetPatient ? 'match' : 'unknown',
         timestamp: exifTime
       });
@@ -452,7 +535,12 @@ app.get('/api/batch-preview', (req, res) => {
     }
   }
 
-  res.json({ success: true, preview });
+  res.json({
+    success: true,
+    preview,
+    targets: getAssignmentTargets(),
+    autoSortEnabled: isAutoSortEnabled()
+  });
 });
 
 app.post('/api/batch-execute', (req, res) => {
@@ -465,7 +553,7 @@ app.post('/api/batch-execute', (req, res) => {
   let movedCount = 0;
 
   for (const mapping of mappings) {
-    if (!mapping.targetPatient || mapping.targetPatient === 'ignore') continue;
+    if (!mapping.targetPatient || mapping.targetPatient === 'ignore' || mapping.targetPatient === '') continue;
 
     const srcPath = path.join(patientsDir, mapping.fileName);
     if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) continue;
@@ -579,7 +667,12 @@ async function handleNewFile(filePath) {
   const patientsDir = getPatientsDir();
   let targetPatientId = activePatientId || null;
 
-  if (!targetPatientId && isInboxImageFile(fileName) && currentSchedule.length > 0) {
+  if (
+    !targetPatientId &&
+    isAutoSortEnabled() &&
+    isInboxImageFile(fileName) &&
+    currentSchedule.length > 0
+  ) {
     try {
       const stat = fs.statSync(filePath);
       const exifTime = getExifTime(filePath) || stat.mtimeMs;

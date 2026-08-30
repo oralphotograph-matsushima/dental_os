@@ -6,9 +6,18 @@ import * as htmlToImage from 'html-to-image';
 
 interface CameraModeProps {
   activePatient?: string;
+  autoSortEnabled?: boolean;
 }
 
-export default function CameraModePage({ activePatient }: CameraModeProps) {
+interface AssignmentTarget {
+  id: string;
+  name: string;
+  folder: string;
+  startTime?: string;
+  source?: string;
+}
+
+export default function CameraModePage({ activePatient, autoSortEnabled = false }: CameraModeProps) {
   const [patientId, setPatientId] = useState("");
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -21,10 +30,12 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
 
   // === Master Schedule State ===
   const [schedule, setSchedule] = useState<any[]>([]);
+  const [assignmentTargets, setAssignmentTargets] = useState<AssignmentTarget[]>([]);
   const [isParsingSchedule, setIsParsingSchedule] = useState(false);
   const [batchPreview, setBatchPreview] = useState<any[] | null>(null);
   const [showBatchPreviewModal, setShowBatchPreviewModal] = useState(false);
   const [isExecutingBatch, setIsExecutingBatch] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [layoutFormat, setLayoutFormat] = useState<"5" | "7" | "9">("9");
   const scheduleInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,13 +64,19 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
     }
   }, [activePatient]);
 
-  // マウント時に今日のスケジュールをPCサーバーから取得
+  // マウント時に今日のスケジュールと本日の診療キューをPCサーバーから取得
   useEffect(() => {
     fetch(`http://${window.location.hostname}:3001/api/schedule`)
       .then(res => res.json())
       .then(data => {
         if (data.schedule) setSchedule(data.schedule);
       }).catch(err => console.error("Failed to fetch schedule:", err));
+
+    fetch(`http://${window.location.hostname}:3001/api/assignment-targets`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.targets) setAssignmentTargets(data.targets);
+      }).catch(err => console.error("Failed to fetch assignment targets:", err));
   }, []);
 
   // スリープ復帰時などの自動再接続処理
@@ -198,12 +215,17 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
       const data = await res.json();
       setSchedule(data.schedule);
       
-      // 同期的に状態をサーバーにも保存（既にparseで保存されているなら不要だが念のため）
       await fetch(`http://${window.location.hostname}:3001/api/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ schedule: data.schedule })
       });
+
+      const targetsRes = await fetch(`http://${window.location.hostname}:3001/api/assignment-targets`);
+      if (targetsRes.ok) {
+        const targetsData = await targetsRes.json();
+        if (targetsData.targets) setAssignmentTargets(targetsData.targets);
+      }
       
     } catch (err: any) {
       setErrorMsg(err.message || "エラーが発生しました");
@@ -214,22 +236,27 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
   };
 
   const handleBatchSort = async () => {
-    if (schedule.length === 0) {
-      setErrorMsg("スケジュールが登録されていません。");
-      return;
-    }
+    setErrorMsg("");
+    setIsLoadingPreview(true);
     
     try {
       const res = await fetch(`http://${window.location.hostname}:3001/api/batch-preview`);
       const data = await res.json();
-      if (res.ok) {
-        setBatchPreview(data.preview || []);
-        setShowBatchPreviewModal(true);
-      } else {
-        throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "プレビュー取得に失敗しました");
+
+      if (data.targets) setAssignmentTargets(data.targets);
+
+      const preview = data.preview || [];
+      setBatchPreview(preview);
+      setShowBatchPreviewModal(true);
+
+      if (preview.length > 0 && (data.targets || []).length === 0) {
+        setErrorMsg("本日の診療キューかアポ表に患者がいません。先に患者を登録すると、写真の行き先を選べます。");
       }
     } catch (err: any) {
       setErrorMsg(err.message || "プレビュー取得に失敗しました");
+    } finally {
+      setIsLoadingPreview(false);
     }
   };
 
@@ -244,7 +271,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`${data.moved} 枚の写真を自動振り分けしました！`);
+        alert(`${data.moved} 枚の写真を振り分けました。`);
         setShowBatchPreviewModal(false);
         setBatchPreview(null);
       } else {
@@ -490,11 +517,14 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-200 mb-2 flex items-center gap-2">
-                  <span className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-bold">🪄</span>
-                  スマート一括振り分け (AIスケジュール)
+                  <span className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-bold">1</span>
+                  写真の振り分け
                 </h2>
                 <p className="text-xs text-neutral-400">
-                  朝一のアポ表を読み込むと、Patients 直下に入った写真を撮影時刻（EXIF）と当日の予約で照合し、各患者フォルダへ振り分けます。Unassigned フォルダは使いません。
+                  写真は Patients 直下に溜まります。「振り分けを開始」を押すと、撮影時刻の候補と本日の患者一覧から行き先を選んで確定できます。
+                  {autoSortEnabled
+                    ? " 設定で自動振り分けがオンのため、時刻が確実に一致したものだけ先に患者フォルダへ入ります。"
+                    : " 自動振り分けはオフです。自分のタイミングで開始してください。"}
                 </p>
               </div>
               <div className="mt-4 sm:mt-0 flex gap-2">
@@ -515,22 +545,28 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                 </button>
                 <button 
                   onClick={handleBatchSort}
-                  disabled={schedule.length === 0}
+                  disabled={isLoadingPreview}
                   className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center gap-2 text-sm active:scale-95 disabled:opacity-50"
                 >
-                  <LayoutTemplate className="w-4 h-4" />
-                  一括取り込み＆自動振り分け
+                  {isLoadingPreview ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LayoutTemplate className="w-4 h-4" />}
+                  振り分けを開始
                 </button>
               </div>
             </div>
             
-            {schedule.length > 0 && (
+            {(assignmentTargets.length > 0 || schedule.length > 0) && (
               <div className="bg-black/40 border border-white/5 rounded-2xl p-4 overflow-x-auto scrollbar-thin">
                 <div className="flex gap-2">
-                  {schedule.map((slot, idx) => (
-                    <div key={idx} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 min-w-[120px] flex-shrink-0">
-                      <div className="text-xs font-mono text-purple-400 mb-1">{slot.startTime}〜</div>
-                      <div className="text-sm font-bold text-white truncate">{slot.name}</div>
+                  {(assignmentTargets.length > 0 ? assignmentTargets : schedule.map((s: any) => ({
+                    id: s.id,
+                    name: s.name,
+                    folder: `${s.id}_${s.name}`,
+                    startTime: s.startTime,
+                    source: 'schedule'
+                  }))).map((slot, idx) => (
+                    <div key={`${slot.id}-${idx}`} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-xs font-mono text-purple-400 mb-1">{slot.startTime ? `${slot.startTime}〜` : "本日"}</div>
+                      <div className="text-sm font-bold text-white truncate">{String(slot.name).includes('_') ? String(slot.name).split('_').slice(1).join('_') : slot.name}</div>
                       <div className="text-[10px] text-neutral-500 font-mono mt-1">ID: {slot.id}</div>
                     </div>
                   ))}
@@ -822,7 +858,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-2xl font-bold text-white flex items-center gap-3">
                 <LayoutTemplate className="w-8 h-8 text-purple-400" />
-                振り分けプレビュー
+                振り分け先の確認
               </h2>
               <button 
                 onClick={() => setShowBatchPreviewModal(false)}
@@ -832,8 +868,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
               </button>
             </div>
             <p className="text-neutral-400 mb-6 text-sm">
-              以下の内容でファイルを振り分けます。よろしければ確定してください。
-              変更する場合はドロップダウンで対象を変更するか、「除外」を選んでください。
+              時刻から候補が付いている写真は確認して確定してください。付いていない写真は、本日のアポ／診療キューから患者を選んで入れてください。
             </p>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
@@ -855,26 +890,38 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <select
                           className="bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500 min-w-[200px]"
-                          value={item.targetPatient || 'ignore'}
+                          value={item.targetPatient || ''}
                           onChange={(e) => {
+                            const val = e.target.value;
                             const newPreview = [...batchPreview];
-                            newPreview[idx].targetPatient = e.target.value;
+                            newPreview[idx].targetPatient = val;
+                            newPreview[idx].status = (!val || val === 'ignore') ? 'unknown' : 'manual';
                             setBatchPreview(newPreview);
                           }}
                         >
-                          <option value="ignore">除外（移動しない）</option>
-                          {schedule.map(s => (
-                            <option key={s.id} value={`${s.id}_${s.name}`}>{s.id} {s.name}</option>
+                          <option value="">患者を選択</option>
+                          <option value="ignore">今回は入れない</option>
+                          {assignmentTargets.map(t => (
+                            <option key={t.folder} value={t.folder}>
+                              {t.id} {String(t.name).includes('_') ? String(t.name).split('_').slice(1).join('_') : t.name}
+                              {t.startTime ? ` (${t.startTime})` : ''}
+                            </option>
                           ))}
-                          {item.targetPatient && !schedule.find(s => `${s.id}_${s.name}` === item.targetPatient) && (
-                            <option value={item.targetPatient}>{item.targetPatient} (スケジュール外)</option>
+                          {schedule.filter((s: any) => !assignmentTargets.some(t => t.id === String(s.id))).map((s: any) => (
+                            <option key={`${s.id}_${s.name}`} value={`${s.id}_${s.name}`}>{s.id} {s.name}</option>
+                          ))}
+                          {item.targetPatient && item.targetPatient !== 'ignore' && !assignmentTargets.some(t => t.folder === item.targetPatient) && !schedule.some((s: any) => `${s.id}_${s.name}` === item.targetPatient) && (
+                            <option value={item.targetPatient}>{item.targetPatient}</option>
                           )}
                         </select>
-                        {item.status === 'match' && (
-                          <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded inline-flex items-center">AI判定済</span>
+                        {item.status === 'match' && item.targetPatient && (
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded inline-flex items-center">時刻候補あり・確認して確定</span>
                         )}
-                        {item.status === 'unknown' && (
-                          <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded inline-flex items-center">自動判定不可・要確認</span>
+                        {item.status === 'manual' && item.targetPatient && item.targetPatient !== 'ignore' && (
+                          <span className="text-xs font-bold text-teal-400 bg-teal-400/10 px-2 py-1 rounded inline-flex items-center">手動選択</span>
+                        )}
+                        {(!item.targetPatient || item.targetPatient === 'ignore' || item.status === 'unknown') && item.status !== 'manual' && item.status !== 'match' && (
+                          <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded inline-flex items-center">行き先未定・アポから選択</span>
                         )}
                       </div>
                     </div>

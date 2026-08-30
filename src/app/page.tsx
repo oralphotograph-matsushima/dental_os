@@ -232,6 +232,7 @@ export default function Home() {
   const [isIOS, setIsIOS] = useState(false);
   const [copied, setCopied] = useState(false);
   const [vaultPath, setVaultPath] = useState("");
+  const [autoSortEnabled, setAutoSortEnabled] = useState(false);
 
   const [clinicName, setClinicName] = useState("");
   const [clinicEmail, setClinicEmail] = useState("");
@@ -256,7 +257,7 @@ export default function Home() {
   const [isParsingImage, setIsParsingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const saveClinicSettings = async (updates: { vaultPath?: string; name?: string; email?: string; tagKeywords?: string[]; customIP?: string }) => {
+  const saveClinicSettings = async (updates: { vaultPath?: string; name?: string; email?: string; tagKeywords?: string[]; customIP?: string; autoSortEnabled?: boolean }) => {
     try {
       let currentSettings = {};
       const getRes = await fetch('/api/settings/clinic');
@@ -452,6 +453,7 @@ export default function Home() {
             if (data.email) setClinicEmail(data.email);
             if (data.tagKeywords) setTagKeywords(data.tagKeywords);
             if (data.customIP) setCustomIP(data.customIP);
+            setAutoSortEnabled(data.autoSortEnabled === true);
           }
         }
       } catch (e) {
@@ -1656,7 +1658,7 @@ export default function Home() {
 
           {/* === WIRELESS CONNECT TAB === */}
           {activeTab === "qr" && (
-            <CameraMode activePatient={patientInfo} />
+            <CameraMode activePatient={patientInfo} autoSortEnabled={autoSortEnabled} />
           )}
 
           {/* === INPUT TAB === */}
@@ -2153,6 +2155,36 @@ export default function Home() {
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
                   v{APP_VERSION} (App)
+                </div>
+              </div>
+
+              <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
+                <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-teal-500" />
+                  写真の振り分け
+                </h3>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-black/40 rounded-xl border border-white/5">
+                  <div className="flex-1">
+                    <div className="font-semibold text-neutral-200 mb-1">自動振り分け</div>
+                    <div className="text-xs md:text-sm text-neutral-400">
+                      オフ（推奨）のときは、写真は Patients 直下に溜まり、Wireless Connect タブの「振り分けを開始」で自分のタイミングで行き先を選べます。オンにすると、撮影時刻とアポが確実に一致した写真だけ自動で患者フォルダへ入ります。不確かなものは直下に残り、ボタンから選べます。
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !autoSortEnabled;
+                      setAutoSortEnabled(next);
+                      saveClinicSettings({ autoSortEnabled: next });
+                    }}
+                    className={`flex-shrink-0 px-5 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                      autoSortEnabled
+                        ? "bg-teal-600 border-teal-400 text-white"
+                        : "bg-neutral-800 border-white/10 text-neutral-300"
+                    }`}
+                  >
+                    {autoSortEnabled ? "オン" : "オフ"}
+                  </button>
                 </div>
               </div>
 
