@@ -19,6 +19,15 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
   const [duplicateConflicts, setDuplicateConflicts] = useState<Record<string, string[]> | null>(null);
   const [showSlidePreview, setShowSlidePreview] = useState(false);
 
+  // === Master Schedule State ===
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [isParsingSchedule, setIsParsingSchedule] = useState(false);
+  const [batchPreview, setBatchPreview] = useState<any[] | null>(null);
+  const [showBatchPreviewModal, setShowBatchPreviewModal] = useState(false);
+  const [isExecutingBatch, setIsExecutingBatch] = useState(false);
+  const [layoutFormat, setLayoutFormat] = useState<"5" | "7" | "9">("9");
+  const scheduleInputRef = useRef<HTMLInputElement>(null);
+
   const eventSourceRef = useRef<EventSource | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +52,15 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
       fetchActivePatient();
     }
   }, [activePatient]);
+
+  // マウント時に今日のスケジュールをPCサーバーから取得
+  useEffect(() => {
+    fetch(`http://${window.location.hostname}:3001/api/schedule`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.schedule) setSchedule(data.schedule);
+      }).catch(err => console.error("Failed to fetch schedule:", err));
+  }, []);
 
   // スリープ復帰時などの自動再接続処理
   useEffect(() => {
@@ -158,6 +176,88 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
     }
   };
 
+  // ==========================================
+  // Master Schedule Functions
+  // ==========================================
+  const handleScheduleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingSchedule(true);
+    setErrorMsg("");
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3001/api/schedule/parse`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!res.ok) throw new Error("アポ表の解析に失敗しました。");
+      const data = await res.json();
+      setSchedule(data.schedule);
+      
+      // 同期的に状態をサーバーにも保存（既にparseで保存されているなら不要だが念のため）
+      await fetch(`http://${window.location.hostname}:3001/api/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule: data.schedule })
+      });
+      
+    } catch (err: any) {
+      setErrorMsg(err.message || "エラーが発生しました");
+    } finally {
+      setIsParsingSchedule(false);
+      if (scheduleInputRef.current) scheduleInputRef.current.value = "";
+    }
+  };
+
+  const handleBatchSort = async () => {
+    if (schedule.length === 0) {
+      setErrorMsg("スケジュールが登録されていません。");
+      return;
+    }
+    
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3001/api/batch-preview`);
+      const data = await res.json();
+      if (res.ok) {
+        setBatchPreview(data.preview || []);
+        setShowBatchPreviewModal(true);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "プレビュー取得に失敗しました");
+    }
+  };
+
+  const handleBatchExecute = async () => {
+    if (!batchPreview) return;
+    setIsExecutingBatch(true);
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3001/api/batch-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mappings: batchPreview })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`${data.moved} 枚の写真を自動振り分けしました！`);
+        setShowBatchPreviewModal(false);
+        setBatchPreview(null);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "振り分け実行に失敗しました");
+    } finally {
+      setIsExecutingBatch(false);
+    }
+  };
+
   const fileToBase64 = async (url: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new window.Image();
@@ -217,7 +317,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
       const results = data.results || [];
 
       const viewMap: Record<string, string[]> = {
-        front: [], right: [], left: [], upper: [], lower: [], facial: [], other: []
+        front: [], right: [], left: [], upper: [], lower: [], facial: [], smile: [], right_overjet: [], left_overjet: [], other: []
       };
 
       results.forEach((r: any) => {
@@ -294,7 +394,21 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
   };
 
   const viewLabels: Record<string, string> = {
-    front: "正面", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌"
+    front: "正面", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌", smile: "スマイル", right_overjet: "右側オーバージェット", left_overjet: "左側オーバージェット"
+  };
+
+  const ImageCell = ({ view, label, fallback }: { view: string, label: string, fallback?: string }) => {
+    const filename = analysisResults?.[view]?.[0];
+    return (
+      <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
+        {filename ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${filename}`} className="w-full h-full object-cover" alt={label} />
+        ) : (
+          <span className="text-neutral-700 font-bold text-center px-4 text-sm">{fallback || label}</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -367,6 +481,65 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
             </div>
           </div>
         )}
+
+        {/* ========================================== */}
+        {/* Master Schedule (Batch Sort) UI            */}
+        {/* ========================================== */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -ml-20 -mt-20 transition-opacity group-hover:opacity-100 opacity-50"></div>
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-neutral-200 mb-2 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm font-bold">🪄</span>
+                  スマート一括振り分け (AIスケジュール)
+                </h2>
+                <p className="text-xs text-neutral-400">
+                  朝一のアポ表画像を読み込ませることで、SDカード等から取り込んだ未分類の写真を、撮影時刻（EXIF）を基準に全自動でフォルダ分けします。
+                </p>
+              </div>
+              <div className="mt-4 sm:mt-0 flex gap-2">
+                <input 
+                  type="file" 
+                  ref={scheduleInputRef}
+                  onChange={handleScheduleUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button 
+                  onClick={() => scheduleInputRef.current?.click()}
+                  disabled={isParsingSchedule}
+                  className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center gap-2 text-sm border border-neutral-700 active:scale-95 disabled:opacity-50"
+                >
+                  {isParsingSchedule ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                  アポ表を読み込む
+                </button>
+                <button 
+                  onClick={handleBatchSort}
+                  disabled={schedule.length === 0}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center gap-2 text-sm active:scale-95 disabled:opacity-50"
+                >
+                  <LayoutTemplate className="w-4 h-4" />
+                  一括取り込み＆自動振り分け
+                </button>
+              </div>
+            </div>
+            
+            {schedule.length > 0 && (
+              <div className="bg-black/40 border border-white/5 rounded-2xl p-4 overflow-x-auto scrollbar-thin">
+                <div className="flex gap-2">
+                  {schedule.map((slot, idx) => (
+                    <div key={idx} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-xs font-mono text-purple-400 mb-1">{slot.startTime}〜</div>
+                      <div className="text-sm font-bold text-white truncate">{slot.name}</div>
+                      <div className="text-[10px] text-neutral-500 font-mono mt-1">ID: {slot.id}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Patient Selection Card */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden group">
@@ -471,47 +644,68 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                   <p className="text-xl text-neutral-400 font-mono">ID: {activePatientId}</p>
                 </div>
 
-                <div className="flex-1 grid grid-cols-3 grid-rows-2 gap-4">
-                  {/* Top Row: Right, Front, Left */}
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.right?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.right[0]}`} className="w-full h-full object-cover" alt="Right" />
-                    ) : <span className="text-neutral-700 font-bold">右側観</span>}
-                  </div>
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.front?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.front[0]}`} className="w-full h-full object-cover" alt="Front" />
-                    ) : <span className="text-neutral-700 font-bold">正面観</span>}
-                  </div>
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.left?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.left[0]}`} className="w-full h-full object-cover" alt="Left" />
-                    ) : <span className="text-neutral-700 font-bold">左側観</span>}
-                  </div>
+                {layoutFormat === "5" ? (
+                  <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-2">
+                    {/* Top Row */}
+                    <div className="bg-transparent"></div>
+                    <ImageCell view="upper" label="上顎観" />
+                    <div className="bg-transparent"></div>
+                    
+                    {/* Middle Row */}
+                    <ImageCell view="right" label="右側観" />
+                    <ImageCell view="front" label="正面観" />
+                    <ImageCell view="left" label="左側観" />
 
-                  {/* Bottom Row: Upper, Facial/Other, Lower */}
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.upper?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.upper[0]}`} className="w-full h-full object-cover" alt="Upper" />
-                    ) : <span className="text-neutral-700 font-bold">上顎観</span>}
+                    {/* Bottom Row */}
+                    <div className="bg-transparent"></div>
+                    <ImageCell view="lower" label="下顎観" />
+                    {/* Bottom right can be an overjet or face if available */}
+                    {(analysisResults.smile?.[0] || analysisResults.facial?.[0] || analysisResults.right_overjet?.[0]) ? (
+                      <ImageCell 
+                        view={analysisResults.right_overjet?.[0] ? "right_overjet" : (analysisResults.smile?.[0] ? "smile" : "facial")} 
+                        label="追加写真" 
+                      />
+                    ) : (
+                      <div className="bg-transparent border border-neutral-800/30 border-dashed rounded-lg flex items-center justify-center">
+                        <span className="text-neutral-700 text-xs">空き（オーバージェット等）</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.facial?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.facial[0]}`} className="w-full h-full object-cover" alt="Facial" />
-                    ) : <span className="text-neutral-700 font-bold text-sm text-center px-4">顔貌（未撮影時は空白）</span>}
+                ) : (
+                  <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-2">
+                    {/* For 9-view or 7-view, adapt to cross as well or standard grid? */}
+                    {layoutFormat === "7" ? (
+                      <>
+                        <ImageCell view="right_overjet" label="右側側方" />
+                        <ImageCell view="upper" label="上顎観" />
+                        <ImageCell view="left_overjet" label="左側側方" />
+                        
+                        <ImageCell view="right" label="右側観" />
+                        <ImageCell view="front" label="正面観" />
+                        <ImageCell view="left" label="左側観" />
+                        
+                        <div className="bg-transparent"></div>
+                        <ImageCell view="lower" label="下顎観" />
+                        <ImageCell view="smile" label="スマイル" />
+                      </>
+                    ) : (
+                      <>
+                        {/* 9-view standard grid */}
+                        <ImageCell view="right" label="右側観" />
+                        <ImageCell view="front" label="正面観" />
+                        <ImageCell view="left" label="左側観" />
+                        
+                        <ImageCell view="right_overjet" label="右側側方" />
+                        <ImageCell view="smile" label="スマイル" />
+                        <ImageCell view="left_overjet" label="左側側方" />
+
+                        <ImageCell view="upper" label="上顎観" />
+                        <ImageCell view="facial" label="顔貌" />
+                        <ImageCell view="lower" label="下顎観" />
+                      </>
+                    )}
                   </div>
-                  <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-                    {analysisResults.lower?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${analysisResults.lower[0]}`} className="w-full h-full object-cover" alt="Lower" />
-                    ) : <span className="text-neutral-700 font-bold">下顎観</span>}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
             
@@ -548,18 +742,29 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                   <span className="text-xs text-slate-400">撮影が完了したらAI判定へ</span>
                 </div>
               </div>
-              <button 
-                onClick={handleGenerateSlide}
-                disabled={isGenerating}
-                className="bg-teal-500 hover:bg-teal-400 text-white font-bold px-6 py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isGenerating ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                ) : (
-                  <LayoutTemplate className="w-5 h-5" />
-                )}
-                <span>AIで自動スライド生成</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <select
+                  value={layoutFormat}
+                  onChange={(e) => setLayoutFormat(e.target.value as any)}
+                  className="bg-neutral-900 border border-neutral-700 text-white text-sm rounded-xl px-4 py-3 focus:ring-teal-500 focus:border-teal-500 font-bold cursor-pointer hover:bg-neutral-800 transition-colors"
+                >
+                  <option value="5">基本5枚法</option>
+                  <option value="7">標準7枚法</option>
+                  <option value="9">精密9枚法</option>
+                </select>
+                <button 
+                  onClick={handleGenerateSlide}
+                  disabled={isGenerating}
+                  className="bg-teal-500 hover:bg-teal-400 text-white font-bold px-6 py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <LayoutTemplate className="w-5 h-5" />
+                  )}
+                  <span>AIで自動スライド生成</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -606,6 +811,94 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Preview Modal */}
+      {showBatchPreviewModal && batchPreview && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in zoom-in duration-200">
+          <div className="w-full max-w-4xl bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <LayoutTemplate className="w-8 h-8 text-purple-400" />
+                振り分けプレビュー
+              </h2>
+              <button 
+                onClick={() => setShowBatchPreviewModal(false)}
+                className="text-neutral-500 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-neutral-400 mb-6 text-sm">
+              以下の内容でファイルを振り分けます。よろしければ確定してください。
+              変更する場合はドロップダウンで対象を変更するか、「除外」を選んでください。
+            </p>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {batchPreview.length === 0 ? (
+                <div className="text-center text-neutral-500 py-10">振り分け対象の未分類写真がありません。</div>
+              ) : (
+                batchPreview.map((item, idx) => (
+                  <div key={idx} className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 flex gap-4 items-center">
+                    <div className="w-24 h-24 rounded-lg bg-neutral-900 overflow-hidden flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={`http://${window.location.hostname}:3001/unassigned-images/${item.fileName}`} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs text-neutral-500 mb-1">{item.fileName}</div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <select
+                          className="bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500 min-w-[200px]"
+                          value={item.targetPatient || 'ignore'}
+                          onChange={(e) => {
+                            const newPreview = [...batchPreview];
+                            newPreview[idx].targetPatient = e.target.value;
+                            setBatchPreview(newPreview);
+                          }}
+                        >
+                          <option value="ignore">除外（移動しない）</option>
+                          {schedule.map(s => (
+                            <option key={s.id} value={`${s.id}_${s.name}`}>{s.id} {s.name}</option>
+                          ))}
+                          {item.targetPatient && !schedule.find(s => `${s.id}_${s.name}` === item.targetPatient) && (
+                            <option value={item.targetPatient}>{item.targetPatient} (スケジュール外)</option>
+                          )}
+                        </select>
+                        {item.status === 'match' && (
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded inline-flex items-center">AI判定済</span>
+                        )}
+                        {item.status === 'unknown' && (
+                          <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded inline-flex items-center">自動判定不可・要確認</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-neutral-800">
+              <button 
+                onClick={() => setShowBatchPreviewModal(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={handleBatchExecute}
+                disabled={isExecutingBatch || batchPreview.length === 0}
+                className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isExecutingBatch ? <RefreshCw className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                確定して振り分ける
+              </button>
             </div>
           </div>
         </div>

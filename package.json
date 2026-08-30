@@ -96,6 +96,7 @@
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",
     "electron-updater": "^6.8.3",
+    "exif-parser": "^0.1.12",
     "express": "^5.2.1",
     "ftp-srv": "^4.6.3",
     "html-to-image": "^1.11.13",
@@ -114,6 +115,7 @@
     "react-dom": "19.2.4",
     "resend": "^6.12.3",
     "stripe": "^22.1.1",
+    "tesseract.js": "^7.0.0",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

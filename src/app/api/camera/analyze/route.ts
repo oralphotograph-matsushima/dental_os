@@ -24,21 +24,24 @@ export async function POST(req: Request) {
         - "front" (正面観 - Frontal intraoral view showing anterior teeth)
         - "right" (右側観 - Right lateral intraoral view)
         - "left" (左側観 - Left lateral intraoral view)
+        - "right_overjet" (右側オーバージェット/側方観 - Right overjet/lateral view showing anterior overbite from the right side)
+        - "left_overjet" (左側オーバージェット/側方観 - Left overjet/lateral view showing anterior overbite from the left side)
         - "upper" (上顎咬合面観 - Upper/Maxillary occlusal view, typically taken with a mirror)
         - "lower" (下顎咬合面観 - Lower/Mandibular occlusal view, typically taken with a mirror)
-        - "facial" (顔貌 - Extraoral facial view)
+        - "facial" (顔貌 - Extraoral facial view, resting profile or frontal)
+        - "smile" (スマイル - Extraoral facial view, smiling showing teeth)
         - "other" (その他 - X-rays, documents, or unidentifiable)
         
         Output a strictly valid JSON object with a single key "results" which contains an array of objects. Each object must have:
         - "filename": The filename of the image as provided.
-        - "view": The identified category (one of: "front", "right", "left", "upper", "lower", "facial", "other").
+        - "view": The identified category (one of: "front", "right", "left", "right_overjet", "left_overjet", "upper", "lower", "facial", "smile", "other").
         - "confidence": A number from 0 to 1 indicating your confidence.
         
         Example Output:
         {
           "results": [
             {"filename": "IMG_001.jpg", "view": "front", "confidence": 0.95},
-            {"filename": "IMG_002.jpg", "view": "upper", "confidence": 0.92}
+            {"filename": "IMG_002.jpg", "view": "smile", "confidence": 0.92}
           ]
         }
         `
