@@ -29,7 +29,7 @@ export default function LandingPage() {
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">OralNote</span>
+            <span className="text-xl font-bold tracking-tight text-white">Wireless Connect</span>
           </div>
           <div className="flex items-center gap-3">
             <a href="/?login=true" className="text-sm font-bold text-neutral-300 hover:text-white px-4 py-2 transition-colors">
@@ -62,7 +62,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="text-sm sm:text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mt-6">
-            カメラのSDカード運用から解放される「Wireless Connect」と、日々の記録業務をシームレスに繋ぐ「OralNote」。現場のストレスをなくし、患者様と向き合う時間を増やす次世代Dental OS。
+            カメラのSDカード運用から解放される「Wireless Connect」。撮った写真の自動振り分けと、日々の記録業務を院内PCでつなぐ次世代 Dental OS。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-teal-500 hover:bg-teal-400 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
@@ -303,7 +303,7 @@ export default function LandingPage() {
               </div>
               <ul className="space-y-3 mb-8 flex-1 mt-6">
                 <li className="flex items-start gap-2 text-white text-sm"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" /> <span><strong>カメラ連携 完全構築マニュアル</strong><br/><span className="text-[10px] text-emerald-300">（FTP / ルーター / 撮影プロトコルの設定ガイド）</span></span></li>
-                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" /> <span><strong>OralNote Clinic Pro 全機能</strong><br/><span className="text-[10px] text-teal-300">（デスクトップアプリの利用権利込み）</span></span></li>
+                <li className="flex items-start gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" /> <span><strong>Wireless Connect Clinic Pro 全機能</strong><br/><span className="text-[10px] text-teal-300">（デスクトップアプリの利用権利込み）</span></span></li>
                 <li className="flex items-center gap-2 text-neutral-300 text-sm"><CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" /> 無制限のスマートカルテ・スライド生成</li>
               </ul>
               <div className="space-y-3 mt-auto">
@@ -328,7 +328,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-neutral-500" />
-            <span className="text-neutral-400 font-bold">Nostalgista | OralNote</span>
+            <span className="text-neutral-400 font-bold">Nostalgista | Wireless Connect</span>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-4 text-sm text-neutral-500">
@@ -370,7 +370,7 @@ export default function LandingPage() {
                   完全自動転送
                 </h3>
                 <p className="text-sm leading-relaxed">
-                  一眼レフカメラでシャッターを切った瞬間、写真データが自動的に院内ネットワーク上のOralNoteアプリに送信されます。
+                  一眼レフカメラでシャッターを切った瞬間、写真データが自動的に院内ネットワーク上のWireless Connectアプリに送信されます。
                 </p>
               </div>
               <div className="bg-black/30 p-4 rounded-xl border border-white/5">

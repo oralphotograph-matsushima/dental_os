@@ -31,7 +31,7 @@ export default function SubscriptionRequiredPage() {
         
         <p className="text-gray-300 mb-8 text-left leading-relaxed">
           このアカウントには有効なClinicプランのライセンス（サブスクリプション）が見つかりませんでした。
-          OralNote をご利用いただくには、有効な契約が必要です。
+          Wireless Connect をご利用いただくには、有効な契約が必要です。
         </p>
 
         <div className="space-y-4">

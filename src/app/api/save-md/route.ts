@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { getVaultBaseDir } from '@/lib/settingsHelper';
 
 export async function POST(req: Request) {
   try {
@@ -11,38 +11,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'filename and content are required' }, { status: 400 });
     }
 
-    // 1. clinic.json からカスタムパスを取得する
-    const homedir = os.homedir();
-    const settingsFilePath = path.join(homedir, 'Desktop', 'WirelessConnect_Data', 'Settings', 'clinic.json');
-    let vaultPath = '';
-    
-    if (fs.existsSync(settingsFilePath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
-        if (config && config.vaultPath) {
-          vaultPath = config.vaultPath;
-        }
-      } catch (e) {
-        console.error('Failed to parse clinic.json for vaultPath in save-md:', e);
-      }
-    }
+    const baseDir = getVaultBaseDir();
 
     // ファイル名から患者フォルダ名を抽出 (例: カルテ_1234_山田太郎_260524.md -> 1234_山田太郎)
-    let patientFolder = "Unassigned";
+    let patientFolder = "";
     if (filename.startsWith("カルテ_")) {
       const parts = filename.replace(".md", "").split("_");
       if (parts.length >= 3) {
-        // カルテ_ID_名前_日付.md
         patientFolder = `${parts[1]}_${parts[2]}`;
       } else if (parts.length === 2) {
-        // カルテ_名前.md
         patientFolder = parts[1];
       }
     } else {
       patientFolder = filename.replace(".md", "");
     }
 
-    const baseDir = vaultPath || path.join(homedir, 'Desktop', 'WirelessConnect_Data');
+    if (patientFolder) {
+      const patientPhotoDir = path.join(baseDir, 'Patients', patientFolder);
+      if (!fs.existsSync(patientPhotoDir)) {
+        fs.mkdirSync(patientPhotoDir, { recursive: true });
+      }
+    }
+
     const karteDir = path.join(baseDir, 'カルテ');
 
     if (!fs.existsSync(karteDir)) {

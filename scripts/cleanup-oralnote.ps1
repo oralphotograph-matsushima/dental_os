@@ -3,13 +3,13 @@
 # Runs with Administrative Privileges
 
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "  OralNote クリーンアップ & 再インストール準備" -ForegroundColor Cyan
+Write-Host "  Wireless Connect クリーンアップ & 再インストール準備" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. 競合プロセスの強制終了
 Write-Host "[1/3] 競合するバックグラウンドプロセスを終了しています..." -ForegroundColor Yellow
-$processes = @("OralNote", "EOS Utility", "EOS Utility 3", "EOSWebService", "Wireless Transmitter Utility")
+$processes = @("Wireless Connect", "OralNote", "EOS Utility", "EOS Utility 3", "EOSWebService", "Wireless Transmitter Utility")
 foreach ($proc in $processes) {
     try {
         Stop-Process -Name $proc -Force -ErrorAction SilentlyContinue
@@ -30,15 +30,18 @@ $programFiles = $env:ProgramFiles
 $programFilesX86 = ${env:ProgramFiles(x86)}
 
 $targets = @(
-    # Program Files (for safety if machine-wide installation was attempted)
+    (Join-Path $programFiles "Wireless Connect"),
     (Join-Path $programFiles "OralNote"),
+    (Join-Path $programFilesX86 "Wireless Connect"),
     (Join-Path $programFilesX86 "OralNote"),
-
-    # AppData (perUser install, caching, or standard configuration)
+    (Join-Path $appData "Wireless Connect"),
     (Join-Path $appData "OralNote"),
     (Join-Path $appData "dental-os-prototype"),
+    (Join-Path $localAppData "Programs\Wireless Connect"),
     (Join-Path $localAppData "Programs\OralNote"),
+    (Join-Path $localAppData "wireless-connect-updater"),
     (Join-Path $localAppData "oralnote-updater"),
+    (Join-Path $env:TEMP "wireless-connect-updater"),
     (Join-Path $env:TEMP "oralnote-updater")
 )
 
@@ -124,6 +127,10 @@ Write-Host "重要な臨床データの保護状況を確認しています..." 
 
 $patientDataFound = $false
 $patientDataLocations = @(
+    (Join-Path ([Environment]::GetFolderPath("Desktop")) "WirelessConnect_Data"),
+    (Join-Path $env:USERPROFILE "Desktop\WirelessConnect_Data"),
+    "C:\Users\Public\Desktop\WirelessConnect_Data",
+    (Join-Path $env:USERPROFILE "OneDrive\Desktop\WirelessConnect_Data"),
     (Join-Path ([Environment]::GetFolderPath("Desktop")) "OralNote_Data"),
     (Join-Path $env:USERPROFILE "Desktop\OralNote_Data"),
     "C:\Users\Public\Desktop\OralNote_Data",
@@ -131,6 +138,7 @@ $patientDataLocations = @(
 )
 if (Test-Path $env:USERPROFILE) {
     Get-ChildItem -Path $env:USERPROFILE -Filter "OneDrive*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $patientDataLocations += Join-Path $_.FullName "Desktop\WirelessConnect_Data"
         $patientDataLocations += Join-Path $_.FullName "Desktop\OralNote_Data"
     }
 }

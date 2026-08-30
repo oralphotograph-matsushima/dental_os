@@ -1,13 +1,13 @@
-# OralNote - システム構成・仕様書 (System Specifications)
+# Wireless Connect - システム構成・仕様書 (System Specifications)
 
-本書は、歯科臨床用カルテ生成・画像管理支援システム **「OralNote (オラルノート)」** の全容、ハイブリッドアーキテクチャ、データフロー、およびネットワーク仕様をまとめた定義書です。
+本書は、歯科臨床用カルテ生成・画像管理支援システム **「Wireless Connect（旧 OralNote）」** の全容、ハイブリッドアーキテクチャ、データフロー、およびネットワーク仕様をまとめた定義書です。
 今後の機能拡張、AIによる開発支援、および他システムとの連携時にシステム構成を即座に把握するためのリファレンスとして使用します。
 
 ---
 
 ## 1. システム概要 & 設計思想
 
-OralNoteは、**「究極のデータセキュリティ（院内完結）」**と**「iPadによるスマートな操作性」**を両立する、**ローカル親機・子機ハイブリッド型 デスクトップアプリケーション（Dental OS）** です。
+Wireless Connectは、**「究極のデータセキュリティ（院内完結）」**と**「iPadによるスマートな操作性」**を両立する、**ローカル親機・子機ハイブリッド型 デスクトップアプリケーション（Dental OS）** です。
 
 ### 3大コアバリュー
 1. **完全院内完結型セキュリティ (Offline-First Local Storage)**
@@ -33,7 +33,7 @@ flowchart TB
         NextJS["Next.js Web Server (Port 3000)"]
         Watcher["Watcher Server (Port 3001)"]
         FTPSrv["FTP Server (Port 2121)"]
-        LocalFile["Local Filesystem (~/Desktop/OralNote_Data)"]
+        LocalFile["Local Filesystem (~/Desktop/WirelessConnect_Data)"]
         Obsidian["Obsidian Vault (.md files)"]
     end
 
@@ -82,14 +82,15 @@ flowchart TB
 ```text
 Desktop/
 ├── EOS_Utility_Photos/            # カメラから一時的に写真がアップロードされる一時領域 (Staging)
-└── OralNote_Data/
+└── WirelessConnect_Data/
     ├── Patients/                  # 患者データベース
+    │   ├── IMG_0001.JPG           # 未振り分け写真（Patients 直下。EXIFと当日アポで患者フォルダへ移動）
     │   ├── [患者ID_名前]/
-    │   │   ├── [患者ID_名前].md   # SOAPカルテ履歴ファイル（Obsidian対応）
-    │   │   ├── photo_001.jpg      # 口腔内写真 (圧縮済)
+    │   │   ├── photo_001.jpg
     │   │   └── photo_002.jpg
     │   └── [患者ID_名前_2]/
-    └── Unassigned/                # 患者を選択せずに撮影した写真が一時保存されるフォルダ
+    ├── Settings/                  # clinic.json / queue.json 等
+    └── カルテ/                    # SOAP Markdown
 ```
 
 ### B. カルテファイル仕様 (Obsidian互換Markdown)
@@ -256,7 +257,7 @@ Electron 開発において、古いデータベーススキーマや状態管�
 1.  **Windows用 (`cleanup-oralnote.bat` & `scripts/cleanup-oralnote.ps1`)**
     *   `OralNote`, `node` などの競合バックグラウンドプロセスを強制終了。
     *   Electron キャッシュおよび AppData (`%APPDATA%\OralNote`, `%LOCALAPPDATA%\Programs\OralNote`) などの不要な残骸データを完全に削除。
-    *   デスクトップ上のカルテ・画像の実データ（`OralNote_Data`）は絶対に削除しない保護処理を実装。
+    *   デスクトップ上のカルテ・画像の実データ（`WirelessConnect_Data`）は絶対に削除しない保護処理を実装。
 2.  **Mac用 (`cleanup-oralnote.sh`)**
     *   同一 LAN に接続された iPad 子機のリモート接続用に稼働する Node サーバーや、ポート `3000`/`3001` を占有する旧サーバープロセスをキル。
     *   `~/Library/Application Support/OralNote` を含む Mac 側のアプリキャッシュ・残骸を完全削除し、常にクリーンな検証・デプロイ環境を維持。

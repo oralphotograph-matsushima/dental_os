@@ -141,7 +141,7 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
             <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-3 rounded-2xl">
               <Camera className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl md:text-4xl font-bold tracking-tight text-white">OralNote</span>
+            <span className="text-3xl md:text-4xl font-bold tracking-tight text-white">Wireless Connect</span>
         </div>
         <p className="text-teal-400 font-bold tracking-widest text-xs md:text-sm">次世代 Dental OS</p>
       </div>

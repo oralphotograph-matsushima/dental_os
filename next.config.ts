@@ -29,7 +29,6 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     '*': [
       './dist/**/*',
-      './OralNote_Release_v1.2.0/**/*',
       './Clinic_Distribution_Assets/**/*',
       './node_modules/puppeteer/**/*',
     ],

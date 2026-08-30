@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Wireless Connect",
     description: "Next Generation Dental OS",
-    url: "https://oralnote.example.com",
+    url: "https://oralnote.nostalgista.co.jp",
     siteName: "Wireless Connect",
     images: [
       {

@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { getSettingsDir } from '@/lib/settingsHelper';
 
 const getQueueFilePath = () => {
-  const desktopPath = path.join(os.homedir(), 'Desktop');
-  const settingsDir = path.join(desktopPath, 'WirelessConnect_Data', 'Settings');
-  if (!fs.existsSync(settingsDir)) {
-    fs.mkdirSync(settingsDir, { recursive: true });
-  }
-  return path.join(settingsDir, 'queue.json');
+  return path.join(getSettingsDir(), 'queue.json');
 };
 
 export async function GET() {

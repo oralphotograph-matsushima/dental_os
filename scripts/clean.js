@@ -8,10 +8,10 @@ if (!fs.existsSync(distDir)) {
   process.exit(0);
 }
 
-// Keep only 1.3.5 and 1.3.4 version files and essential config
+// Keep current and previous clinic versions plus electron-builder metadata
 const keepPatterns = [
-  '1.3.5',
-  '1.3.4',
+  '1.5.0',
+  '1.4.1',
   'builder-debug.yml',
   'latest.yml'
 ];

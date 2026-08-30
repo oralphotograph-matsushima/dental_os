@@ -157,7 +157,6 @@ async function processQueue() {
   isProcessing = false;
 }
 
-const homedir = os.homedir();
 const STAGING_DIR = path.join(getDesktopPath(), 'EOS_Utility_Photos');
 
 function getVaultPath() {
@@ -176,6 +175,13 @@ function getVaultPath() {
   return '';
 }
 
+const IMAGE_EXTS = ['.jpg', '.jpeg', '.png'];
+
+function isInboxImageFile(fileName) {
+  const ext = path.extname(fileName).toLowerCase();
+  return IMAGE_EXTS.includes(ext) && !fileName.startsWith('.');
+}
+
 function getPatientsDir() {
   const vaultPath = getVaultPath();
   const dir = vaultPath 
@@ -187,15 +193,102 @@ function getPatientsDir() {
   return dir;
 }
 
-function getUnassignedDir() {
+function getLegacyUnassignedDir() {
   const vaultPath = getVaultPath();
-  const dir = vaultPath 
+  return vaultPath
     ? path.join(vaultPath, 'Unassigned')
     : path.join(getDesktopPath(), 'WirelessConnect_Data', 'Unassigned');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+}
+
+/** 旧 Unassigned に残った写真を Patients 直下へ一度だけ移し、空ならフォルダを消す */
+function migrateUnassignedIntoPatients() {
+  const oldDir = getLegacyUnassignedDir();
+  if (!fs.existsSync(oldDir)) return;
+
+  const patientsDir = getPatientsDir();
+  try {
+    const entries = fs.readdirSync(oldDir);
+    for (const file of entries) {
+      if (file.startsWith('.')) continue;
+      const srcPath = path.join(oldDir, file);
+      if (!fs.statSync(srcPath).isFile()) continue;
+      const destPath = path.join(patientsDir, file);
+      if (fs.existsSync(destPath)) {
+        const stamp = Date.now();
+        fs.renameSync(srcPath, path.join(patientsDir, `${stamp}_${file}`));
+      } else {
+        fs.renameSync(srcPath, destPath);
+      }
+      console.log(`[Watcher Migration] Moved leftover inbox photo to Patients/: ${file}`);
+    }
+    const leftover = fs.readdirSync(oldDir).filter(f => !f.startsWith('.'));
+    if (leftover.length === 0) {
+      fs.rmSync(oldDir, { recursive: true, force: true });
+      console.log('[Watcher Migration] Removed empty Unassigned folder');
+    }
+  } catch (e) {
+    console.error('[Watcher Migration] Failed to migrate Unassigned into Patients:', e);
   }
-  return dir;
+}
+
+function matchSchedulePatient(exifTime) {
+  if (!currentSchedule.length) return null;
+  for (let i = 0; i < currentSchedule.length; i++) {
+    const slot = currentSchedule[i];
+    const nextSlot = currentSchedule[i + 1];
+    const slotStartMs = slot.timestampMs - (15 * 60 * 1000);
+    const slotEndMs = nextSlot
+      ? (nextSlot.timestampMs - (15 * 60 * 1000))
+      : (slot.timestampMs + (60 * 60 * 1000));
+    if (exifTime >= slotStartMs && exifTime < slotEndMs) {
+      return `${slot.id}_${slot.name}`;
+    }
+  }
+  return null;
+}
+
+function listInboxPhotos() {
+  const patientsDir = getPatientsDir();
+  if (!fs.existsSync(patientsDir)) return [];
+  return fs.readdirSync(patientsDir).filter((file) => {
+    if (!isInboxImageFile(file)) return false;
+    const fullPath = path.join(patientsDir, file);
+    try {
+      return fs.statSync(fullPath).isFile();
+    } catch {
+      return false;
+    }
+  });
+}
+
+function autoSortInboxIfScheduled() {
+  if (!currentSchedule.length) return;
+  const patientsDir = getPatientsDir();
+  let moved = 0;
+  for (const file of listInboxPhotos()) {
+    const srcPath = path.join(patientsDir, file);
+    try {
+      const stat = fs.statSync(srcPath);
+      const match = matchSchedulePatient(getExifTime(srcPath) || stat.mtimeMs);
+      if (!match) continue;
+      const targetDir = path.join(patientsDir, match);
+      if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+      let destName = file;
+      let destPath = path.join(targetDir, destName);
+      if (fs.existsSync(destPath)) {
+        destName = `${Date.now()}_${file}`;
+        destPath = path.join(targetDir, destName);
+      }
+      fs.renameSync(srcPath, destPath);
+      moved++;
+      console.log(`[Watcher] Startup sort: ${file} -> ${match}`);
+    } catch (e) {
+      console.error(`[Watcher] Startup sort failed for ${file}:`, e);
+    }
+  }
+  if (moved > 0) {
+    console.log(`[Watcher] Startup sort moved ${moved} inbox photo(s) into patient folders`);
+  }
 }
 
 // 初期化時に必要なディレクトリを作成
@@ -203,8 +296,9 @@ if (!fs.existsSync(STAGING_DIR)) {
   fs.mkdirSync(STAGING_DIR, { recursive: true });
 }
 getPatientsDir();
-getUnassignedDir();
+migrateUnassignedIntoPatients();
 loadSchedule();
+autoSortInboxIfScheduled();
 
 // SSE接続クライアントの管理
 let clients = [];
@@ -217,8 +311,12 @@ app.use('/images', (req, res, next) => {
   express.static(getPatientsDir())(req, res, next);
 });
 
+// 旧UI互換。未振り分け写真は Patients 直下にある
 app.use('/unassigned-images', (req, res, next) => {
-  express.static(getUnassignedDir())(req, res, next);
+  express.static(getPatientsDir())(req, res, next);
+});
+app.use('/inbox-images', (req, res, next) => {
+  express.static(getPatientsDir())(req, res, next);
 });
 
 // ==========================================
@@ -331,47 +429,22 @@ app.get('/api/batch-preview', (req, res) => {
     return res.status(400).json({ success: false, error: 'No schedule available for sorting' });
   }
 
-  const unassignedDir = getUnassignedDir();
-  if (!fs.existsSync(unassignedDir)) {
-    return res.json({ success: true, preview: [] });
-  }
-
-  const files = fs.readdirSync(unassignedDir);
+  const patientsDir = getPatientsDir();
+  const files = listInboxPhotos();
   const preview = [];
 
   for (const file of files) {
-    if (file.startsWith('.')) continue;
-    const srcPath = path.join(unassignedDir, file);
+    const srcPath = path.join(patientsDir, file);
     
     try {
       const stat = fs.statSync(srcPath);
-      if (!stat.isFile()) continue;
-
-      const ext = path.extname(file).toLowerCase();
-      if (!['.jpg', '.jpeg', '.png'].includes(ext)) continue;
-
       const exifTime = getExifTime(srcPath) || stat.mtimeMs;
-      let targetPatient = null;
-      let status = 'unknown';
-      
-      for (let i = 0; i < currentSchedule.length; i++) {
-        const slot = currentSchedule[i];
-        const nextSlot = currentSchedule[i + 1];
-        
-        const slotStartMs = slot.timestampMs - (15 * 60 * 1000); 
-        const slotEndMs = nextSlot ? (nextSlot.timestampMs - (15 * 60 * 1000)) : (slot.timestampMs + (60 * 60 * 1000));
-
-        if (exifTime >= slotStartMs && exifTime < slotEndMs) {
-          targetPatient = `${slot.id}_${slot.name}`;
-          status = 'match';
-          break;
-        }
-      }
+      const targetPatient = matchSchedulePatient(exifTime);
 
       preview.push({
         fileName: file,
         targetPatient,
-        status,
+        status: targetPatient ? 'match' : 'unknown',
         timestamp: exifTime
       });
     } catch (fileErr) {
@@ -388,25 +461,30 @@ app.post('/api/batch-execute', (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid mappings data' });
   }
 
-  const unassignedDir = getUnassignedDir();
+  const patientsDir = getPatientsDir();
   let movedCount = 0;
 
   for (const mapping of mappings) {
     if (!mapping.targetPatient || mapping.targetPatient === 'ignore') continue;
 
-    const srcPath = path.join(unassignedDir, mapping.fileName);
-    if (!fs.existsSync(srcPath)) continue;
+    const srcPath = path.join(patientsDir, mapping.fileName);
+    if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) continue;
 
-    const targetDir = path.join(getPatientsDir(), mapping.targetPatient);
+    const targetDir = path.join(patientsDir, mapping.targetPatient);
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
 
-    const targetPath = path.join(targetDir, mapping.fileName);
+    let destName = mapping.fileName;
+    let targetPath = path.join(targetDir, destName);
+    if (fs.existsSync(targetPath)) {
+      destName = `${Date.now()}_${mapping.fileName}`;
+      targetPath = path.join(targetDir, destName);
+    }
     try {
       fs.renameSync(srcPath, targetPath);
       movedCount++;
-      console.log(`[Batch-Execute] 🔄 Moved ${mapping.fileName} to ${mapping.targetPatient}`);
+      console.log(`[Batch-Execute] Moved ${mapping.fileName} to ${mapping.targetPatient}`);
     } catch (err) {
       console.error(`[Batch-Execute] Error moving ${mapping.fileName}:`, err);
     }
@@ -425,7 +503,14 @@ app.get('/api/patients/:id/images', (req, res) => {
     return res.json({ images: [] });
   }
   const files = fs.readdirSync(patientDir)
-    .filter(f => !f.startsWith('.'))
+    .filter(f => {
+      if (f.startsWith('.')) return false;
+      try {
+        return fs.statSync(path.join(patientDir, f)).isFile();
+      } catch {
+        return false;
+      }
+    })
     .sort((a, b) => {
       // 新しいものが先頭に来るようにソート（更新日時）
       const statA = fs.statSync(path.join(patientDir, a));
@@ -491,43 +576,44 @@ watcher.on('add', (filePath) => {
 
 async function handleNewFile(filePath) {
   const fileName = path.basename(filePath);
-  
-  let targetDir;
-  let targetPatientId = null;
+  const patientsDir = getPatientsDir();
+  let targetPatientId = activePatientId || null;
 
-  if (activePatientId) {
-    // 手動で設定されている場合は最優先
-    targetPatientId = activePatientId;
-  } else {
-    // スケジュール駆動のため、リアルタイムの振り分けは行わずすべてUnassignedに入れる
-    // 拡張子チェック (画像かどうか)
-    const ext = path.extname(fileName).toLowerCase();
-    const isImage = ['.jpg', '.jpeg', '.png'].includes(ext);
-
-    if (!isImage) {
-      console.log(`[Watcher] ⚠️ Not an image. Routing to unassigned.`);
+  if (!targetPatientId && isInboxImageFile(fileName) && currentSchedule.length > 0) {
+    try {
+      const stat = fs.statSync(filePath);
+      const exifTime = getExifTime(filePath) || stat.mtimeMs;
+      targetPatientId = matchSchedulePatient(exifTime);
+    } catch (e) {
+      console.error('[Watcher] Failed to read EXIF for schedule match:', e);
     }
   }
 
-  if (targetPatientId) {
-    targetDir = path.join(getPatientsDir(), targetPatientId);
-  } else {
-    targetDir = getUnassignedDir();
-    console.log(`[Watcher] 📥 File placed in Unassigned for batch sorting: ${fileName}`);
-  }
+  const targetDir = targetPatientId
+    ? path.join(patientsDir, targetPatientId)
+    : patientsDir;
 
   if (!fs.existsSync(targetDir)) {
     fs.mkdirSync(targetDir, { recursive: true });
   }
 
-  const targetPath = path.join(targetDir, fileName);
+  let destName = fileName;
+  let targetPath = path.join(targetDir, destName);
+  if (fs.existsSync(targetPath)) {
+    destName = `${Date.now()}_${fileName}`;
+    targetPath = path.join(targetDir, destName);
+  }
 
   try {
     fs.renameSync(filePath, targetPath);
-    console.log(`[Watcher] ✅ File moved to: ${targetDir}`);
-    sendToClients({ type: 'NEW_IMAGE', fileName, patientId: targetPatientId || 'unassigned' });
+    if (targetPatientId) {
+      console.log(`[Watcher] File moved to patient folder: ${targetPatientId}/${destName}`);
+    } else {
+      console.log(`[Watcher] File parked in Patients/ inbox for later sort: ${destName}`);
+    }
+    sendToClients({ type: 'NEW_IMAGE', fileName: destName, patientId: targetPatientId || 'inbox' });
   } catch (err) {
-    console.error(`[Watcher] ❌ Error moving file:`, err);
+    console.error(`[Watcher] Error moving file:`, err);
   }
 }
 

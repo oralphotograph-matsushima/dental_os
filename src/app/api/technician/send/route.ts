@@ -119,7 +119,7 @@ ${shadeDetails || '特になし'}
 ※実際に技工所宛てに送信された添付画像ファイルがこのメールにも含まれています。
 
 ---
-※本メールはOralNoteシステムより自動送信されています。
+※本メールはWireless Connectシステムより自動送信されています。
           `,
           attachments: attachments,
         });

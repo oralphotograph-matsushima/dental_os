@@ -134,9 +134,8 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
           return currentId;
         });
       } else if (data.type === "REFRESH_IMAGES") {
-        // 画像を自動振り分けした後の再読み込み
         setActivePatientId(currentId => {
-          if (currentId && data.patientId === currentId) {
+          if (currentId && (data.patientId === currentId || data.patientId === 'all')) {
             fetchImages(currentId);
           }
           return currentId;
@@ -495,7 +494,7 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
                   スマート一括振り分け (AIスケジュール)
                 </h2>
                 <p className="text-xs text-neutral-400">
-                  朝一のアポ表画像を読み込ませることで、SDカード等から取り込んだ未分類の写真を、撮影時刻（EXIF）を基準に全自動でフォルダ分けします。
+                  朝一のアポ表を読み込むと、Patients 直下に入った写真を撮影時刻（EXIF）と当日の予約で照合し、各患者フォルダへ振り分けます。Unassigned フォルダは使いません。
                 </p>
               </div>
               <div className="mt-4 sm:mt-0 flex gap-2">
@@ -839,14 +838,14 @@ export default function CameraModePage({ activePatient }: CameraModeProps) {
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {batchPreview.length === 0 ? (
-                <div className="text-center text-neutral-500 py-10">振り分け対象の未分類写真がありません。</div>
+                <div className="text-center text-neutral-500 py-10">Patients 直下に振り分け対象の写真がありません。</div>
               ) : (
                 batchPreview.map((item, idx) => (
                   <div key={idx} className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 flex gap-4 items-center">
                     <div className="w-24 h-24 rounded-lg bg-neutral-900 overflow-hidden flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
-                        src={`http://${window.location.hostname}:3001/unassigned-images/${item.fileName}`} 
+                        src={`http://${window.location.hostname}:3001/inbox-images/${item.fileName}`} 
                         alt="Preview" 
                         className="w-full h-full object-cover"
                       />

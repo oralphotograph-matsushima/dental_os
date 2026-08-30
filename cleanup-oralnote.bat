@@ -1,9 +1,9 @@
 @echo off
-title OralNote Cleanup Tool
+title Wireless Connect Cleanup Tool
 chcp 65001 > nul
 
 echo ====================================================
-echo  OralNote クリーンアップツール (Windows用)
+echo  Wireless Connect クリーンアップツール (Windows用)
 echo ====================================================
 echo.
 

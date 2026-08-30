@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# OralNote Clean Reinstallation Script for macOS
+# Wireless Connect Clean Reinstallation Script for macOS
 
 echo "============================================="
-echo "  OralNote クリーンアップ & 再インストール準備 (Mac用)"
+echo "  Wireless Connect クリーンアップ & 再インストール準備 (Mac用)"
 echo "============================================="
 echo ""
 
 # 1. 競合プロセスの強制終了
 echo "[1/3] 競合するバックグラウンドプロセスを終了しています..."
 
-# 実行中の OralNote プロセスを終了
+pkill -f "Wireless Connect" 2>/dev/null
 pkill -f "OralNote" 2>/dev/null
 
 # ポート 3000 と 3001 を占有しているプロセスを終了して競合を回避
@@ -31,8 +31,10 @@ echo ""
 echo "[2/3] アプリ本体の残骸およびキャッシュデータを削除しています..."
 
 TARGETS=(
+  "$HOME/Library/Application Support/Wireless Connect"
   "$HOME/Library/Application Support/OralNote"
   "$HOME/Library/Application Support/dental-os-prototype"
+  "$HOME/Library/Caches/com.wirelessconnect.app"
   "$HOME/Library/Caches/com.oralnote.ai"
   "$HOME/Library/Caches/com.oralnote.ai.ShipIt"
 )
@@ -49,12 +51,16 @@ done
 # 3. 大切なデータの保護確認
 echo ""
 echo "[3/3] 重要な臨床データの保護状況を確認しています..."
-CLINICAL_DATA="$HOME/Desktop/OralNote_Data"
-if [ -d "$CLINICAL_DATA" ]; then
-  echo "  ✅ 検出成功: $CLINICAL_DATA"
-  echo "  🛡️ カルテおよび画像データは完全に保護されています。(削除されていません)"
-else
-  echo "  ℹ️ フォルダなし: $CLINICAL_DATA (新規インストールと同等の状態です)"
+PROTECTED=0
+for CLINICAL_DATA in "$HOME/Desktop/WirelessConnect_Data" "$HOME/Desktop/OralNote_Data"; do
+  if [ -d "$CLINICAL_DATA" ]; then
+    echo "  検出成功: $CLINICAL_DATA"
+    echo "  カルテおよび画像データは完全に保護されています。(削除されていません)"
+    PROTECTED=1
+  fi
+done
+if [ "$PROTECTED" -eq 0 ]; then
+  echo "  データフォルダなし (新規インストールと同等の状態です)"
 fi
 
 echo ""

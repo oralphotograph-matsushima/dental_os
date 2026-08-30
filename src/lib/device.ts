@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-const DEVICE_ID_KEY = 'oralnote_device_id';
+const DEVICE_ID_KEY = 'oralnote_device_id'; // 既存クリニック端末のIDを壊さないためキー名は据え置き
 
 /**
  * 現在のデバイスの固有IDを取得する。存在しない場合は新規生成して保存する。

@@ -8,6 +8,7 @@ import SlideGenerator from "@/components/SlideGenerator";
 import TechnicianOrder from "@/components/TechnicianOrder";
 import CameraMode from "@/components/CameraMode";
 import { supabase } from "@/lib/supabase";
+import { APP_VERSION } from "@/lib/appVersion";
 
 function generateDeviceId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -71,7 +72,7 @@ export default function Home() {
     const code = downloadCode.trim().toLowerCase();
     
     // 許可するダウンロード認証コード一覧
-    const validCodes = ['oralnote-setup', 'matsushima-vip', 'coupon-free', 'oralnote2026'];
+    const validCodes = ['oralnote-setup', 'matsushima-vip', 'coupon-free', 'oralnote2026', 'wireless-connect', 'wirelessconnect2026'];
     
     if (validCodes.includes(code)) {
       setIsCodeUnlocked(true);
@@ -134,7 +135,7 @@ export default function Home() {
       
       if (isLocal) {
         try {
-          const CURRENT_VERSION = "1.3.2"; // 現在のアプリのバージョン
+          const CURRENT_VERSION = APP_VERSION;
           const res = await fetch("https://oralnote.nostalgista.co.jp/api/app-version", { cache: 'no-store' });
           if (res.ok) {
             const data = await res.json();
@@ -1434,7 +1435,7 @@ export default function Home() {
                       className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/10 hover:shadow-teal-500/25 transition-all text-center hover:scale-[1.01]"
                     >
                       <Download className="w-4 h-4" />
-                      Windowsデスクトップ版（v1.3.2）をダウンロード
+                      Windowsデスクトップ版（v{APP_VERSION}）をダウンロード
                     </a>
                     <p className="text-[11px] text-neutral-500 text-center">
                       ※Windows 10/11対応。ダウンロード後、インストーラーを実行してください。
@@ -1521,7 +1522,7 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-100 to-neutral-400">
                 Wireless Connect
               </h1>
-              <span className="text-[10px] text-orange-500/50 font-mono tracking-wider">v1.4.0 (App)</span>
+              <span className="text-[10px] text-orange-500/50 font-mono tracking-wider">v{APP_VERSION} (App)</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-1.5 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
@@ -2151,7 +2152,7 @@ export default function Home() {
                   <p className="text-xs md:text-sm text-neutral-400">アプリの動作や連携機能のカスタマイズを行います。</p>
                 </div>
                 <div className="text-[10px] md:text-xs text-teal-400 font-mono bg-teal-500/10 px-2 py-1 rounded-md border border-teal-500/20 shadow-inner">
-                  v1.3.5 (App)
+                  v{APP_VERSION} (App)
                 </div>
               </div>
 

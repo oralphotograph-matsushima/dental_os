@@ -5,7 +5,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 
 <!-- BEGIN:oralnote-ui-rules -->
-# OralNote Tab Order & Dynamic Queue Rules
+# Wireless Connect Tab Order & Dynamic Queue Rules
 
 To maintain high usability in real-world clinical environments, the following rules for UI layout, tab order, and dynamic patient queue workflows MUST be strictly followed:
 

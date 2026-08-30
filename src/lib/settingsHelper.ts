@@ -62,15 +62,41 @@ export const getDesktopPath = (): string => {
 };
 
 /**
- * デフォルトの設定保存ディレクトリ (Desktop/OralNote_Data/Settings) を取得します。
+ * デフォルトのデータ保存ルート (Desktop/WirelessConnect_Data) を取得します。
+ */
+export const getDefaultDataDir = (): string => {
+  return path.join(getDesktopPath(), 'WirelessConnect_Data');
+};
+
+/**
+ * デフォルトの設定保存ディレクトリ (Desktop/WirelessConnect_Data/Settings) を取得します。
  */
 export const getDefaultSettingsDir = (): string => {
-  const desktop = getDesktopPath();
-  const defaultDir = path.join(desktop, 'WirelessConnect_Data', 'Settings');
+  const defaultDir = path.join(getDefaultDataDir(), 'Settings');
   if (!fs.existsSync(defaultDir)) {
     fs.mkdirSync(defaultDir, { recursive: true });
   }
   return defaultDir;
+};
+
+/**
+ * 実際に使うデータルート。clinic.json の vaultPath があればそちら、なければ WirelessConnect_Data。
+ */
+export const getVaultBaseDir = (): string => {
+  const defaultDir = getDefaultSettingsDir();
+  const defaultClinicJson = path.join(defaultDir, 'clinic.json');
+
+  if (fs.existsSync(defaultClinicJson)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(defaultClinicJson, 'utf8'));
+      if (data && data.vaultPath) {
+        return data.vaultPath;
+      }
+    } catch (e) {
+      console.error('[SettingsHelper] Failed to read clinic.json for vaultPath in getVaultBaseDir:', e);
+    }
+  }
+  return getDefaultDataDir();
 };
 
 /**
@@ -113,23 +139,7 @@ export const getTermsSettingsPath = (): string => {
  * 技工指示書データの保存先ディレクトリ (vaultPath/TechnicianOrders) を取得します。
  */
 export const getOrdersDir = (): string => {
-  const defaultDesktopDir = getDesktopPath();
-  let baseDir = path.join(defaultDesktopDir, 'WirelessConnect_Data');
-  
-  const defaultDir = getDefaultSettingsDir();
-  const defaultClinicJson = path.join(defaultDir, 'clinic.json');
-  if (fs.existsSync(defaultClinicJson)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(defaultClinicJson, 'utf8'));
-      if (data && data.vaultPath) {
-        baseDir = data.vaultPath;
-      }
-    } catch (e) {
-      console.error('[SettingsHelper] Failed to read clinic.json for vaultPath in getOrdersDir:', e);
-    }
-  }
-  
-  const ordersDir = path.join(baseDir, 'TechnicianOrders');
+  const ordersDir = path.join(getVaultBaseDir(), 'TechnicianOrders');
   if (!fs.existsSync(ordersDir)) {
     fs.mkdirSync(ordersDir, { recursive: true });
   }

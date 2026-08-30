@@ -1,26 +1,11 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { getVaultBaseDir } from '@/lib/settingsHelper';
 
 export async function GET() {
   try {
-    const homedir = os.homedir();
-    const settingsFilePath = path.join(homedir, 'Desktop', 'WirelessConnect_Data', 'Settings', 'clinic.json');
-    let vaultPath = '';
-    
-    if (fs.existsSync(settingsFilePath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(settingsFilePath, 'utf8'));
-        if (config && config.vaultPath) {
-          vaultPath = config.vaultPath;
-        }
-      } catch (e) {
-        console.error('Failed to parse clinic.json for vaultPath:', e);
-      }
-    }
-    
-    let baseDir = vaultPath || path.join(homedir, 'Desktop', 'WirelessConnect_Data');
+    const baseDir = getVaultBaseDir();
       
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });

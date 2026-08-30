@@ -281,7 +281,7 @@ export default function WirelessConnectLP() {
             <span>© {new Date().getFullYear()} Nostalgista Inc. All rights reserved.</span>
           </div>
           <div className="flex gap-6">
-            <Link href="/" className="hover:text-neutral-300 transition-colors">OralNote Main</Link>
+            <Link href="/" className="hover:text-neutral-300 transition-colors">Wireless Connect</Link>
             <a href="#" className="hover:text-neutral-300 transition-colors">Privacy</a>
             <a href="#" className="hover:text-neutral-300 transition-colors">Terms</a>
           </div>
