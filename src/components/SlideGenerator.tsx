@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Sliders, Edit3, Mic, Loader2, Maximize2, MoveRight, MoveLeft, RefreshCw, Circle, Droplet } from "lucide-react";
-import pptxgen from "pptxgenjs";
+import React, { useState, useRef, useEffect } from "react";
+import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Sliders, Edit3, Mic, Loader2, Maximize2, MoveRight, MoveLeft, RefreshCw, Circle, Droplet, CheckCircle } from "lucide-react";
 import * as htmlToImage from "html-to-image";
-import jsPDF from "jspdf";
 import { getApproximateCoordinates } from "@/lib/dentalGridMap";
+import { LAYOUT_TEMPLATES, LayoutSlot, compositePngFilename, compositePngLatestName, isCompositePng } from "@/lib/layoutSlots";
 
 export type AnnotationType = 'implant' | 'arrow_mesial' | 'arrow_distal' | 'rotation' | 'caries' | 'bone_graft' | 'polygon';
 
@@ -70,10 +69,13 @@ export const MarkerIcon = ({ type, className = "", points, isStatic = false }: {
   }
 };
 
-export default function SlideGenerator() {
+export default function SlideGenerator({ activePatient }: { activePatient?: string }) {
   const [intraoralImages, setIntraoralImages] = useState<(ImageData | null)[]>(Array(9).fill(null));
   const [panoImage, setPanoImage] = useState<ImageData | null>(null);
   const [facialImages, setFacialImages] = useState<(ImageData | null)[]>(Array(3).fill(null));
+  const [savedCompositeUrl, setSavedCompositeUrl] = useState("");
+  const [pngSavedName, setPngSavedName] = useState("");
+  const [loadError, setLoadError] = useState("");
   
   const [intraoralAnnotations, setIntraoralAnnotations] = useState<Annotation[]>([]);
   const [panoAnnotations, setPanoAnnotations] = useState<Annotation[]>([]);
@@ -95,6 +97,53 @@ export default function SlideGenerator() {
   const intraoralRef = useRef<HTMLDivElement>(null);
   const panoRef = useRef<HTMLDivElement>(null);
   const facialRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!activePatient) {
+      setSavedCompositeUrl("");
+      setLoadError("");
+      return;
+    }
+    let cancelled = false;
+    const host = window.location.hostname;
+    const base = `http://${host}:3001`;
+    (async () => {
+      try {
+        const [layoutRes, imagesRes] = await Promise.all([
+          fetch(`${base}/api/patients/${encodeURIComponent(activePatient)}/layout`),
+          fetch(`${base}/api/patients/${encodeURIComponent(activePatient)}/images`),
+        ]);
+        const layout = layoutRes.ok ? await layoutRes.json() : {};
+        const imagesData = imagesRes.ok ? await imagesRes.json() : { images: [] };
+        if (cancelled) return;
+        const files: string[] = imagesData.images || [];
+        const latest = files.find((f) => /^oral_\dview_latest\.png$/i.test(f))
+          || files.find((f) => isCompositePng(f));
+        setSavedCompositeUrl(latest ? `${base}/images/${encodeURIComponent(activePatient)}/${latest}` : "");
+        setLoadError("");
+
+        const slots: LayoutSlot[] = Array.isArray(layout.slots) ? layout.slots : [];
+        const next = Array(9).fill(null) as (ImageData | null)[];
+        LAYOUT_TEMPLATES["9"].forEach((tpl, i) => {
+          const slot = slots.find((s) => s.view === tpl.view);
+          if (slot?.filename) {
+            next[i] = {
+              id: slot.filename,
+              file: new File([], slot.filename),
+              previewUrl: `${base}/images/${encodeURIComponent(activePatient)}/${slot.filename}`,
+              flipH: !!slot.flipH,
+              flipV: !!slot.flipV,
+              rotate: slot.rotate || 0,
+            };
+          }
+        });
+        if (next.some((img) => img)) setIntraoralImages(next);
+      } catch (e) {
+        if (!cancelled) setLoadError("患者フォルダの写真を読み込めませんでした。Watcher が起動しているか確認してください。");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activePatient]);
 
   const fileToDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -251,178 +300,47 @@ export default function SlideGenerator() {
     }
   };
 
-  const getImageDimensions = (url: string): Promise<{w: number, h: number}> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve({ w: img.width, h: img.height });
-      img.onerror = () => resolve({ w: 4, h: 3 }); // fallback
-      img.src = url;
-    });
-  };
-
-  const generatePowerPoint = async () => {
+  const exportPng = async () => {
+    if (!intraoralRef.current) return;
     setIsGenerating(true);
+    setPngSavedName("");
     try {
-      const pptx = new pptxgen();
-      pptx.layout = "LAYOUT_16x9";
-
-      if (panoImage) {
-        const slide = pptx.addSlide();
-        const dims = await getImageDimensions(panoImage.previewUrl);
-        const imgRatio = dims.w / dims.h;
-        let finalW = 9.5;
-        let finalH = 9.5 / imgRatio;
-        if (finalH > 5) {
-          finalH = 5;
-          finalW = 5 * imgRatio;
-        }
-        slide.addImage({ 
-          data: panoImage.previewUrl, 
-          x: (10 - finalW) / 2, 
-          y: (5.625 - finalH) / 2, 
-          w: finalW, 
-          h: finalH, 
-          rotate: panoImage.rotate || 0,
-          flipH: panoImage.flipH || false,
-          flipV: panoImage.flipV || false
+      const imgs = Array.from(intraoralRef.current.querySelectorAll("img"));
+      await Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      })));
+      const dataUrl = await htmlToImage.toPng(intraoralRef.current, {
+        backgroundColor: "#0a0a0a",
+        pixelRatio: 2,
+        filter: (node) => !(node.classList && node.classList.contains("export-ignore")),
+      });
+      if (activePatient) {
+        const timestamped = compositePngFilename("9", activePatient);
+        const latest = compositePngLatestName("9");
+        const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${encodeURIComponent(activePatient)}/export-png`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            files: [
+              { filename: timestamped, dataUrl },
+              { filename: latest, dataUrl },
+            ],
+          }),
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "保存に失敗しました");
+        setPngSavedName(timestamped);
+        setSavedCompositeUrl(`http://${window.location.hostname}:3001/images/${encodeURIComponent(activePatient)}/${latest}?t=${Date.now()}`);
+      } else {
+        const link = document.createElement("a");
+        link.download = compositePngFilename("9", "patient");
+        link.href = dataUrl;
+        link.click();
+        setPngSavedName("ダウンロードしました（患者未選択のためPCへ保存）");
       }
-
-      if (intraoralImages.some(img => img !== null)) {
-        const slide = pptx.addSlide();
-        const cellMaxW = 3.1;
-        const cellMaxH = 1.7;
-        const gapX = 0.1;
-        const gapY = 0.1;
-        const startX = (10 - (cellMaxW * 3 + gapX * 2)) / 2;
-        const startY = (5.625 - (cellMaxH * 3 + gapY * 2)) / 2;
-
-        for (let i = 0; i < intraoralImages.length; i++) {
-          const img = intraoralImages[i];
-          if (img) {
-            const dims = await getImageDimensions(img.previewUrl);
-            const imgRatio = dims.w / dims.h;
-            let finalW = cellMaxW;
-            let finalH = cellMaxW / imgRatio;
-            if (finalH > cellMaxH) {
-              finalH = cellMaxH;
-              finalW = cellMaxH * imgRatio;
-            }
-            const offsetX = (cellMaxW - finalW) / 2;
-            const offsetY = (cellMaxH - finalH) / 2;
-
-            const row = Math.floor(i / 3);
-            const col = i % 3;
-            slide.addImage({
-              data: img.previewUrl,
-              x: startX + col * (cellMaxW + gapX) + offsetX, 
-              y: startY + row * (cellMaxH + gapY) + offsetY, 
-              w: finalW,
-              h: finalH,
-              rotate: img.rotate || 0,
-              flipH: img.flipH || false,
-              flipV: img.flipV || false
-            });
-          }
-        }
-      }
-
-      if (facialImages.some(img => img !== null)) {
-        const slide = pptx.addSlide();
-        const cellMaxW = 2.5;
-        const cellMaxH = 3.33;
-        const gapX = 0.5;
-        const startX = (10 - (cellMaxW * 3 + gapX * 2)) / 2;
-        const startY = (5.625 - cellMaxH) / 2;
-
-        for (let i = 0; i < facialImages.length; i++) {
-          const img = facialImages[i];
-          if (img) {
-            const dims = await getImageDimensions(img.previewUrl);
-            const imgRatio = dims.w / dims.h;
-            let finalW = cellMaxW;
-            let finalH = cellMaxW / imgRatio;
-            if (finalH > cellMaxH) {
-              finalH = cellMaxH;
-              finalW = cellMaxH * imgRatio;
-            }
-            const offsetX = (cellMaxW - finalW) / 2;
-            const offsetY = (cellMaxH - finalH) / 2;
-
-            slide.addImage({
-              data: img.previewUrl,
-              x: startX + i * (cellMaxW + gapX) + offsetX, 
-              y: startY + offsetY, 
-              w: finalW,
-              h: finalH,
-              rotate: img.rotate || 0,
-              flipH: img.flipH || false,
-              flipV: img.flipV || false
-            });
-          }
-        }
-      }
-
-      await pptx.writeFile({ fileName: `Dental_Presentation_${new Date().getTime()}.pptx` });
     } catch (e: any) {
-      console.error("PPTX Error", e);
-      alert("PowerPointの生成中にエラーが発生しました。\n詳細: " + (e.message || e.toString()));
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const generatePDF = async () => {
-    setIsGenerating(true);
-    try {
-      const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [16, 9] });
-      let addedFirst = false;
-
-      const captureAndAddPage = async (ref: React.RefObject<HTMLDivElement | null>) => {
-        if (!ref.current) return;
-        
-        const originalBorder = ref.current.style.border;
-        ref.current.style.border = 'none';
-
-        const dataUrl = await htmlToImage.toJpeg(ref.current, { 
-          backgroundColor: '#000000', 
-          pixelRatio: 2,
-          quality: 0.95,
-          filter: (node) => {
-            if (node.classList && node.classList.contains && node.classList.contains('export-ignore')) {
-              return false;
-            }
-            return true;
-          }
-        });
-        
-        ref.current.style.border = originalBorder;
-
-        if (addedFirst) pdf.addPage();
-        
-        // Calculate dimensions to center the image on the 16x9 page
-        // Since we don't have canvas dimensions directly, we can use the element's clientWidth/clientHeight
-        const imgAspect = ref.current.clientWidth / ref.current.clientHeight;
-        let drawW = 16;
-        let drawH = 16 / imgAspect;
-        if (drawH > 9) {
-            drawH = 9;
-            drawW = 9 * imgAspect;
-        }
-        const x = (16 - drawW) / 2;
-        const y = (9 - drawH) / 2;
-        pdf.addImage(dataUrl, 'JPEG', x, y, drawW, drawH);
-        addedFirst = true;
-      };
-
-      if (panoImage) await captureAndAddPage(panoRef);
-      if (intraoralImages.some(img => img !== null)) await captureAndAddPage(intraoralRef);
-      if (facialImages.some(img => img !== null)) await captureAndAddPage(facialRef);
-
-      pdf.save(`Dental_Presentation_${new Date().getTime()}.pdf`);
-    } catch (e: any) {
-      console.error("PDF Error", e);
-      alert("PDFの生成中にエラーが発生しました。\n詳細: " + (e.message || e.toString()));
+      alert("PNGの保存に失敗しました。\n" + (e.message || e.toString()));
     } finally {
       setIsGenerating(false);
     }
@@ -460,23 +378,91 @@ export default function SlideGenerator() {
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-white mb-1 md:mb-2 flex items-center gap-2">
             <span className="bg-teal-500/20 text-teal-400 p-2 rounded-xl"><Sliders className="w-5 h-5" /></span>
-            プレゼンテーション生成 & 計画エディタ
+            口腔内写真・プレゼンテーション
           </h2>
-          <p className="text-xs md:text-sm text-neutral-400">各グリッドに「計画を書き込む」で全体に書き込みができます。出力ボタンで美しい1枚のスライド（PDF/画像）になります。</p>
+          <p className="text-xs md:text-sm text-neutral-400">口腔内9枚法が先頭です。黒背景のPNGだけを患者フォルダへ保存します（PowerPoint / PDF は使いません）。</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <button onClick={generatePowerPoint} disabled={isGenerating} className="flex-1 md:flex-none bg-orange-600 hover:bg-orange-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
+          <button onClick={exportPng} disabled={isGenerating} className="flex-1 md:flex-none bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
             {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
-            PowerPointで出力（画像のみ）
-          </button>
-          <button onClick={generatePDF} disabled={isGenerating} className="flex-1 md:flex-none bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
-            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
-            PDFで出力（計画込み）
+            黒背景PNGを患者フォルダへ保存
           </button>
         </div>
       </div>
 
       <div className="space-y-8 px-2 md:px-0">
+          {activePatient && (
+            <div className="bg-teal-500/10 border border-teal-500/20 rounded-2xl p-4 text-sm text-teal-200">
+              Wireless Connect から <span className="font-bold text-white">{activePatient}</span> を読み込み中。保存したPNGは同じ患者フォルダに入り、ワイヤレスタブのギャラリーからも見られます。
+            </div>
+          )}
+          {loadError && <div className="text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">{loadError}</div>}
+          {pngSavedName && (
+            <p className="text-sm text-teal-400 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              保存しました: {pngSavedName}
+            </p>
+          )}
+          {savedCompositeUrl && (
+            <div className="bg-neutral-900/60 border border-white/5 rounded-2xl p-4">
+              <p className="text-xs text-neutral-400 mb-2">保存済みの黒背景PNG</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={savedCompositeUrl} alt="saved composite" className="w-full rounded-xl border border-neutral-800" />
+            </div>
+          )}
+
+          {/* Intraoral 9-grid */}
+          <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <h3 className="text-base md:text-lg font-semibold text-white">口腔内9枚法</h3>
+                <button onClick={() => fileInputRef9.current?.click()} className="text-xs md:text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg border border-white/10">
+                  画像を追加
+                </button>
+              </div>
+              <button onClick={() => setActiveEditor("intraoral")} className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-teal-900/30 transition-all">
+                <Edit3 className="w-4 h-4" /> 計画を書き込む
+              </button>
+            </div>
+            
+            {selectedSwapIndex !== null && (
+              <div className="text-[10px] md:text-xs text-amber-500 mb-4 bg-amber-500/10 p-2 md:p-3 rounded-lg border border-amber-500/20 animate-pulse">
+                💡 入れ替え先の画像（または空枠）をタップしてください。
+              </div>
+            )}
+            
+            <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef9} onChange={(e) => handleFiles(e.target.files, "intraoral")} />
+            
+            <div 
+              ref={intraoralRef}
+              className="relative grid grid-cols-3 gap-2 bg-[#0a0a0a] p-2 rounded-xl border border-neutral-800 shadow-inner"
+              onDrop={(e) => handleDrop(e, "intraoral")} onDragOver={handleDragOver}
+            >
+              {renderAnnotations(intraoralAnnotations)}
+              
+              {intraoralImages.map((img, idx) => (
+                <div 
+                  key={idx} onClick={() => handleGridClick(idx)}
+                  className={`relative aspect-[4/3] rounded-lg flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all z-10
+                    ${selectedSwapIndex === idx ? 'border-2 border-teal-500 bg-teal-500/20 scale-95' : 'border border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}
+                >
+                  {img ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img crossOrigin="anonymous" src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />
+                      <div className="export-ignore absolute top-1 right-1 flex gap-1 z-50">
+                        <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "intraoral", index: idx, img }); }} className="p-1.5 bg-black/60 rounded text-white hover:bg-teal-600"><Sliders className="w-3 h-3" /></button>
+                        <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><RotateCw className="w-3 h-3" /></button>
+                        <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><FlipHorizontal className="w-3 h-3" /></button>
+                        <button onClick={(e) => removeImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white"><Trash2 className="w-3 h-3" /></button>
+                      </div>
+                    </>
+                  ) : <span className="text-neutral-600 text-xs font-medium">{LAYOUT_TEMPLATES["9"][idx]?.label || `枠 ${idx + 1}`}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Pano */}
           <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
@@ -513,57 +499,6 @@ export default function SlideGenerator() {
               ) : (
                 <><UploadCloud className="w-8 h-8 text-neutral-500 mb-2" /><span className="text-neutral-500 text-sm">タップしてアップロード</span></>
               )}
-            </div>
-          </div>
-
-          {/* Intraoral 9-grid */}
-          <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-4 md:p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
-                <h3 className="text-base md:text-lg font-semibold text-white">口腔内9枚法</h3>
-                <button onClick={() => fileInputRef9.current?.click()} className="text-xs md:text-sm bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg border border-white/10">
-                  画像を追加
-                </button>
-              </div>
-              <button onClick={() => setActiveEditor("intraoral")} className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-teal-900/30 transition-all">
-                <Edit3 className="w-4 h-4" /> 計画を書き込む
-              </button>
-            </div>
-            
-            {selectedSwapIndex !== null && (
-              <div className="text-[10px] md:text-xs text-amber-500 mb-4 bg-amber-500/10 p-2 md:p-3 rounded-lg border border-amber-500/20 animate-pulse">
-                💡 入れ替え先の画像（または空枠）をタップしてください。
-              </div>
-            )}
-            
-            <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef9} onChange={(e) => handleFiles(e.target.files, "intraoral")} />
-            
-            <div 
-              ref={intraoralRef}
-              className="relative grid grid-cols-3 gap-2 bg-black p-2 rounded-xl border border-neutral-800 shadow-inner"
-              onDrop={(e) => handleDrop(e, "intraoral")} onDragOver={handleDragOver}
-            >
-              {renderAnnotations(intraoralAnnotations)}
-              
-              {intraoralImages.map((img, idx) => (
-                <div 
-                  key={idx} onClick={() => handleGridClick(idx)}
-                  className={`relative aspect-[4/3] rounded-lg flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all z-10
-                    ${selectedSwapIndex === idx ? 'border-2 border-teal-500 bg-teal-500/20 scale-95' : 'border border-neutral-800 bg-neutral-900/50 hover:border-neutral-600'}`}
-                >
-                  {img ? (
-                    <>
-                      <img src={img.previewUrl} className="absolute inset-0 w-full h-full object-cover" style={{ transform: `scaleX(${(img.flipH ? -1 : 1) * (img.zoom || 1)}) scaleY(${(img.flipV ? -1 : 1) * (img.zoom || 1)}) rotate(${img.rotate}deg)` }} />
-                      <div className="export-ignore absolute top-1 right-1 flex gap-1 z-50">
-                        <button onClick={(e) => { e.stopPropagation(); setEditingImage({ type: "intraoral", index: idx, img }); }} className="p-1.5 bg-black/60 rounded text-white hover:bg-teal-600"><Sliders className="w-3 h-3" /></button>
-                        <button onClick={(e) => rotateImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><RotateCw className="w-3 h-3" /></button>
-                        <button onClick={(e) => toggleFlip("intraoral", idx, "H", e)} className="p-1.5 bg-black/60 rounded text-white hover:bg-blue-600"><FlipHorizontal className="w-3 h-3" /></button>
-                        <button onClick={(e) => removeImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white"><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    </>
-                  ) : <span className="text-neutral-600 text-xs font-medium">枠 {idx + 1}</span>}
-                </div>
-              ))}
             </div>
           </div>
 

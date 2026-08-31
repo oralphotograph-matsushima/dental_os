@@ -200,16 +200,22 @@ export default function Home() {
     };
   }, [activeTab, isWirelessActive, wirelessPatientId]);
 
-  // Sync Active Patient to Watcher Server for automatic image routing
+  // 患者を開いた時点で Watcher に番号を渡し、既存フォルダへ写真を流す（Wireless Connect タブを開いていなくても可）
   useEffect(() => {
-    if (activeTab === "qr" && isWirelessActive && wirelessPatientId) {
-      fetch(`http://${window.location.hostname}:3001/api/patient`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: wirelessPatientId })
-      }).catch(e => console.error("Failed to sync active patient to watcher", e));
-    }
-  }, [activeTab, isWirelessActive, wirelessPatientId]);
+    if (!isWirelessActive || !wirelessPatientId) return;
+    fetch(`http://${window.location.hostname}:3001/api/patient`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patientId: wirelessPatientId, patientName: patientInfo })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.activePatientId && data.activePatientId !== patientInfo) {
+          setPatientInfo(data.activePatientId);
+        }
+      })
+      .catch((e) => console.error("Failed to sync active patient to watcher", e));
+  }, [isWirelessActive, wirelessPatientId]);
   // Append State
   const [appendingChart, setAppendingChart] = useState<string | null>(null);
   const [appendContent, setAppendContent] = useState("");
@@ -780,11 +786,30 @@ export default function Home() {
     }
   };
 
-  const handleSelectTodayPatient = (patient: TodayPatient) => {
+  const syncActivePatientToWatcher = (patient: TodayPatient) => {
     setPatientInfo(patient.name);
     setWirelessPatientId(patient.id);
     setIsWirelessActive(true);
+    fetch(`http://${window.location.hostname}:3001/api/patient`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patientId: patient.id, patientName: patient.name }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.activePatientId) setPatientInfo(data.activePatientId);
+      })
+      .catch((e) => console.error("Failed to activate patient folder", e));
+  };
+
+  const handleSelectTodayPatient = (patient: TodayPatient) => {
+    syncActivePatientToWatcher(patient);
     setActiveTab("input");
+  };
+
+  const handleOpenWirelessPatient = (patient: TodayPatient) => {
+    syncActivePatientToWatcher(patient);
+    setActiveTab("qr");
   };
 
   const triggerPatientCompleted = (patientNameOrId: string) => {
@@ -1658,7 +1683,16 @@ export default function Home() {
 
           {/* === WIRELESS CONNECT TAB === */}
           {activeTab === "qr" && (
-            <CameraMode activePatient={patientInfo} autoSortEnabled={autoSortEnabled} />
+            <CameraMode
+              activePatient={patientInfo}
+              autoSortEnabled={autoSortEnabled}
+              onSelectPatient={(folder) => {
+                setPatientInfo(folder);
+                setWirelessPatientId(folder.includes("_") ? folder.split("_")[0] : folder);
+                setIsWirelessActive(true);
+              }}
+              onOpenSlideTab={() => setActiveTab("slide")}
+            />
           )}
 
           {/* === INPUT TAB === */}
@@ -2107,16 +2141,29 @@ export default function Home() {
 
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {!p.completed ? (
-                              <button
-                                onClick={() => handleSelectTodayPatient(p)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                                  isCurrent
-                                    ? "bg-teal-500 text-neutral-950 shadow-md scale-95"
-                                    : "bg-neutral-800 hover:bg-teal-600 hover:text-white"
-                                }`}
-                              >
-                                {isCurrent ? "診療中" : "開始"}
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleOpenWirelessPatient(p)}
+                                  className={`p-2 rounded-xl transition-all ${
+                                    isCurrent && activeTab === "qr"
+                                      ? "bg-teal-500 text-neutral-950"
+                                      : "bg-neutral-800 hover:bg-teal-600 hover:text-white text-neutral-300"
+                                  }`}
+                                  title="Wireless Connectでこの患者のフォルダを開く"
+                                >
+                                  <Camera className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleSelectTodayPatient(p)}
+                                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                    isCurrent
+                                      ? "bg-teal-500 text-neutral-950 shadow-md scale-95"
+                                      : "bg-neutral-800 hover:bg-teal-600 hover:text-white"
+                                  }`}
+                                >
+                                  {isCurrent ? "診療中" : "開始"}
+                                </button>
+                              </>
                             ) : (
                               <span className="px-3.5 py-1.5 bg-neutral-900 border border-neutral-800 text-[10px] text-neutral-600 font-bold rounded-xl">
                                 記載済
@@ -2140,7 +2187,7 @@ export default function Home() {
             </div>
           )}
 
-          {activeTab === "slide" && <SlideGenerator />}
+          {activeTab === "slide" && <SlideGenerator activePatient={patientInfo} />}
 
           {/* === TECHNICIAN ORDER TAB === */}
           {activeTab === "technician" && <TechnicianOrder />}
@@ -2167,7 +2214,7 @@ export default function Home() {
                   <div className="flex-1">
                     <div className="font-semibold text-neutral-200 mb-1">自動振り分け</div>
                     <div className="text-xs md:text-sm text-neutral-400">
-                      オフ（推奨）のときは、写真は Patients 直下に溜まり、Wireless Connect タブの「振り分けを開始」で自分のタイミングで行き先を選べます。オンにすると、撮影時刻とアポが確実に一致した写真だけ自動で患者フォルダへ入ります。不確かなものは直下に残り、ボタンから選べます。
+                      オフ（推奨）のときは、診療中の患者を開いていれば写真はその人のフォルダへ入ります。開いていなければ Patients 直下に溜まり、「振り分けを開始」で行き先を選べます。オンにすると、撮影時刻とアポが確実に一致した写真だけ自動で患者フォルダへ入ります。どちらの場合も、カルテか写真が入るまで空フォルダは作りません。
                     </div>
                   </div>
                   <button

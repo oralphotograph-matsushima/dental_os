@@ -1,14 +1,23 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Camera, RefreshCw, Image as ImageIcon, Send, X, CheckCircle, AlertCircle, LayoutTemplate, Download } from "lucide-react";
+import { Camera, RefreshCw, Image as ImageIcon, Send, X, CheckCircle, AlertCircle, LayoutTemplate, Download, Presentation } from "lucide-react";
 import * as htmlToImage from 'html-to-image';
 import LayoutConfirm from "@/components/LayoutConfirm";
-import { LayoutFormat, LayoutSlot, buildSlotsFromAnalysis } from "@/lib/layoutSlots";
+import OralLayoutCanvas from "@/components/OralLayoutCanvas";
+import { LayoutFormat, LayoutSlot, buildSlotsFromAnalysis, compositePngFilename, compositePngLatestName, isCompositePng } from "@/lib/layoutSlots";
+
+function samePatientNumber(a?: string | null, b?: string | null) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.split("_")[0] === b.split("_")[0];
+}
 
 interface CameraModeProps {
   activePatient?: string;
   autoSortEnabled?: boolean;
+  onSelectPatient?: (folder: string) => void;
+  onOpenSlideTab?: () => void;
 }
 
 interface AssignmentTarget {
@@ -19,7 +28,7 @@ interface AssignmentTarget {
   source?: string;
 }
 
-export default function CameraModePage({ activePatient, autoSortEnabled = false }: CameraModeProps) {
+export default function CameraModePage({ activePatient, autoSortEnabled = false, onSelectPatient, onOpenSlideTab }: CameraModeProps) {
   const [patientId, setPatientId] = useState("");
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -38,35 +47,38 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
   const [showBatchPreviewModal, setShowBatchPreviewModal] = useState(false);
   const [isExecutingBatch, setIsExecutingBatch] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  const [layoutFormat, setLayoutFormat] = useState<LayoutFormat>("7");
+  const [layoutFormat, setLayoutFormat] = useState<LayoutFormat>("9");
   const [layoutSlots, setLayoutSlots] = useState<LayoutSlot[]>([]);
   const [showLayoutConfirm, setShowLayoutConfirm] = useState(false);
   const [layoutConfirmed, setLayoutConfirmed] = useState(false);
+  const [photoCounts, setPhotoCounts] = useState<Record<string, number>>({});
+  const [pngSavedName, setPngSavedName] = useState("");
   const scheduleInputRef = useRef<HTMLInputElement>(null);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
 
-  // activePatient Prop の変化、または初回ロード時に現在のActive Patientを取得
+  // 患者タブで開いている人を、番号だけで既存フォルダに接続（名前のゆれは無視）
   useEffect(() => {
-    if (activePatient) {
-      const idOnly = activePatient.includes('_') ? activePatient.split('_')[0] : activePatient;
-      setPatientId(idOnly);
-      setActivePatientId(activePatient); // Keep full name (e.g., 1234_ヤマダ) for folder and image sync
-      fetchImages(activePatient);
-      
-      fetch(`http://${window.location.hostname}:3001/api/patient`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: activePatient }) // Create full folder name on PC Watcher
-      }).then(res => {
-        if (res.ok) {
-          connectSSE();
-        }
-      }).catch(err => console.error("Failed to sync active patient to PC server:", err));
-    } else {
+    if (!activePatient) {
       fetchActivePatient();
+      return;
     }
+    const idOnly = activePatient.includes('_') ? activePatient.split('_')[0] : activePatient;
+    setPatientId(idOnly);
+    fetch(`http://${window.location.hostname}:3001/api/patient`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patientId: activePatient })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const folder = data.activePatientId || activePatient;
+        setActivePatientId(folder);
+        fetchImages(folder);
+        connectSSE();
+      })
+      .catch((err) => console.error("Failed to sync active patient to PC server:", err));
   }, [activePatient]);
 
   // マウント時に今日のスケジュールと本日の診療キューをPCサーバーから取得
@@ -83,6 +95,23 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
         if (data.targets) setAssignmentTargets(data.targets);
       }).catch(err => console.error("Failed to fetch assignment targets:", err));
   }, []);
+
+  useEffect(() => {
+    if (assignmentTargets.length === 0) return;
+    let cancelled = false;
+    Promise.all(assignmentTargets.map(async (t) => {
+      try {
+        const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${encodeURIComponent(t.folder)}/images`);
+        const data = await res.json();
+        return [t.folder, Array.isArray(data.images) ? data.images.length : 0] as const;
+      } catch {
+        return [t.folder, 0] as const;
+      }
+    })).then((entries) => {
+      if (!cancelled) setPhotoCounts(Object.fromEntries(entries));
+    });
+    return () => { cancelled = true; };
+  }, [assignmentTargets]);
 
   // スリープ復帰時などの自動再接続処理
   useEffect(() => {
@@ -124,10 +153,16 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
 
   const fetchImages = async (id: string) => {
     try {
-      const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${id}/images`);
+      const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${encodeURIComponent(id)}/images`);
       if (res.ok) {
         const data = await res.json();
-        setImages(data.images || []);
+        const nextImages = data.images || [];
+        setImages(nextImages);
+        const folder = data.folder || id;
+        setPhotoCounts((prev) => ({ ...prev, [folder]: nextImages.length }));
+        if (folder && folder !== id) {
+          setActivePatientId(folder);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -150,14 +185,14 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       if (data.type === "NEW_IMAGE") {
         // 現在アクティブな患者IDの画像のみ追加する
         setActivePatientId(currentId => {
-          if (currentId && data.patientId === currentId) {
+          if (currentId && samePatientNumber(data.patientId, currentId)) {
             setImages(prev => [data.fileName, ...prev]);
           }
           return currentId;
         });
       } else if (data.type === "REFRESH_IMAGES") {
         setActivePatientId(currentId => {
-          if (currentId && (data.patientId === currentId || data.patientId === 'all')) {
+          if (currentId && (samePatientNumber(data.patientId, currentId) || data.patientId === 'all')) {
             fetchImages(currentId);
           }
           return currentId;
@@ -174,8 +209,18 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
     eventSourceRef.current = sse;
   };
 
-  const handleConnect = async () => {
-    if (!patientId.trim()) {
+  const resolvePatientFolder = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return "";
+    const hit = assignmentTargets.find(
+      (t) => t.folder === trimmed || t.id === trimmed || t.folder.startsWith(`${trimmed}_`)
+    );
+    return hit?.folder || trimmed;
+  };
+
+  const activatePatient = async (folderOrId: string) => {
+    const folder = resolvePatientFolder(folderOrId);
+    if (!folder) {
       setErrorMsg("患者番号を入力してください。");
       return;
     }
@@ -183,21 +228,35 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
       const res = await fetch(`http://${window.location.hostname}:3001/api/patient`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: patientId.trim() })
+        body: JSON.stringify({ patientId: folder })
       });
-      
-      if (res.ok) {
-        setActivePatientId(patientId.trim());
-        setImages([]); // リセット
-        setShowLayoutConfirm(false);
-        setLayoutConfirmed(false);
-        setLayoutSlots([]);
-        fetchImages(patientId.trim());
-        connectSSE();
-      }
+      if (!res.ok) throw new Error("接続に失敗しました");
+      const data = await res.json();
+      const resolved = data.activePatientId || folder;
+      const idOnly = resolved.includes("_") ? resolved.split("_")[0] : resolved;
+      setPatientId(idOnly);
+      setActivePatientId(resolved);
+      setImages([]);
+      setShowSlidePreview(false);
+      setShowLayoutConfirm(false);
+      setLayoutConfirmed(false);
+      setLayoutSlots([]);
+      setPngSavedName("");
+      setErrorMsg("");
+      fetchImages(resolved);
+      connectSSE();
+      onSelectPatient?.(resolved);
     } catch (err) {
       setErrorMsg("PCサーバーとの通信に失敗しました。");
     }
+  };
+
+  const handleConnect = async () => {
+    if (!patientId.trim()) {
+      setErrorMsg("患者番号を入力してください。");
+      return;
+    }
+    await activatePatient(patientId.trim());
   };
 
   // ==========================================
@@ -410,16 +469,37 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
   };
 
   const downloadSlide = async () => {
-    if (!slideRef.current) return;
+    if (!slideRef.current || !activePatientId) return;
     try {
       setIsGenerating(true);
-      const dataUrl = await htmlToImage.toJpeg(slideRef.current, { quality: 0.95, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = `${activePatientId}_oral_slide.jpg`;
-      link.href = dataUrl;
-      link.click();
-    } catch (e) {
-      setErrorMsg("画像の保存に失敗しました");
+      setErrorMsg("");
+      const imgs = Array.from(slideRef.current.querySelectorAll("img"));
+      await Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      })));
+      const dataUrl = await htmlToImage.toPng(slideRef.current, {
+        backgroundColor: "#0a0a0a",
+        pixelRatio: 2,
+      });
+      const timestamped = compositePngFilename(layoutFormat, activePatientId);
+      const latest = compositePngLatestName(layoutFormat);
+      const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${encodeURIComponent(activePatientId)}/export-png`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: [
+            { filename: timestamped, dataUrl },
+            { filename: latest, dataUrl },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "保存に失敗しました");
+      setPngSavedName(timestamped);
+      await fetchImages(activePatientId);
+    } catch (e: any) {
+      setErrorMsg(e.message || "PNGの保存に失敗しました");
     } finally {
       setIsGenerating(false);
     }
@@ -445,21 +525,11 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
   const handleConfirmLayout = async () => {
     setLayoutConfirmed(true);
     await saveLayout(layoutSlots, true);
+    setShowLayoutConfirm(false);
+    setShowSlidePreview(true);
   };
 
-  const ImageCell = ({ view, label, fallback }: { view: string, label: string, fallback?: string }) => {
-    const filename = analysisResults?.[view]?.[0];
-    return (
-      <div className="bg-neutral-900 rounded-lg overflow-hidden flex items-center justify-center relative">
-        {filename ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={`http://${window.location.hostname}:3001/images/${activePatientId}/${filename}`} className="w-full h-full object-cover" alt={label} />
-        ) : (
-          <span className="text-neutral-700 font-bold text-center px-4 text-sm">{fallback || label}</span>
-        )}
-      </div>
-    );
-  };
+  const galleryImages = [...images].sort((a, b) => Number(isCompositePng(b)) - Number(isCompositePng(a)));
 
   return (
     <div className="flex flex-col bg-neutral-900/50 border border-neutral-800 rounded-3xl min-h-[600px] overflow-hidden relative shadow-2xl">
@@ -526,7 +596,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
               </div>
               <div className="text-xs text-neutral-400 leading-relaxed bg-black/40 p-4 rounded-2xl border border-white/5 max-w-sm font-sans">
                 <p className="font-bold text-white mb-1">📸 ワイヤレスカメラ自動格納モード</p>
-                カメラで撮影した写真は、PCのフォルダ <code className="text-teal-400 font-mono">Patients/{activePatient}</code> へリアルタイムで完全自動保存されます。
+                カメラで撮影した写真は、届いた時点で PC の <code className="text-teal-400 font-mono">Patients/{activePatient}</code> に保存されます。カルテも同じフォルダです。
               </div>
             </div>
           </div>
@@ -587,13 +657,32 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
                     folder: `${s.id}_${s.name}`,
                     startTime: s.startTime,
                     source: 'schedule'
-                  }))).map((slot, idx) => (
-                    <div key={`${slot.id}-${idx}`} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                  }))).map((slot, idx) => {
+                    const isActive = samePatientNumber(activePatientId, slot.folder) || samePatientNumber(activePatientId, slot.id);
+                    const count = photoCounts[slot.folder] || 0;
+                    const displayName = String(slot.name).includes('_') ? String(slot.name).split('_').slice(1).join('_') : slot.name;
+                    return (
+                    <button
+                      type="button"
+                      key={`${slot.id}-${idx}`}
+                      onClick={() => activatePatient(slot.folder)}
+                      className={`rounded-xl p-3 min-w-[132px] flex-shrink-0 text-left transition-all border ${
+                        isActive
+                          ? "bg-teal-500/15 border-teal-500/40"
+                          : "bg-neutral-900 border-neutral-800 hover:border-teal-500/30"
+                      }`}
+                    >
                       <div className="text-xs font-mono text-purple-400 mb-1">{slot.startTime ? `${slot.startTime}〜` : "本日"}</div>
-                      <div className="text-sm font-bold text-white truncate">{String(slot.name).includes('_') ? String(slot.name).split('_').slice(1).join('_') : slot.name}</div>
+                      <div className="text-sm font-bold text-white truncate">{displayName}</div>
                       <div className="text-[10px] text-neutral-500 font-mono mt-1">ID: {slot.id}</div>
-                    </div>
-                  ))}
+                      {count > 0 ? (
+                        <div className="text-[10px] text-teal-400 font-bold mt-1">{count}枚あり・タップで確認</div>
+                      ) : (
+                        <div className="text-[10px] text-neutral-600 mt-1">データなし</div>
+                      )}
+                    </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -627,13 +716,13 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
                 className="bg-white hover:bg-neutral-200 text-black font-bold py-4 px-8 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <CheckCircle className="w-5 h-5" />
-                連携フォルダを作成
+                この患者で受信を開始
               </button>
             </div>
             {activePatientId && (
               <p className="mt-4 text-sm text-teal-400/80 flex items-center gap-1.5">
                 <CheckCircle className="w-4 h-4" />
-                PC上に「{activePatientId}」の連携フォルダが作成され、受信待機中です。カメラで撮影を行ってください。
+                PC上で「{activePatientId}」を受信対象にしました。写真またはカルテが保存されたときにフォルダを作ります。
               </p>
             )}
           </div>
@@ -656,7 +745,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {images.map((img, i) => (
+                {galleryImages.map((img, i) => (
                   <div key={i} className="group aspect-[4/3] bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden relative shadow-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
@@ -664,6 +753,11 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
                       alt="Oral photo"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+                    {isCompositePng(img) && (
+                      <span className="absolute top-2 left-2 text-[10px] font-bold bg-teal-500 text-white px-2 py-0.5 rounded-full">
+                        {img.match(/oral_(\d)view/i)?.[1] || ""}枚PNG
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                       <p className="text-xs text-white/80 truncate w-full font-medium">{img}</p>
                     </div>
@@ -691,100 +785,52 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false 
           />
         )}
 
-        {/* Slide Preview (Phase 3) */}
-        {showSlidePreview && analysisResults && (
+        {showSlidePreview && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-teal-400 flex items-center gap-2">
                 <LayoutTemplate className="w-6 h-6" />
-                自動生成スライド
+                {layoutFormat}枚法・黒背景PNG
               </h2>
-              <button 
-                onClick={downloadSlide}
-                disabled={isGenerating}
-                className="bg-teal-500 hover:bg-teal-400 text-white font-bold px-6 py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-teal-500/20"
-              >
-                {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                画像として保存 (JPEG)
-              </button>
-            </div>
-
-            <div className="overflow-x-auto bg-neutral-950 p-8 rounded-3xl border border-neutral-800 flex justify-center">
-              {/* Slide Canvas */}
-              <div 
-                ref={slideRef}
-                className="bg-black p-4 w-[1280px] aspect-[16/9] flex flex-col gap-4 relative"
-              >
-                <div className="flex justify-between items-end px-4 pt-2">
-                  <h1 className="text-3xl font-bold text-white tracking-widest">ORAL PHOTOGRAPH</h1>
-                  <p className="text-xl text-neutral-400 font-mono">ID: {activePatientId}</p>
-                </div>
-
-                {layoutFormat === "5" ? (
-                  <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-2">
-                    {/* Top Row */}
-                    <div className="bg-transparent"></div>
-                    <ImageCell view="upper" label="上顎観" />
-                    <div className="bg-transparent"></div>
-                    
-                    {/* Middle Row */}
-                    <ImageCell view="right" label="右側観" />
-                    <ImageCell view="front" label="正面観" />
-                    <ImageCell view="left" label="左側観" />
-
-                    {/* Bottom Row */}
-                    <div className="bg-transparent"></div>
-                    <ImageCell view="lower" label="下顎観" />
-                    {/* Bottom right can be an overjet or face if available */}
-                    {(analysisResults.smile?.[0] || analysisResults.facial?.[0] || analysisResults.right_overjet?.[0]) ? (
-                      <ImageCell 
-                        view={analysisResults.right_overjet?.[0] ? "right_overjet" : (analysisResults.smile?.[0] ? "smile" : "facial")} 
-                        label="追加写真" 
-                      />
-                    ) : (
-                      <div className="bg-transparent border border-neutral-800/30 border-dashed rounded-lg flex items-center justify-center">
-                        <span className="text-neutral-700 text-xs">空き（オーバージェット等）</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-2">
-                    {/* For 9-view or 7-view, adapt to cross as well or standard grid? */}
-                    {layoutFormat === "7" ? (
-                      <>
-                        <ImageCell view="right_overjet" label="右側側方" />
-                        <ImageCell view="upper" label="上顎観" />
-                        <ImageCell view="left_overjet" label="左側側方" />
-                        
-                        <ImageCell view="right" label="右側観" />
-                        <ImageCell view="front" label="正面観" />
-                        <ImageCell view="left" label="左側観" />
-                        
-                        <div className="bg-transparent"></div>
-                        <ImageCell view="lower" label="下顎観" />
-                        <ImageCell view="smile" label="スマイル" />
-                      </>
-                    ) : (
-                      <>
-                        {/* 9-view standard grid */}
-                        <ImageCell view="right" label="右側観" />
-                        <ImageCell view="front" label="正面観" />
-                        <ImageCell view="left" label="左側観" />
-                        
-                        <ImageCell view="right_overjet" label="右側側方" />
-                        <ImageCell view="smile" label="スマイル" />
-                        <ImageCell view="left_overjet" label="左側側方" />
-
-                        <ImageCell view="upper" label="上顎観" />
-                        <ImageCell view="facial" label="顔貌" />
-                        <ImageCell view="lower" label="下顎観" />
-                      </>
-                    )}
-                  </div>
-                )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={downloadSlide}
+                  disabled={isGenerating || !activePatientId}
+                  className="bg-teal-500 hover:bg-teal-400 text-white font-bold px-5 py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-teal-500/20"
+                >
+                  {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                  患者フォルダへPNG保存
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenSlideTab?.()}
+                  className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold px-5 py-3 rounded-xl transition-all active:scale-95 flex items-center gap-2 border border-white/10"
+                >
+                  <Presentation className="w-5 h-5" />
+                  スライド生成タブへ
+                </button>
               </div>
             </div>
-            
+
+            {pngSavedName && (
+              <p className="text-sm text-teal-400 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                保存しました: {pngSavedName}（Wireless Connect のギャラリーからも確認できます）
+              </p>
+            )}
+
+            <div className="overflow-x-auto bg-neutral-950 p-4 md:p-8 rounded-3xl border border-neutral-800 flex justify-center">
+              <div className="origin-top scale-[0.28] sm:scale-[0.45] md:scale-[0.62] lg:scale-75">
+                <OralLayoutCanvas
+                  ref={slideRef}
+                  format={layoutFormat}
+                  slots={layoutSlots}
+                  imageUrl={(filename) => `http://${window.location.hostname}:3001/images/${activePatientId}/${filename}`}
+                  patientLabel={activePatientId || ""}
+                />
+              </div>
+            </div>
+
             <div className="flex justify-center mt-4">
               <button onClick={() => setShowSlidePreview(false)} className="text-neutral-400 hover:text-white underline underline-offset-4 transition-colors">
                 画像の再判定・再選択に戻る

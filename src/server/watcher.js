@@ -94,7 +94,7 @@ const localIp = getLocalIpAddress();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '40mb' }));
 
 // ==========================================
 // 1. 状態管理 (State)
@@ -176,7 +176,7 @@ function getAssignmentTargets() {
     byId.set(id, {
       id,
       name: slot.name || id,
-      folder: `${id}_${slot.name || id}`,
+      folder: findExistingPatientFolder(id) || `${id}_${slot.name || id}`,
       startTime: slot.startTime || '',
       source: 'schedule'
     });
@@ -186,7 +186,8 @@ function getAssignmentTargets() {
     if (!p || p.id == null) continue;
     const id = String(p.id);
     if (byId.has(id)) continue;
-    const folder = p.name && String(p.name).includes('_') ? String(p.name) : id;
+    const folder = findExistingPatientFolder(id)
+      || (p.name && String(p.name).includes('_') ? String(p.name) : id);
     byId.set(id, {
       id,
       name: p.name || id,
@@ -271,6 +272,101 @@ function getPatientsDir() {
   return dir;
 }
 
+/** フォルダ名・表示名から患者番号だけ取り出す（名前のOCRゆれは無視） */
+function extractPatientNumber(raw) {
+  if (raw == null || raw === '') return '';
+  return String(raw).trim().split('_')[0].trim();
+}
+
+function findExistingPatientFolder(patientNumber) {
+  const id = extractPatientNumber(patientNumber);
+  if (!id) return null;
+  const patientsDir = getPatientsDir();
+  if (!fs.existsSync(patientsDir)) return null;
+  let dirs = [];
+  try {
+    dirs = fs.readdirSync(patientsDir, { withFileTypes: true }).filter((e) => e.isDirectory());
+  } catch {
+    return null;
+  }
+  const exact = dirs.filter((e) => e.name === id);
+  const prefixed = dirs.filter((e) => e.name.startsWith(`${id}_`));
+  const pickNewest = (list) => {
+    const sorted = [...list].sort((a, b) => {
+      try {
+        const sa = fs.statSync(path.join(patientsDir, a.name));
+        const sb = fs.statSync(path.join(patientsDir, b.name));
+        return sb.mtimeMs - sa.mtimeMs;
+      } catch {
+        return 0;
+      }
+    });
+    return sorted[0] ? sorted[0].name : null;
+  };
+  const named = pickNewest(prefixed);
+  if (named) {
+    if (exact[0]) mergePatientFolderInto(exact[0].name, named);
+    return named;
+  }
+  return pickNewest(exact);
+}
+
+function mergePatientFolderInto(fromName, toName) {
+  if (!fromName || !toName || fromName === toName) return;
+  const patientsDir = getPatientsDir();
+  const fromDir = path.join(patientsDir, fromName);
+  const toDir = path.join(patientsDir, toName);
+  if (!fs.existsSync(fromDir) || !fs.existsSync(toDir)) return;
+  try {
+    for (const file of fs.readdirSync(fromDir)) {
+      const src = path.join(fromDir, file);
+      if (!fs.statSync(src).isFile()) continue;
+      let destName = file;
+      let dest = path.join(toDir, destName);
+      if (fs.existsSync(dest)) {
+        destName = `${Date.now()}_${file}`;
+        dest = path.join(toDir, destName);
+      }
+      fs.renameSync(src, dest);
+    }
+    fs.rmdirSync(fromDir);
+    console.log(`[Watcher] Merged leftover folder ${fromName} → ${toName}`);
+  } catch (e) {
+    console.error(`[Watcher] Failed to merge ${fromName} into ${toName}:`, e);
+  }
+}
+
+function preferredFolderName(raw, patientName) {
+  const id = extractPatientNumber(raw);
+  if (!id) return null;
+  let namePart = '';
+  if (patientName) {
+    const n = String(patientName).trim();
+    namePart = n.includes('_') ? n.split('_').slice(1).join('_') : n;
+  } else if (String(raw).includes('_')) {
+    namePart = String(raw).split('_').slice(1).join('_');
+  }
+  return namePart ? `${id}_${namePart}` : id;
+}
+
+/** 番号が同じなら既存フォルダを優先。なければ id_名前 を返す（まだ作らない） */
+function resolvePatientFolder(raw, patientName) {
+  const id = extractPatientNumber(raw);
+  if (!id) return null;
+  return findExistingPatientFolder(id) || preferredFolderName(raw, patientName);
+}
+
+function ensurePatientFolder(raw, patientName) {
+  const folder = resolvePatientFolder(raw, patientName);
+  if (!folder) return null;
+  const targetDir = path.join(getPatientsDir(), folder);
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+    console.log(`[API] ✅ Created directory: ${targetDir}`);
+  }
+  return folder;
+}
+
 function getLegacyUnassignedDir() {
   const vaultPath = getVaultPath();
   return vaultPath
@@ -319,7 +415,7 @@ function matchSchedulePatient(exifTime) {
       ? (nextSlot.timestampMs - (15 * 60 * 1000))
       : (slot.timestampMs + (60 * 60 * 1000));
     if (exifTime >= slotStartMs && exifTime < slotEndMs) {
-      return `${slot.id}_${slot.name}`;
+      return resolvePatientFolder(`${slot.id}_${slot.name}`);
     }
   }
   return null;
@@ -373,8 +469,29 @@ function autoSortInboxIfScheduled() {
 if (!fs.existsSync(STAGING_DIR)) {
   fs.mkdirSync(STAGING_DIR, { recursive: true });
 }
+
+function pruneEmptyPatientFolders() {
+  const patientsDir = getPatientsDir();
+  if (!fs.existsSync(patientsDir)) return;
+  for (const name of fs.readdirSync(patientsDir)) {
+    const full = path.join(patientsDir, name);
+    try {
+      if (!fs.statSync(full).isDirectory()) continue;
+      const files = fs.readdirSync(full).filter((f) => !f.startsWith('.'));
+      const meaningful = files.filter((f) => f !== 'layout.json');
+      if (meaningful.length === 0) {
+        fs.rmSync(full, { recursive: true, force: true });
+        console.log(`[Watcher] Removed empty patient folder: ${name}`);
+      }
+    } catch (e) {
+      console.error(`[Watcher] Failed to prune ${name}:`, e);
+    }
+  }
+}
+
 getPatientsDir();
 migrateUnassignedIntoPatients();
+pruneEmptyPatientFolders();
 loadSchedule();
 if (isAutoSortEnabled()) {
   autoSortInboxIfScheduled();
@@ -407,19 +524,22 @@ app.get('/api/patient', (req, res) => {
 });
 
 app.post('/api/patient', (req, res) => {
-  const { patientId } = req.body;
-  activePatientId = patientId || null;
-  console.log(`[API] 🧑‍⚕️ Active patient set to: ${activePatientId || 'None'}`);
-  
-  if (activePatientId) {
-    const targetDir = path.join(getPatientsDir(), activePatientId);
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-      console.log(`[API] ✅ Created directory: ${targetDir}`);
-    }
+  const { patientId, patientName } = req.body;
+  if (!patientId) {
+    activePatientId = null;
+    console.log(`[API] 🧑‍⚕️ Active patient cleared`);
+    return res.json({ success: true, activePatientId: null });
   }
-  
-  res.json({ success: true, activePatientId });
+
+  activePatientId = resolvePatientFolder(patientId, patientName);
+  const exists = !!(activePatientId && findExistingPatientFolder(activePatientId));
+  console.log(`[API] 🧑‍⚕️ Active patient set to: ${activePatientId || 'None'} (id=${extractPatientNumber(patientId)}, folder ${exists ? 'exists' : 'will be created on first photo or chart'})`);
+  res.json({
+    success: true,
+    activePatientId,
+    patientNumber: extractPatientNumber(patientId),
+    folderExists: exists
+  });
 });
 
 // ==========================================
@@ -558,10 +678,9 @@ app.post('/api/batch-execute', (req, res) => {
     const srcPath = path.join(patientsDir, mapping.fileName);
     if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) continue;
 
-    const targetDir = path.join(patientsDir, mapping.targetPatient);
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
+    const folder = ensurePatientFolder(mapping.targetPatient);
+    if (!folder) continue;
+    const targetDir = path.join(patientsDir, folder);
 
     let destName = mapping.fileName;
     let targetPath = path.join(targetDir, destName);
@@ -572,7 +691,7 @@ app.post('/api/batch-execute', (req, res) => {
     try {
       fs.renameSync(srcPath, targetPath);
       movedCount++;
-      console.log(`[Batch-Execute] Moved ${mapping.fileName} to ${mapping.targetPatient}`);
+      console.log(`[Batch-Execute] Moved ${mapping.fileName} to ${folder}`);
     } catch (err) {
       console.error(`[Batch-Execute] Error moving ${mapping.fileName}:`, err);
     }
@@ -586,14 +705,16 @@ app.post('/api/batch-execute', (req, res) => {
 });
 
 app.get('/api/patients/:id/images', (req, res) => {
-  const patientDir = path.join(getPatientsDir(), req.params.id);
-  if (!fs.existsSync(patientDir)) {
-    return res.json({ images: [] });
+  const folder = findExistingPatientFolder(req.params.id) || req.params.id;
+  const patientDir = path.join(getPatientsDir(), folder);
+  if (!fs.existsSync(patientDir) || !fs.statSync(patientDir).isDirectory()) {
+    return res.json({ images: [], folder: null });
   }
   const files = fs.readdirSync(patientDir)
     .filter(f => {
       if (f.startsWith('.')) return false;
       if (f === 'layout.json') return false;
+      if (!IMAGE_EXTS.includes(path.extname(f).toLowerCase())) return false;
       try {
         return fs.statSync(path.join(patientDir, f)).isFile();
       } catch {
@@ -606,11 +727,12 @@ app.get('/api/patients/:id/images', (req, res) => {
       const statB = fs.statSync(path.join(patientDir, b));
       return statB.mtime.getTime() - statA.mtime.getTime();
     });
-  res.json({ images: files });
+  res.json({ images: files, folder });
 });
 
 app.get('/api/patients/:id/layout', (req, res) => {
-  const layoutPath = path.join(getPatientsDir(), req.params.id, 'layout.json');
+  const folder = findExistingPatientFolder(req.params.id) || req.params.id;
+  const layoutPath = path.join(getPatientsDir(), folder, 'layout.json');
   if (!fs.existsSync(layoutPath)) {
     return res.json({ slots: null });
   }
@@ -622,8 +744,40 @@ app.get('/api/patients/:id/layout', (req, res) => {
   }
 });
 
+app.post('/api/patients/:id/export-png', (req, res) => {
+  const folder = findExistingPatientFolder(req.params.id) || req.params.id;
+  const patientDir = path.join(getPatientsDir(), folder);
+  if (!fs.existsSync(patientDir)) {
+    return res.status(404).json({ error: '患者フォルダがありません' });
+  }
+
+  const files = Array.isArray(req.body?.files) ? req.body.files : [];
+  if (files.length === 0 && req.body?.filename && req.body?.dataUrl) {
+    files.push({ filename: req.body.filename, dataUrl: req.body.dataUrl });
+  }
+  if (files.length === 0) {
+    return res.status(400).json({ error: '保存する画像がありません' });
+  }
+
+  const saved = [];
+  for (const item of files) {
+    if (!item || !item.filename || !item.dataUrl) continue;
+    const safeName = path.basename(String(item.filename)).replace(/[^\w.\u3040-\u30ff\u4e00-\u9fff_-]/g, '_');
+    if (!safeName.toLowerCase().endsWith('.png')) continue;
+    const match = String(item.dataUrl).match(/^data:image\/png;base64,(.+)$/);
+    if (!match) continue;
+    const dest = path.join(patientDir, safeName);
+    fs.writeFileSync(dest, Buffer.from(match[1], 'base64'));
+    saved.push(safeName);
+    sendToClients({ type: 'NEW_IMAGE', fileName: safeName, patientId: folder });
+  }
+
+  res.json({ success: true, saved });
+});
+
 app.post('/api/patients/:id/layout', (req, res) => {
-  const patientDir = path.join(getPatientsDir(), req.params.id);
+  const folder = findExistingPatientFolder(req.params.id) || req.params.id;
+  const patientDir = path.join(getPatientsDir(), folder);
   if (!fs.existsSync(patientDir)) {
     return res.status(404).json({ error: '患者フォルダがありません' });
   }
@@ -635,7 +789,7 @@ app.post('/api/patients/:id/layout', (req, res) => {
     slots: req.body.slots || []
   };
   fs.writeFileSync(layoutPath, JSON.stringify(payload, null, 2));
-  sendToClients({ type: 'REFRESH_IMAGES', patientId: req.params.id });
+  sendToClients({ type: 'REFRESH_IMAGES', patientId: folder });
   res.json({ success: true });
 });
 
@@ -698,6 +852,14 @@ async function handleNewFile(filePath) {
   const patientsDir = getPatientsDir();
   let targetPatientId = activePatientId || null;
 
+  if (targetPatientId) {
+    const resolved = resolvePatientFolder(targetPatientId);
+    if (resolved) {
+      targetPatientId = resolved;
+      activePatientId = resolved;
+    }
+  }
+
   if (
     !targetPatientId &&
     isAutoSortEnabled() &&
@@ -717,8 +879,9 @@ async function handleNewFile(filePath) {
     ? path.join(patientsDir, targetPatientId)
     : patientsDir;
 
-  if (!fs.existsSync(targetDir)) {
+  if (targetPatientId && !fs.existsSync(targetDir)) {
     fs.mkdirSync(targetDir, { recursive: true });
+    console.log(`[Watcher] Created patient folder on first photo: ${targetDir}`);
   }
 
   let destName = fileName;

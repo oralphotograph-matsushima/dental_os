@@ -106,3 +106,20 @@ export function slotTransform(slot: LayoutSlot): string {
   const sy = slot.flipV ? -1 : 1;
   return `scaleX(${sx}) scaleY(${sy}) rotate(${slot.rotate}deg)`;
 }
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+export function compositePngFilename(format: LayoutFormat, patientId: string, date = new Date()) {
+  const id = (patientId || "patient").split("_")[0];
+  return `oral_${format}view_${id}_${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}.png`;
+}
+
+export function compositePngLatestName(format: LayoutFormat) {
+  return `oral_${format}view_latest.png`;
+}
+
+export function isCompositePng(filename: string) {
+  return /^oral_\dview_/i.test(filename) && filename.toLowerCase().endsWith(".png");
+}

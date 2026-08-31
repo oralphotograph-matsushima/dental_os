@@ -99,6 +99,60 @@ export const getVaultBaseDir = (): string => {
   return getDefaultDataDir();
 };
 
+export const getPatientsDir = (): string => {
+  const dir = path.join(getVaultBaseDir(), 'Patients');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+};
+
+export const extractPatientNumber = (raw: string | null | undefined): string => {
+  if (raw == null || raw === '') return '';
+  return String(raw).trim().split('_')[0].trim();
+};
+
+export const findExistingPatientFolder = (patientNumber: string | null | undefined): string | null => {
+  const id = extractPatientNumber(patientNumber);
+  if (!id) return null;
+  const patientsDir = getPatientsDir();
+  if (!fs.existsSync(patientsDir)) return null;
+  let dirs: fs.Dirent[] = [];
+  try {
+    dirs = fs.readdirSync(patientsDir, { withFileTypes: true }).filter((e) => e.isDirectory());
+  } catch {
+    return null;
+  }
+  const prefixed = dirs.filter((e) => e.name.startsWith(`${id}_`));
+  const exact = dirs.filter((e) => e.name === id);
+  const pickNewest = (list: fs.Dirent[]) => {
+    const sorted = [...list].sort((a, b) => {
+      try {
+        return fs.statSync(path.join(patientsDir, b.name)).mtimeMs - fs.statSync(path.join(patientsDir, a.name)).mtimeMs;
+      } catch {
+        return 0;
+      }
+    });
+    return sorted[0]?.name || null;
+  };
+  return pickNewest(prefixed) || pickNewest(exact);
+};
+
+export const resolvePatientFolderName = (raw: string, patientName?: string): string | null => {
+  const id = extractPatientNumber(raw);
+  if (!id) return null;
+  const existing = findExistingPatientFolder(id);
+  if (existing) return existing;
+  let namePart = '';
+  if (patientName) {
+    const n = String(patientName).trim();
+    namePart = n.includes('_') ? n.split('_').slice(1).join('_') : n;
+  } else if (String(raw).includes('_')) {
+    namePart = String(raw).split('_').slice(1).join('_');
+  }
+  return namePart ? `${id}_${namePart}` : id;
+};
+
 /**
  * ユーザー指定のカルテ保存先（vaultPath）の設定フォルダ、またはデフォルトの設定フォルダを取得します。
  */
