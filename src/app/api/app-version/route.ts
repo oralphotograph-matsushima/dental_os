@@ -5,7 +5,7 @@ export async function GET() {
   return NextResponse.json({
     latestVersion: APP_VERSION,
     downloadUrl: "https://drive.google.com/drive/folders/1Y9FkzWJG28WG65s7SHqQDw2W48VYrSbf?usp=sharing",
-    releaseNotes: `Wireless Connect ${APP_VERSION}\n・OralNote から Wireless Connect へ名称・保存パスを完全移行\n・未振り分け写真は Unassigned ではなく Patients 直下に置き、EXIF と当日アポで患者フォルダへ振り分け\n・カルテ履歴が旧 OralNote_Data を見て空になる不具合を修正`,
+    releaseNotes: `Wireless Connect ${APP_VERSION}\n・患者番号だけでフォルダを特定。空フォルダは作らない\n・カルテと口腔内写真を同じ患者フォルダへ。Obsidian は wikilink\n・配置確認 5/7/9、透過 PNG を患者フォルダへ保存\n・スライドタブは口腔内9枚を最上段、PNG のみ`,
     isMandatory: false
   });
 }

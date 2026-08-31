@@ -52,8 +52,8 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
         .anim-s-device-pc { animation: s-device-wake 5s linear infinite; }
         .anim-s-device-ipad { animation: s-device-wake 5s linear infinite; }
         @keyframes s-device-wake {
-          0%, 34% { opacity: 0.3; filter: drop-shadow(0 0 0px #14b8a6); }
-          35%, 100% { opacity: 1; filter: drop-shadow(0 0 20px rgba(20,184,166,0.5)); color: #14b8a6; }
+          0%, 34% { opacity: 0.3; filter: drop-shadow(0 0 0px #f97316); }
+          35%, 100% { opacity: 1; filter: drop-shadow(0 0 20px rgba(249,115,22,0.5)); color: #f97316; }
         }
 
         .anim-s-text { animation: s-text 5s linear infinite; }
@@ -99,7 +99,7 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
       <div className="absolute inset-0 bg-white anim-s-flash z-30 pointer-events-none" />
 
       {/* ネットワークの線 */}
-      <div className="absolute top-1/2 left-[18%] h-[2px] bg-gradient-to-r from-transparent via-teal-500/50 to-transparent -translate-y-1/2 anim-s-line z-0" />
+      <div className="absolute top-1/2 left-[18%] h-[2px] bg-gradient-to-r from-transparent via-orange-500/50 to-transparent -translate-y-1/2 anim-s-line z-0" />
 
       {/* カメラ (左) */}
       <div className="absolute left-[15%] top-1/2 -translate-y-1/2 flex flex-col items-center anim-s-camera text-neutral-400 z-10">
@@ -108,12 +108,12 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
       </div>
 
       {/* 飛んでいくデータ（PCへ） */}
-      <div className="absolute -translate-y-1/2 -translate-x-1/2 anim-s-fly-pc z-20 text-teal-400 drop-shadow-[0_0_10px_#14b8a6]">
+      <div className="absolute -translate-y-1/2 -translate-x-1/2 anim-s-fly-pc z-20 text-orange-400 drop-shadow-[0_0_10px_#f97316]">
         <ImageIcon className="w-8 h-8 md:w-10 md:h-10" />
       </div>
 
       {/* 飛んでいくデータ（iPadへ） */}
-      <div className="absolute -translate-y-1/2 -translate-x-1/2 anim-s-fly-ipad z-20 text-teal-400 drop-shadow-[0_0_10px_#14b8a6]">
+      <div className="absolute -translate-y-1/2 -translate-x-1/2 anim-s-fly-ipad z-20 text-orange-400 drop-shadow-[0_0_10px_#f97316]">
         <ImageIcon className="w-8 h-8 md:w-10 md:h-10" />
       </div>
 

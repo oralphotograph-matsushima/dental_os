@@ -1216,7 +1216,7 @@ export default function Home() {
 
   if (isAuthenticated && !hasAgreedDisclaimer) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 font-sans selection:bg-teal-500/30">
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6 font-sans selection:bg-orange-500/30">
         <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl">
           <div className="flex flex-col items-center mb-6">
             <div className="bg-amber-500/20 p-4 rounded-2xl mb-4">
@@ -1234,7 +1234,7 @@ export default function Home() {
               localStorage.setItem("dental_os_disclaimer_agreed", "true");
               setHasAgreedDisclaimer(true);
             }}
-            className="w-full bg-teal-600 text-white font-bold rounded-xl py-4 hover:bg-teal-500 transition-colors flex items-center justify-center"
+            className="w-full bg-orange-600 text-white font-bold rounded-xl py-4 hover:bg-orange-500 transition-colors flex items-center justify-center"
           >
             同意して利用を開始する
           </button>
