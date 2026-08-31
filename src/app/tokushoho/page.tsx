@@ -1,10 +1,10 @@
 import React from 'react';
-import { FileText, ChevronLeft } from 'lucide-react';
+import { Wifi, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TokushohoPage() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-orange-500/30">
       
       {/* Navigation */}
       <nav className="fixed w-full top-0 z-50 bg-neutral-950/80 backdrop-blur-md border-b border-white/5">
@@ -14,8 +14,8 @@ export default function TokushohoPage() {
             <span className="font-medium">戻る</span>
           </Link>
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-2 rounded-xl shadow-lg shadow-teal-900/50">
-              <FileText className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-2 rounded-xl shadow-lg shadow-orange-950/50">
+              <Wifi className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">Wireless Connect</span>
           </div>

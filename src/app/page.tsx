@@ -1093,7 +1093,11 @@ export default function Home() {
         
         localStorage.setItem("dental_os_staff_name", staffName);
         setStatus("saved");
-        setSavedPath(`PCへ保存完了 (${saveData.filePath})`);
+        setSavedPath(
+          saveData.photoCount
+            ? `PCへ保存完了（写真${saveData.photoCount}枚をObsidian参照） ${saveData.filePath}`
+            : `PCへ保存完了 (${saveData.filePath})`
+        );
         triggerPatientCompleted(patientInfo);
         return;
       }
@@ -1242,7 +1246,7 @@ export default function Home() {
   const filteredPatients = patientsList.filter(p => p.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="h-[100dvh] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-950/30 via-neutral-950 to-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30 flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-950/30 via-neutral-950 to-neutral-950 text-neutral-100 font-sans selection:bg-orange-500/30 flex flex-col overflow-hidden">
       
       {/* Unlock Modal Overlay */}
       {showUnlockModal && !isAuthenticated && (
@@ -1250,7 +1254,7 @@ export default function Home() {
           <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={() => setShowUnlockModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
             <div className="flex flex-col items-center mb-6">
-              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+              <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-4 rounded-2xl shadow-lg shadow-orange-950/20 mb-4">
                 <Lock className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-xl font-bold text-white mb-2 text-center">ライセンスキーが必要です</h2>
@@ -1317,7 +1321,7 @@ export default function Home() {
         <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <div className="flex flex-col items-center mb-6">
-              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+              <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-4 rounded-2xl shadow-lg shadow-orange-950/20 mb-4">
                 <Download className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-xl font-bold text-white mb-2 text-center">アップデートのお知らせ</h2>
@@ -1481,7 +1485,7 @@ export default function Home() {
           <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
             <button onClick={() => setShowClinicProUpsell(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
             <div className="flex flex-col items-center mb-6">
-              <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+              <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-4 rounded-2xl shadow-lg shadow-orange-950/20 mb-4">
                 <Wifi className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-xl font-bold text-white mb-2 text-center">Clinic Pro 専用機能です</h2>
@@ -1514,7 +1518,7 @@ export default function Home() {
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col items-center">
             <button onClick={() => setShowQRModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors">✕</button>
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-teal-900/20 mb-4">
+            <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-4 rounded-2xl shadow-lg shadow-orange-950/20 mb-4">
               <Tablet className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-xl font-bold text-white mb-2 text-center">iPad連携（ローカル接続）</h2>
@@ -1967,6 +1971,11 @@ export default function Home() {
                       </span>
                     </button>
                   </div>
+                  {mdSaveTarget === 'pc' && !isPublicWeb && (
+                    <p className="text-[10px] text-neutral-500 text-center">
+                      写真は複製せず、同じ患者フォルダをObsidianの <code className="text-neutral-400">![[ファイル名]]</code> で参照します。
+                    </p>
+                  )}
 
                   {/* Path indicator */}
                   {status === "saved" && savedPath && (
@@ -2299,7 +2308,7 @@ export default function Home() {
               {/* Network Settings (iPad sync IP) */}
               <div className="bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-xl p-5 md:p-6 shadow-2xl">
                 <h3 className="text-base md:text-lg font-bold text-white mb-4 flex items-center gap-2">
-                  <Wifi className="w-5 h-5 text-teal-500" />
+                  <Wifi className="w-5 h-5 text-orange-500" />
                   iPad連携用 ネットワーク設定
                 </h3>
                 

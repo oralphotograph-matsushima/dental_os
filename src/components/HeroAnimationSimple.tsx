@@ -19,7 +19,7 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
       className="relative w-full h-[350px] md:h-[450px] rounded-3xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-2xl flex items-center justify-center cursor-pointer group"
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-teal-500/0 group-hover:bg-teal-500/10 transition-colors duration-300 z-40" />
+      <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-300 z-40" />
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 pointer-events-none">
          <span className="bg-black/80 text-white px-6 py-3 rounded-full font-bold tracking-wider text-sm border border-white/20 shadow-xl backdrop-blur-sm">
             詳細を見る
@@ -131,19 +131,19 @@ export default function HeroAnimationSimple({ onClick }: { onClick?: () => void 
 
       {/* メッセージ */}
       <div className="absolute bottom-[10%] w-full text-center anim-s-text px-4 z-10">
-        <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-white mb-2">撮るだけ。<span className="text-teal-400">一瞬</span>で全端末へ。</h2>
+        <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-white mb-2">撮るだけ。<span className="text-orange-400">一瞬</span>で全端末へ。</h2>
         <p className="text-sm md:text-base text-neutral-400">Wireless Connect 画像自動転送</p>
       </div>
 
       {/* 最後のロゴ */}
       <div className="absolute inset-0 bg-neutral-900 flex flex-col items-center justify-center anim-s-logo z-20">
         <div className="flex items-center gap-3 mb-4">
-            <div className="bg-gradient-to-br from-teal-400 to-emerald-600 p-3 rounded-2xl">
+            <div className="bg-gradient-to-br from-orange-400 to-amber-600 p-3 rounded-2xl">
               <Camera className="w-8 h-8 text-white" />
             </div>
             <span className="text-3xl md:text-4xl font-bold tracking-tight text-white">Wireless Connect</span>
         </div>
-        <p className="text-teal-400 font-bold tracking-widest text-xs md:text-sm">次世代 Dental OS</p>
+        <p className="text-orange-400 font-bold tracking-widest text-xs md:text-sm">次世代 Dental OS</p>
       </div>
     </div>
   );

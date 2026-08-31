@@ -19,30 +19,32 @@ export const LAYOUT_TEMPLATES: Record<LayoutFormat, { view: string; label: strin
     { view: "lower", label: "下顎" },
   ],
   "7": [
-    { view: "front", label: "正面" },
-    { view: "front_half", label: "半開口" },
-    { view: "coupling", label: "カップリング" },
-    { view: "right", label: "右側" },
-    { view: "left", label: "左側" },
     { view: "upper", label: "上顎" },
+    { view: "right", label: "右側" },
+    { view: "front", label: "正面" },
+    { view: "left", label: "左側" },
+    { view: "coupling", label: "カップリング" },
     { view: "lower", label: "下顎" },
+    { view: "front_half", label: "半開口" },
   ],
   "9": [
+    { view: "right_overjet", label: "右側側方\n（半開口）" },
+    { view: "upper", label: "上顎" },
+    { view: "left_overjet", label: "左側側方\n（半開口）" },
     { view: "right", label: "右側" },
     { view: "front", label: "正面" },
     { view: "left", label: "左側" },
-    { view: "right_overjet", label: "右側側方" },
-    { view: "front_half", label: "半開口" },
-    { view: "left_overjet", label: "左側側方" },
-    { view: "upper", label: "上顎" },
     { view: "coupling", label: "カップリング" },
     { view: "lower", label: "下顎" },
+    { view: "front_half", label: "半開口" },
   ],
 };
 
 const VIEW_FALLBACKS: Record<string, string[]> = {
   front_half: ["front"],
   coupling: ["front", "smile"],
+  right_overjet: ["right"],
+  left_overjet: ["left"],
 };
 
 export function emptySlot(view: string, label: string): LayoutSlot {

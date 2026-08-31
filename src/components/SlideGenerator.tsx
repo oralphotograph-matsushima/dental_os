@@ -2,9 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { UploadCloud, FileDown, FlipHorizontal, FlipVertical, RotateCw, Trash2, Sliders, Edit3, Mic, Loader2, Maximize2, MoveRight, MoveLeft, RefreshCw, Circle, Droplet, CheckCircle } from "lucide-react";
-import * as htmlToImage from "html-to-image";
 import { getApproximateCoordinates } from "@/lib/dentalGridMap";
 import { LAYOUT_TEMPLATES, LayoutSlot, compositePngFilename, compositePngLatestName, isCompositePng } from "@/lib/layoutSlots";
+import { captureTransparentPng } from "@/lib/capturePng";
 
 export type AnnotationType = 'implant' | 'arrow_mesial' | 'arrow_distal' | 'rotation' | 'caries' | 'bone_graft' | 'polygon';
 
@@ -305,16 +305,7 @@ export default function SlideGenerator({ activePatient }: { activePatient?: stri
     setIsGenerating(true);
     setPngSavedName("");
     try {
-      const imgs = Array.from(intraoralRef.current.querySelectorAll("img"));
-      await Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise<void>((resolve) => {
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-      })));
-      const dataUrl = await htmlToImage.toPng(intraoralRef.current, {
-        backgroundColor: "#0a0a0a",
-        pixelRatio: 2,
-        filter: (node) => !(node.classList && node.classList.contains("export-ignore")),
-      });
+      const dataUrl = await captureTransparentPng(intraoralRef.current);
       if (activePatient) {
         const timestamped = compositePngFilename("9", activePatient);
         const latest = compositePngLatestName("9");
@@ -380,12 +371,12 @@ export default function SlideGenerator({ activePatient }: { activePatient?: stri
             <span className="bg-teal-500/20 text-teal-400 p-2 rounded-xl"><Sliders className="w-5 h-5" /></span>
             口腔内写真・プレゼンテーション
           </h2>
-          <p className="text-xs md:text-sm text-neutral-400">口腔内9枚法が先頭です。黒背景のPNGだけを患者フォルダへ保存します（PowerPoint / PDF は使いません）。</p>
+          <p className="text-xs md:text-sm text-neutral-400">口腔内9枚法が先頭です。背景透過のPNGを患者フォルダへ保存します。画面上は黒で見えますが、白・黒どちらのスライドにも置けます。</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <button onClick={exportPng} disabled={isGenerating} className="flex-1 md:flex-none bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white px-4 md:px-6 py-4 md:py-3 rounded-xl md:rounded-lg font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95">
             {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
-            黒背景PNGを患者フォルダへ保存
+            透過PNGを患者フォルダへ保存
           </button>
         </div>
       </div>
@@ -405,7 +396,7 @@ export default function SlideGenerator({ activePatient }: { activePatient?: stri
           )}
           {savedCompositeUrl && (
             <div className="bg-neutral-900/60 border border-white/5 rounded-2xl p-4">
-              <p className="text-xs text-neutral-400 mb-2">保存済みの黒背景PNG</p>
+              <p className="text-xs text-neutral-400 mb-2">保存済みの透過PNG（プレビューは黒背景）</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={savedCompositeUrl} alt="saved composite" className="w-full rounded-xl border border-neutral-800" />
             </div>
@@ -433,9 +424,10 @@ export default function SlideGenerator({ activePatient }: { activePatient?: stri
             
             <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef9} onChange={(e) => handleFiles(e.target.files, "intraoral")} />
             
+            <div className="bg-[#0a0a0a] p-2 rounded-xl border border-neutral-800 shadow-inner">
             <div 
               ref={intraoralRef}
-              className="relative grid grid-cols-3 gap-2 bg-[#0a0a0a] p-2 rounded-xl border border-neutral-800 shadow-inner"
+              className="relative grid grid-cols-3 gap-2 bg-transparent"
               onDrop={(e) => handleDrop(e, "intraoral")} onDragOver={handleDragOver}
             >
               {renderAnnotations(intraoralAnnotations)}
@@ -457,9 +449,10 @@ export default function SlideGenerator({ activePatient }: { activePatient?: stri
                         <button onClick={(e) => removeImage("intraoral", idx, e)} className="p-1.5 bg-black/60 rounded text-red-400 hover:bg-red-600 hover:text-white"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </>
-                  ) : <span className="text-neutral-600 text-xs font-medium">{LAYOUT_TEMPLATES["9"][idx]?.label || `枠 ${idx + 1}`}</span>}
+                  ) : <span className="export-ignore text-neutral-600 text-xs font-medium text-center whitespace-pre-line leading-tight">{LAYOUT_TEMPLATES["9"][idx]?.label || `枠 ${idx + 1}`}</span>}
                 </div>
               ))}
+            </div>
             </div>
           </div>
 

@@ -16,3 +16,14 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 画面は黒背景のまま、書き出しPNGだけ透過にする */
+.png-export,
+.png-export * {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.png-export .export-ignore {
+  display: none !important;
+}

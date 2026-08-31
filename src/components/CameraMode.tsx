@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Camera, RefreshCw, Image as ImageIcon, Send, X, CheckCircle, AlertCircle, LayoutTemplate, Download, Presentation } from "lucide-react";
-import * as htmlToImage from 'html-to-image';
 import LayoutConfirm from "@/components/LayoutConfirm";
 import OralLayoutCanvas from "@/components/OralLayoutCanvas";
 import { LayoutFormat, LayoutSlot, buildSlotsFromAnalysis, compositePngFilename, compositePngLatestName, isCompositePng } from "@/lib/layoutSlots";
+import { captureTransparentPng } from "@/lib/capturePng";
 
 function samePatientNumber(a?: string | null, b?: string | null) {
   if (!a || !b) return false;
@@ -473,15 +473,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false,
     try {
       setIsGenerating(true);
       setErrorMsg("");
-      const imgs = Array.from(slideRef.current.querySelectorAll("img"));
-      await Promise.all(imgs.map((img) => img.complete ? Promise.resolve() : new Promise<void>((resolve) => {
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-      })));
-      const dataUrl = await htmlToImage.toPng(slideRef.current, {
-        backgroundColor: "#0a0a0a",
-        pixelRatio: 2,
-      });
+      const dataUrl = await captureTransparentPng(slideRef.current);
       const timestamped = compositePngFilename(layoutFormat, activePatientId);
       const latest = compositePngLatestName(layoutFormat);
       const res = await fetch(`http://${window.location.hostname}:3001/api/patients/${encodeURIComponent(activePatientId)}/export-png`, {
@@ -506,7 +498,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false,
   };
 
   const viewLabels: Record<string, string> = {
-    front: "正面", front_half: "半開口", coupling: "カップリング", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌", smile: "スマイル", right_overjet: "右側オーバージェット", left_overjet: "左側オーバージェット"
+    front: "正面", front_half: "半開口", coupling: "カップリング", right: "右側", left: "左側", upper: "上顎", lower: "下顎", facial: "顔貌", smile: "スマイル", right_overjet: "右側側方\n（半開口）", left_overjet: "左側側方\n（半開口）"
   };
 
   const saveLayout = async (slots: LayoutSlot[], confirmed: boolean) => {
@@ -790,7 +782,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false,
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-teal-400 flex items-center gap-2">
                 <LayoutTemplate className="w-6 h-6" />
-                {layoutFormat}枚法・黒背景PNG
+                {layoutFormat}枚法・透過PNG
               </h2>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -799,7 +791,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false,
                   className="bg-teal-500 hover:bg-teal-400 text-white font-bold px-5 py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-teal-500/20"
                 >
                   {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                  患者フォルダへPNG保存
+                  患者フォルダへ透過PNG保存
                 </button>
                 <button
                   type="button"
@@ -908,7 +900,7 @@ export default function CameraModePage({ activePatient, autoSortEnabled = false,
               {Object.entries(duplicateConflicts).map(([view, filenames]) => (
                 <div key={view} className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-teal-400 mb-4 border-b border-neutral-800 pb-2">
-                    {viewLabels[view] || view} の写真 ({filenames.length}枚)
+                    {(viewLabels[view] || view).replace(/\n/g, "")} の写真 ({filenames.length}枚)
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {filenames.map(filename => (

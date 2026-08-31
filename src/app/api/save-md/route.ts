@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getPatientsDir, findExistingPatientFolder, resolvePatientFolderName } from '@/lib/settingsHelper';
+import { withObsidianPhotoLinks } from '@/lib/obsidianPhotos';
 
 function folderFromChartFilename(filename: string): string | null {
   const base = path.basename(filename).replace(/\.md$/i, '');
@@ -34,10 +35,11 @@ export async function POST(req: Request) {
       fs.mkdirSync(patientDir, { recursive: true });
     }
 
+    const { markdown, photoCount } = withObsidianPhotoLinks(content, patientDir);
     const filePath = path.join(patientDir, safeFilename);
-    fs.writeFileSync(filePath, content, 'utf8');
+    fs.writeFileSync(filePath, markdown, 'utf8');
 
-    return NextResponse.json({ success: true, filePath, folder });
+    return NextResponse.json({ success: true, filePath, folder, photoCount });
   } catch (error: any) {
     console.error('Error saving md file:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

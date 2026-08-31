@@ -56,7 +56,12 @@ export default function LayoutConfirm({ slots, imageUrl, confirmed, onChange, on
   };
 
   const editing = editingIndex !== null ? slots[editingIndex] : null;
-  const cols = slots.length <= 5 ? "grid-cols-2" : "grid-cols-3";
+  const gridCells: (number | null)[] =
+    slots.length === 5
+      ? [null, 0, null, 1, 2, 3, null, 4, null]
+      : slots.length === 7
+        ? [null, 0, null, 1, 2, 3, 4, 5, 6]
+        : slots.map((_, i) => i);
 
   return (
     <div className="space-y-4">
@@ -78,8 +83,12 @@ export default function LayoutConfirm({ slots, imageUrl, confirmed, onChange, on
         </div>
       )}
 
-      <div className={`grid ${cols} gap-2`}>
-        {slots.map((slot, index) => {
+      <div className="grid grid-cols-3 gap-2">
+        {gridCells.map((index, cellIdx) => {
+          if (index === null) {
+            return <div key={`empty-${cellIdx}`} className="aspect-[4/3] rounded-xl bg-transparent" />;
+          }
+          const slot = slots[index];
           const badge = slotBadge(slot);
           const selected = swapIndex === index;
           const tone =
@@ -110,12 +119,12 @@ export default function LayoutConfirm({ slots, imageUrl, confirmed, onChange, on
                   style={{ transform: slotTransform(slot) }}
                 />
               ) : (
-                <span className="absolute inset-0 flex items-center justify-center text-neutral-600 text-xs">{slot.label}</span>
+                <span className="absolute inset-0 flex items-center justify-center text-neutral-600 text-xs text-center whitespace-pre-line leading-tight px-1">{slot.label}</span>
               )}
-              <span className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/75 text-[11px] text-white truncate">
+              <span className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/75 text-[11px] text-white text-center whitespace-pre-line leading-tight">
                 {slot.label}
               </span>
-              <span className={`absolute bottom-7 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${tone}`}>
+              <span className={`absolute bottom-8 left-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${tone}`}>
                 {badge.text}
               </span>
             </button>
@@ -139,7 +148,7 @@ export default function LayoutConfirm({ slots, imageUrl, confirmed, onChange, on
       {editing && editingIndex !== null && (
         <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-bold text-white">{editing.label}</h3>
+            <h3 className="text-lg font-bold text-white whitespace-pre-line leading-tight">{editing.label}</h3>
             <button onClick={() => setEditingIndex(null)} className="p-2 text-neutral-400">
               <X className="w-6 h-6" />
             </button>
