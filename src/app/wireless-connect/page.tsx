@@ -17,13 +17,13 @@ export default function WirelessConnectLP() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-teal-500/30">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-orange-500/30">
       
       {/* Sticky Header */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 py-4' : 'bg-transparent py-6'}`}>
         <div className="container mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Wifi className="w-6 h-6 text-teal-400" />
+            <Wifi className="w-6 h-6 text-orange-400" />
             <span className="font-bold text-xl tracking-tight">Wireless Connect</span>
           </div>
           <a 
@@ -55,17 +55,17 @@ export default function WirelessConnectLP() {
         </div>
 
         <div className="relative z-10 container mx-auto px-6 text-center mt-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 text-xs font-semibold uppercase tracking-wider mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
             </span>
             次世代の歯科ネットワークインフラ
           </div>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-150">
             ケーブルをなくす。<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-600 block mt-2 md:mt-0 md:inline">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-600 block mt-2 md:mt-0 md:inline">
               クリニックが進化する。
             </span>
           </h1>
@@ -80,7 +80,7 @@ export default function WirelessConnectLP() {
               href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-8 py-4 rounded-full bg-teal-600 text-white font-bold text-lg hover:bg-teal-500 transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_40px_rgba(13,148,136,0.4)]"
+              className="px-8 py-4 rounded-full bg-orange-600 text-white font-bold text-lg hover:bg-orange-500 transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_40px_rgba(249,115,22,0.4)]"
             >
               システムを導入する
               <ArrowRight className="w-5 h-5" />
@@ -138,7 +138,7 @@ export default function WirelessConnectLP() {
               </div>
               
               {/* Decorative elements */}
-              <div className="absolute -inset-4 bg-teal-500/10 blur-2xl -z-10 rounded-full"></div>
+              <div className="absolute -inset-4 bg-orange-500/10 blur-2xl -z-10 rounded-full"></div>
             </div>
 
           </div>
@@ -155,9 +155,9 @@ export default function WirelessConnectLP() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-teal-500/50 transition-colors group">
-              <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-teal-400" />
+            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-orange-500/50 transition-colors group">
+              <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6 text-orange-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">ゼロ遅延のデータ転送</h3>
               <p className="text-neutral-400 leading-relaxed">
@@ -166,9 +166,9 @@ export default function WirelessConnectLP() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-teal-500/50 transition-colors group">
-              <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <MonitorPlay className="w-6 h-6 text-teal-400" />
+            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-orange-500/50 transition-colors group">
+              <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <MonitorPlay className="w-6 h-6 text-orange-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">アプリとのシームレス連携</h3>
               <p className="text-neutral-400 leading-relaxed">
@@ -177,9 +177,9 @@ export default function WirelessConnectLP() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-teal-500/50 transition-colors group">
-              <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Shield className="w-6 h-6 text-teal-400" />
+            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-orange-500/50 transition-colors group">
+              <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Shield className="w-6 h-6 text-orange-400" />
               </div>
               <h3 className="text-xl font-bold mb-3">独立した強靭なネットワーク</h3>
               <p className="text-neutral-400 leading-relaxed">
@@ -196,7 +196,7 @@ export default function WirelessConnectLP() {
           <div className="flex flex-col md:flex-row-reverse gap-16 items-center">
             
             <div className="w-full md:w-1/2 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold uppercase tracking-wider mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 text-xs font-semibold uppercase tracking-wider mb-2">
                 Ultimate Synchronization
               </div>
               <h2 className="text-2xl md:text-4xl font-bold">アプリとの相乗効果。</h2>
@@ -206,15 +206,15 @@ export default function WirelessConnectLP() {
               
               <ul className="space-y-4 pt-4">
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   <span>PC・iPadへのリアルタイムな画像同期</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   <span>AIによるカルテ・スライドの自動生成（オプション）</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   <span>圧倒的なスピードによる感動的な患者体験の提供</span>
                 </li>
               </ul>
@@ -247,7 +247,7 @@ export default function WirelessConnectLP() {
       {/* CTA Section */}
       <section className="py-32 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-neutral-950 z-0"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-teal-500/20 blur-[100px] rounded-full z-0 pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-orange-500/20 blur-[100px] rounded-full z-0 pointer-events-none"></div>
         
         <div className="container mx-auto px-6 relative z-10 text-center">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">クリニックを次の次元へ。</h2>
@@ -262,7 +262,7 @@ export default function WirelessConnectLP() {
               href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="w-full block py-4 rounded-xl bg-teal-600 text-white font-bold text-lg hover:bg-teal-500 transition-colors shadow-lg"
+              className="w-full block py-4 rounded-xl bg-orange-600 text-white font-bold text-lg hover:bg-orange-500 transition-colors shadow-lg"
             >
               パッケージを購入する
             </a>
@@ -277,7 +277,7 @@ export default function WirelessConnectLP() {
       <footer className="py-8 border-t border-neutral-900 bg-neutral-950 text-center text-neutral-500 text-sm">
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
-            <Wifi className="w-4 h-4 text-teal-600" />
+            <Wifi className="w-4 h-4 text-orange-600" />
             <span>© {new Date().getFullYear()} Nostalgista Inc. All rights reserved.</span>
           </div>
           <div className="flex gap-6">
