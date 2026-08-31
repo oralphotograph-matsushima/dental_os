@@ -1490,7 +1490,7 @@ export default function Home() {
               </div>
               <h2 className="text-xl font-bold text-white mb-2 text-center">Clinic Pro 専用機能です</h2>
               <p className="text-sm text-neutral-400 text-center leading-relaxed">
-                「Wireless Connect（カメラ画像自動転送）」をご利用いただくには、PCインストール版アプリを提供する<strong className="text-teal-400">Clinic Proプラン</strong>へのご加入が必要です。
+                「Wireless Connect（カメラ画像自動転送）」をご利用いただくには、PCインストール版アプリを提供する<strong className="text-orange-400">Clinic Proプラン</strong>へのご加入が必要です。
               </p>
             </div>
             
@@ -1498,7 +1498,7 @@ export default function Home() {
               <a 
                 href="https://os.nostalgista.co.jp/wireless-connect" 
                 target="_blank" rel="noopener noreferrer"
-                className="w-full bg-teal-500 text-white font-bold rounded-xl py-4 hover:bg-teal-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-500/25"
+                className="w-full bg-orange-500 text-white font-bold rounded-xl py-4 hover:bg-orange-400 transition-colors flex items-center justify-center shadow-lg shadow-orange-500/25"
               >
                 Wireless Connect の詳細を見る
               </a>
