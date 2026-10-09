@@ -4,6 +4,10 @@ import { useEffect, useState, useRef } from "react";
 import { ArrowRight, CheckCircle2, Zap, Wifi, Shield, ArrowDown, MonitorPlay, X } from "lucide-react";
 import Link from "next/link";
 
+/** 購入の主経路は Order Manager のみ。Stripe は海外／カード副リンク専用。 */
+const ORDER_MANAGER_URL = "https://nostalgista-order-manager.vercel.app/";
+const STRIPE_OVERSEAS_URL = "https://buy.stripe.com/28E8wP7f56CY6Pigza33W04";
+
 export default function WirelessConnectLP() {
   const [isScrolled, setIsScrolled] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
@@ -27,12 +31,12 @@ export default function WirelessConnectLP() {
             <span className="font-bold text-xl tracking-tight">Wireless Connect</span>
           </div>
           <a 
-            href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
+            href={ORDER_MANAGER_URL} 
             target="_blank" 
             rel="noopener noreferrer"
             className="px-5 py-2 rounded-full bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors"
           >
-            Buy Now
+            購入を申し込む
           </a>
         </div>
       </header>
@@ -75,15 +79,23 @@ export default function WirelessConnectLP() {
             撮った瞬間から、シームレスなデータ連携が始まります。
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
+          <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
             <a 
-              href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
+              href={ORDER_MANAGER_URL} 
               target="_blank" 
               rel="noopener noreferrer"
               className="px-8 py-4 rounded-full bg-orange-600 text-white font-bold text-lg hover:bg-orange-500 transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_40px_rgba(249,115,22,0.4)]"
             >
               システムを導入する
               <ArrowRight className="w-5 h-5" />
+            </a>
+            <a
+              href={STRIPE_OVERSEAS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-neutral-400 hover:text-white underline underline-offset-4"
+            >
+              （副）海外／クレジットカード決済はこちら
             </a>
           </div>
         </div>
@@ -107,9 +119,9 @@ export default function WirelessConnectLP() {
               </p>
               <div className="space-y-4 pt-4">
                 {[
-                  "足元の配線やSDカードの抜き差しを完全に排除",
-                  "既存の不安定なWi-Fi環境に依存しない専用構築",
-                  "専門業者不要、届いたその日から機能するシンプルさ"
+                  "SDカードの抜き差しを減らし、スロットの故障を避ける",
+                  "転送は、Canon と Nikon の純正アプリで行う",
+                  "ネットワークの整え方は、マニュアルと導入サポートでお渡しする"
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="mt-1 bg-red-500/20 p-1 rounded-full">
@@ -170,9 +182,9 @@ export default function WirelessConnectLP() {
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <MonitorPlay className="w-6 h-6 text-orange-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">アプリとのシームレス連携</h3>
+              <h3 className="text-xl font-bold mb-3">使うのは純正アプリ</h3>
               <p className="text-neutral-400 leading-relaxed">
-                Wireless Connect は堅牢なインフラ層として機能します。専用アプリ「Wireless Connect App」と組み合わせれば、自動スライド生成などの高度な機能も利用可能です。
+                写真の転送は、カメラメーカー純正のアプリで行います。Canon は EOS Utility、Nikon はトランスミッターユーティリティです。
               </p>
             </div>
 
@@ -181,9 +193,9 @@ export default function WirelessConnectLP() {
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Shield className="w-6 h-6 text-orange-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">独立した強靭なネットワーク</h3>
+              <h3 className="text-xl font-bold mb-3">ネットワークのマニュアルと導入サポート</h3>
               <p className="text-neutral-400 leading-relaxed">
-                院内の既存Wi-Fiとは独立した、カメラ専用のネットワーク環境を構築します。電子カルテ等のシステムに影響を与えることなく、安定した通信を保証します。
+                医院のネットワークを最適化するために、現場で実践して学んだ内容をマニュアルにまとめてお送りします。導入のサポートもします。
               </p>
             </div>
           </div>
@@ -197,25 +209,25 @@ export default function WirelessConnectLP() {
             
             <div className="w-full md:w-1/2 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 text-xs font-semibold uppercase tracking-wider mb-2">
-                Ultimate Synchronization
+                お渡しする内容
               </div>
-              <h2 className="text-2xl md:text-4xl font-bold">アプリとの相乗効果。</h2>
+              <h2 className="text-2xl md:text-4xl font-bold">純正アプリで、院内のネットワークを整える。</h2>
               <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
-                Wireless Connect は、目に見えない強靭なハードウェア・インフラとして機能します。<br className="hidden md:block" />ここに連携アプリをアドオンすることで、データは単なる「画像」から、患者様の心を動かす「プレゼンテーション」へと昇華されます。
+                撮影した写真の受け取りは、カメラメーカーの純正アプリに任せます。<br className="hidden md:block" />届かない、途切れる、というときの原因は、アプリよりも医院のネットワーク側にあることが多いです。
               </p>
               
               <ul className="space-y-4 pt-4">
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>PC・iPadへのリアルタイムな画像同期</span>
+                  <span>Canon は EOS Utility、Nikon はトランスミッターユーティリティ</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>AIによるカルテ・スライドの自動生成（オプション）</span>
+                  <span>実践からまとめた、ネットワーク最適化のマニュアル</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>圧倒的なスピードによる感動的な患者体験の提供</span>
+                  <span>導入時のサポート</span>
                 </li>
               </ul>
             </div>
@@ -244,6 +256,16 @@ export default function WirelessConnectLP() {
         </div>
       </section>
 
+      <section className="py-24 bg-neutral-950 border-t border-neutral-800">
+        <div className="container mx-auto px-6 max-w-3xl">
+          <h2 className="text-2xl md:text-4xl font-bold mb-6 leading-tight">お渡しするのは、純正アプリの使い方と、ネットワークの整え方です。</h2>
+          <div className="space-y-4 text-neutral-400 text-base md:text-lg leading-relaxed">
+            <p>アプリ自体は、カメラメーカー純正のものを使います。Canon なら EOS Utility、Nikon ならトランスミッターユーティリティです。写真は、そのアプリからパソコンへ転送します。</p>
+            <p>その上で、医院のネットワークを最適化するために、診療の現場で実践して学んだ内容をマニュアルとして体系化し、お送りします。導入のサポートもいたします。</p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-32 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-neutral-950 z-0"></div>
@@ -257,18 +279,43 @@ export default function WirelessConnectLP() {
           
           <div className="bg-neutral-900/50 backdrop-blur-xl border border-neutral-800 p-8 rounded-3xl max-w-lg mx-auto mb-10 shadow-2xl">
             <h3 className="text-2xl font-bold text-white mb-6">システム構築パッケージ</h3>
+
+            <div className="mb-8 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-5 text-left">
+              <p className="mb-3 text-sm font-bold tracking-wide text-amber-200">
+                念のための確認
+              </p>
+              <ul className="space-y-3 text-sm leading-relaxed text-neutral-200">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+                  <span>
+                    このマニュアル／サービスは、メーカーの<strong className="font-semibold text-white">純正データ転送アプリ</strong>の利用を補助するものです。
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+                  <span>
+                    データ転送アプリ自体を、当方から提供するものではありません。
+                  </span>
+                </li>
+              </ul>
+            </div>
             
             <a 
-              href="https://buy.stripe.com/28E8wP7f56CY6Pigza33W04" 
+              href={ORDER_MANAGER_URL} 
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full block py-4 rounded-xl bg-orange-600 text-white font-bold text-lg hover:bg-orange-500 transition-colors shadow-lg"
             >
               パッケージを購入する
             </a>
-            <p className="text-xs text-neutral-500 mt-4 text-center flex items-center justify-center gap-1">
-              <Shield className="w-3 h-3" /> Secure payment via Stripe
-            </p>
+            <a
+              href={STRIPE_OVERSEAS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-block text-sm text-neutral-400 hover:text-white underline underline-offset-4"
+            >
+              （副）海外／クレジットカード決済はこちら
+            </a>
           </div>
         </div>
       </section>
