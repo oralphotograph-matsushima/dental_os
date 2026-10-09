@@ -38,8 +38,10 @@ export const migrateDataDirectoryName = () => {
   }
 };
 
-// モジュール読み込み時に自動で移行処理を走らせる
-migrateDataDirectoryName();
+// モジュール読み込み時に自動で移行処理を走らせる（Vercel 上では Desktop が無いのでスキップ）
+if (!process.env.VERCEL) {
+  migrateDataDirectoryName();
+}
 
 /**
  * OneDrive等の同期フォルダが有効な場合に備え、存在する正しいデスクトップパスを特定して返します。
@@ -100,7 +102,8 @@ export const getVaultBaseDir = (): string => {
 };
 
 export const getPatientsDir = (): string => {
-  const dir = path.join(getVaultBaseDir(), 'Patients');
+  // vaultPath はランタイム可変。turbopackIgnore で NFT がプロジェクト全体を同梱しないようにする
+  const dir = path.join(/*turbopackIgnore: true*/ getVaultBaseDir(), 'Patients');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -164,7 +167,7 @@ export const getSettingsDir = (): string => {
     try {
       const data = JSON.parse(fs.readFileSync(defaultClinicJson, 'utf8'));
       if (data && data.vaultPath) {
-        const customDir = path.join(data.vaultPath, 'Settings');
+        const customDir = path.join(/*turbopackIgnore: true*/ data.vaultPath, 'Settings');
         if (!fs.existsSync(customDir)) {
           fs.mkdirSync(customDir, { recursive: true });
         }
@@ -193,7 +196,7 @@ export const getTermsSettingsPath = (): string => {
  * 技工指示書データの保存先ディレクトリ (vaultPath/TechnicianOrders) を取得します。
  */
 export const getOrdersDir = (): string => {
-  const ordersDir = path.join(getVaultBaseDir(), 'TechnicianOrders');
+  const ordersDir = path.join(/*turbopackIgnore: true*/ getVaultBaseDir(), 'TechnicianOrders');
   if (!fs.existsSync(ordersDir)) {
     fs.mkdirSync(ordersDir, { recursive: true });
   }
@@ -207,7 +210,7 @@ export const migrateSettings = (newVaultPath: string) => {
   if (!newVaultPath) return;
 
   const oldDir = getSettingsDir();
-  const newDir = path.join(newVaultPath, 'Settings');
+  const newDir = path.join(/*turbopackIgnore: true*/ newVaultPath, 'Settings');
 
   if (path.resolve(oldDir) === path.resolve(newDir)) {
     return; // 同一フォルダの場合は何もしない

@@ -69,6 +69,29 @@ async function buildElectron() {
     }
   }
 
+  // Watcher 依存（ftp-srv 等）は Vercel 関数に載せない。Electron standalone へ明示コピーする。
+  const watcherDeps = ['ftp-srv', 'chokidar', 'express', 'cors'];
+  const nmRoot = path.join(__dirname, '..', 'node_modules');
+  const standaloneNm = path.join(standaloneDir, 'node_modules');
+  for (const dep of watcherDeps) {
+    const src = path.join(nmRoot, dep);
+    const dest = path.join(standaloneNm, dep);
+    if (fs.existsSync(src)) {
+      console.log(`Copying watcher dependency ${dep} into standalone...`);
+      await fs.copy(src, dest);
+    } else {
+      console.warn(`Warning: node_modules/${dep} not found; skipped.`);
+    }
+  }
+
+  // watcher.js 本体も standalone に含める（Electron から起動するため）
+  const watcherSrc = path.join(__dirname, '..', 'src', 'server', 'watcher.js');
+  const watcherDest = path.join(standaloneDir, 'src', 'server', 'watcher.js');
+  if (fs.existsSync(watcherSrc)) {
+    await fs.ensureDir(path.dirname(watcherDest));
+    await fs.copy(watcherSrc, watcherDest);
+  }
+
   console.log('Successfully prepared standalone build!');
 }
 
