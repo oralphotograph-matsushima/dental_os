@@ -2838,13 +2838,70 @@ export default function Home() {
 
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1">
+              {/* 診断：どの方法で接続しますか */}
+              <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-4">
+                <h3 className="text-white font-bold mb-1">診断：どの方法で接続しますか？</h3>
+                <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+                  写真の本拠地に合わせて選んでください。迷ったら上から順がおすすめです。
+                </p>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 p-3">
+                    <div className="text-[10px] font-bold text-teal-400 mb-1">おすすめ（まずここ）</div>
+                    <div className="text-sm font-bold text-white">PCへ転送</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      Canon は EOS Utility、Nikon は FTP 等で院内PCに保存。資産管理がいちばんわかりやすい基本形です。
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-neutral-600/50 bg-black/20 p-3">
+                    <div className="text-[10px] font-bold text-amber-400 mb-1">応用：PC + iPad</div>
+                    <div className="text-sm font-bold text-white">Nostalgista Wireless Connect アプリ</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      PCに溜めた写真を、アプリ経由で iPad でも即時確認・説明に使います。
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-neutral-600/50 bg-black/20 p-3">
+                    <div className="text-[10px] font-bold text-neutral-400 mb-1">応用：さらに進める場合</div>
+                    <div className="text-sm font-bold text-white">NAS への直接書き込み</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      共有サーバーを用意できる院向け。Nikon の FTP などが向きます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 解説動画（診断の直後） */}
+              <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-4">
+                <h3 className="text-white font-bold mb-1">解説動画：Wireless Connect の活用方法</h3>
+                <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
+                  接続方法の診断のあとにご覧ください。転送先の選び方とネットワークの考え方をまとめています。
+                </p>
+                <div className="relative w-full overflow-hidden rounded-xl border border-neutral-700 bg-black aspect-video mb-3">
+                  <iframe
+                    className="absolute inset-0 h-full w-full"
+                    src="https://www.youtube.com/embed/VI2IvHBuqLM"
+                    title="WirelessConnectの活用方法"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+                <a
+                  href="https://youtu.be/VI2IvHBuqLM"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-teal-400 hover:text-teal-300 inline-flex items-center gap-1"
+                >
+                  YouTubeで開く
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
               <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-6">
                 <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
                   <FileText className="w-5 h-5 text-teal-400" />
                 </div>
                 <h3 className="text-white font-bold mb-2">Wireless Connect 導入マニュアル<br/><span className="text-xs text-neutral-400 font-normal">（専用AIサポート）</span></h3>
                 <p className="text-sm text-neutral-300 leading-relaxed mb-4">
-                  カメラ設定からネットワーク構築までの完全な手順は、専用のAIサポート環境（NotebookLM）にて提供しております。
+                  カメラ設定からネットワーク構築までの完全な手順は、専用のAIサポート環境（NotebookLM）にて提供しております。Studio では「どの方法で接続しますか？」のあとに解説動画を配置しています。
                 </p>
                 <div className="space-y-2 mb-6">
                   <p className="text-xs text-neutral-400 flex items-start gap-1.5">
