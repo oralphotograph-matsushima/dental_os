@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi, HelpCircle, X, ExternalLink, Plus, Trash2, ChevronRight } from "lucide-react";
+import { Mic, Square, Save, Loader2, FileText, CheckCircle2, FolderOpen, AlertTriangle, Lock, Search, User, Clock, ChevronLeft, Clipboard, Camera, Presentation, Settings, Tablet, Download, Wifi, HelpCircle, X, ExternalLink, Plus, Trash2, ChevronRight, Play } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 import { get, set } from "idb-keyval";
 import SlideGenerator from "@/components/SlideGenerator";
@@ -44,6 +44,50 @@ const formatToKatakanaLastName = (name: string): string => {
   // ひらがなをカタカナに変換
   return toKatakana(lastName);
 };
+
+/** 会員限定：導入手順の解説動画（YouTube ID）。追加時はこの配列に足すだけ。 */
+type MemberGuideVideo = {
+  id: string;
+  title: string;
+  description: string;
+  badge?: "最新" | "アーカイブ";
+  status: "ready" | "coming_soon";
+  youtubeId?: string;
+};
+
+/** YouTube 限定再生リスト（裏の母艦）。アプリ表示はこの配列が正本。 */
+const MEMBER_GUIDE_PLAYLIST_URL = "https://www.youtube.com/playlist?list=PLLYjBPE6UTxc";
+
+const MEMBER_GUIDE_VIDEOS: MemberGuideVideo[] = [
+  {
+    id: "wc-howto-latest",
+    title: "Wireless Connect の活用方法",
+    description: "転送先の選び方と、院内ネットワークの考え方（最新版）",
+    badge: "最新",
+    status: "ready",
+    youtubeId: "VI2IvHBuqLM",
+  },
+  {
+    id: "wc-setup-buyer",
+    title: "【購入者向け】Wireless Connect 設定方法",
+    description: "購入者向けの基本設定（アーカイブ）",
+    badge: "アーカイブ",
+    status: "ready",
+    youtubeId: "Ov3rVT4jnyU",
+  },
+  {
+    id: "wc-setup-steps",
+    title: "導入手順の詳細解説",
+    description: "カメラ設定から院内転送までのステップ解説",
+    status: "coming_soon",
+  },
+  {
+    id: "wc-troubleshoot",
+    title: "つながらないときのチェックリスト",
+    description: "途切れ・届かないときの切り分け方法",
+    status: "coming_soon",
+  },
+];
 
 export default function Home() {
   // Web Version Check
@@ -126,6 +170,7 @@ export default function Home() {
 
   // Help Panel State
   const [showHelpPanel, setShowHelpPanel] = useState(false);
+  const [playingGuideVideoId, setPlayingGuideVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     // Desktop App Update Checker
@@ -2829,7 +2874,10 @@ export default function Home() {
                 <h2 className="font-bold">ヘルプ・導入サポート</h2>
               </div>
               <button 
-                onClick={() => setShowHelpPanel(false)}
+                onClick={() => {
+                  setShowHelpPanel(false);
+                  setPlayingGuideVideoId(null);
+                }}
                 className="p-2 hover:bg-neutral-800 rounded-full text-neutral-400 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -2838,13 +2886,150 @@ export default function Home() {
 
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1">
+              {/* 診断：どの方法で接続しますか */}
+              <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-4">
+                <h3 className="text-white font-bold mb-1">診断：どの方法で接続しますか？</h3>
+                <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+                  写真の本拠地に合わせて選んでください。迷ったら上から順がおすすめです。
+                </p>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 p-3">
+                    <div className="text-[10px] font-bold text-teal-400 mb-1">おすすめ（まずここ）</div>
+                    <div className="text-sm font-bold text-white">PCへ転送</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      Canon は EOS Utility、Nikon は FTP 等で院内PCに保存。資産管理がいちばんわかりやすい基本形です。
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-neutral-600/50 bg-black/20 p-3">
+                    <div className="text-[10px] font-bold text-amber-400 mb-1">応用：PC + iPad</div>
+                    <div className="text-sm font-bold text-white">Nostalgista Wireless Connect アプリ</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      PCに溜めた写真を、アプリ経由で iPad でも即時確認・説明に使います。
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-neutral-600/50 bg-black/20 p-3">
+                    <div className="text-[10px] font-bold text-neutral-400 mb-1">応用：さらに進める場合</div>
+                    <div className="text-sm font-bold text-white">NAS への直接書き込み</div>
+                    <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                      共有サーバーを用意できる院向け。Nikon の FTP などが向きます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 会員限定：導入の手順（サムネイル一覧） */}
+              <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-4">
+                <h3 className="text-white font-bold mb-1">導入の手順<span className="ml-2 text-[10px] font-semibold text-teal-400 align-middle">会員限定</span></h3>
+                <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
+                  サムネイルをタップすると再生します。最新版に加え、これから公開する動画も順次追加します。
+                </p>
+                <a
+                  href={MEMBER_GUIDE_PLAYLIST_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mb-4 inline-flex items-center gap-1 text-[11px] text-teal-400 hover:text-teal-300"
+                >
+                  YouTube限定リストで一覧を見る
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <div className="space-y-3">
+                  {MEMBER_GUIDE_VIDEOS.map((video) => {
+                    const isPlaying = playingGuideVideoId === video.id;
+                    const thumb =
+                      video.status === "ready" && video.youtubeId
+                        ? `https://i.ytimg.com/vi/${video.youtubeId}/hqdefault.jpg`
+                        : null;
+
+                    if (video.status === "coming_soon") {
+                      return (
+                        <div
+                          key={video.id}
+                          className="rounded-xl border border-dashed border-neutral-600/70 bg-black/20 overflow-hidden opacity-80"
+                        >
+                          <div className="relative aspect-video bg-neutral-950 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-br from-neutral-800/40 to-neutral-950" />
+                            <span className="relative z-10 px-3 py-1 rounded-full bg-neutral-800 border border-neutral-600 text-[11px] font-bold tracking-wider text-neutral-300">
+                              COMING SOON
+                            </span>
+                          </div>
+                          <div className="p-3">
+                            <div className="text-sm font-bold text-neutral-300">{video.title}</div>
+                            <p className="text-[11px] text-neutral-500 mt-1 leading-relaxed">{video.description}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={video.id}
+                        className="rounded-xl border border-neutral-700 bg-black/30 overflow-hidden"
+                      >
+                        {isPlaying && video.youtubeId ? (
+                          <div className="relative aspect-video bg-black">
+                            <iframe
+                              className="absolute inset-0 h-full w-full"
+                              src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1`}
+                              title={video.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setPlayingGuideVideoId(video.id)}
+                            className="group relative block w-full aspect-video bg-neutral-950 text-left"
+                          >
+                            {thumb && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={thumb}
+                                alt={video.title}
+                                className="absolute inset-0 h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/35 group-hover:bg-black/25 transition-colors" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="w-14 h-14 rounded-full bg-teal-500/90 text-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                                <Play className="w-6 h-6 ml-0.5 fill-current" />
+                              </span>
+                            </div>
+                            {video.badge && (
+                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-teal-500 text-[10px] font-bold text-white">
+                                {video.badge}
+                              </span>
+                            )}
+                          </button>
+                        )}
+                        <div className="p-3 flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-bold text-white">{video.title}</div>
+                            <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">{video.description}</p>
+                          </div>
+                          {isPlaying && (
+                            <button
+                              type="button"
+                              onClick={() => setPlayingGuideVideoId(null)}
+                              className="shrink-0 text-[11px] text-neutral-400 hover:text-white"
+                            >
+                              閉じる
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-6">
                 <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
                   <FileText className="w-5 h-5 text-teal-400" />
                 </div>
                 <h3 className="text-white font-bold mb-2">Wireless Connect 導入マニュアル<br/><span className="text-xs text-neutral-400 font-normal">（専用AIサポート）</span></h3>
                 <p className="text-sm text-neutral-300 leading-relaxed mb-4">
-                  カメラ設定からネットワーク構築までの完全な手順は、専用のAIサポート環境（NotebookLM）にて提供しております。
+                  カメラ設定からネットワーク構築までの詳細は、専用のAIサポート環境（NotebookLM）でも提供しています。まずは上の会員限定動画から始めてください。
                 </p>
                 <div className="space-y-2 mb-6">
                   <p className="text-xs text-neutral-400 flex items-start gap-1.5">
