@@ -55,6 +55,9 @@ type MemberGuideVideo = {
   youtubeId?: string;
 };
 
+/** YouTube 限定再生リスト（裏の母艦）。アプリ表示はこの配列が正本。 */
+const MEMBER_GUIDE_PLAYLIST_URL = "https://www.youtube.com/playlist?list=PLLYjBPE6UTxc";
+
 const MEMBER_GUIDE_VIDEOS: MemberGuideVideo[] = [
   {
     id: "wc-howto-latest",
@@ -63,6 +66,14 @@ const MEMBER_GUIDE_VIDEOS: MemberGuideVideo[] = [
     badge: "最新",
     status: "ready",
     youtubeId: "VI2IvHBuqLM",
+  },
+  {
+    id: "wc-setup-buyer",
+    title: "【購入者向け】Wireless Connect 設定方法",
+    description: "購入者向けの基本設定（アーカイブ）",
+    badge: "アーカイブ",
+    status: "ready",
+    youtubeId: "Ov3rVT4jnyU",
   },
   {
     id: "wc-setup-steps",
@@ -2909,9 +2920,18 @@ export default function Home() {
               {/* 会員限定：導入の手順（サムネイル一覧） */}
               <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-2xl p-5 mb-4">
                 <h3 className="text-white font-bold mb-1">導入の手順<span className="ml-2 text-[10px] font-semibold text-teal-400 align-middle">会員限定</span></h3>
-                <p className="text-xs text-neutral-400 mb-4 leading-relaxed">
+                <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
                   サムネイルをタップすると再生します。最新版に加え、これから公開する動画も順次追加します。
                 </p>
+                <a
+                  href={MEMBER_GUIDE_PLAYLIST_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mb-4 inline-flex items-center gap-1 text-[11px] text-teal-400 hover:text-teal-300"
+                >
+                  YouTube限定リストで一覧を見る
+                  <ExternalLink className="w-3 h-3" />
+                </a>
                 <div className="space-y-3">
                   {MEMBER_GUIDE_VIDEOS.map((video) => {
                     const isPlaying = playingGuideVideoId === video.id;
