@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { ArrowRight, CheckCircle2, Zap, Wifi, Shield, ArrowDown, MonitorPlay, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, Zap, Wifi, Shield, ArrowDown, MonitorPlay } from "lucide-react";
 import Link from "next/link";
 
 /** 購入の主経路は Order Manager のみ。Stripe は海外／カード副リンク専用。 */
@@ -74,9 +74,12 @@ export default function WirelessConnectLP() {
             </span>
           </h1>
           
-          <p className="text-base md:text-lg text-neutral-400 max-w-2xl mx-auto mb-10 px-2 md:px-0 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            ゼロ遅延のワイヤレス転送で、歯科診療のワークフローを根本から変革。<br className="hidden md:block" />
-            撮った瞬間から、シームレスなデータ連携が始まります。
+          <p className="text-base md:text-lg text-neutral-300 max-w-2xl mx-auto mb-4 px-2 md:px-0 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            今回から、Nikonのワイヤレス転送を助けるアプリを同封します。<br className="hidden md:block" />
+            手順どおりにつなぐと、撮った写真がアプリに届きます。チェアサイドのPCでも、iPadでも見られます。
+          </p>
+          <p className="text-sm text-neutral-500 max-w-2xl mx-auto mb-10 px-2 md:px-0">
+            Canon は EOS Utility のままです。
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -119,14 +122,12 @@ export default function WirelessConnectLP() {
               </p>
               <div className="space-y-4 pt-4">
                 {[
-                  "SDカードの抜き差しを減らし、スロットの故障を避ける",
-                  "転送は、Canon と Nikon の純正アプリで行う",
-                  "ネットワークの整え方は、マニュアルと導入サポートでお渡しする"
+                  "Nikonのワイヤレス転送を助けるアプリを同封します。",
+                  "撮った写真は、アプリとチェアサイドのPC、iPadで見られます。",
+                  "ネットワークの整え方は、マニュアルと導入サポートでお渡しします。"
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <div className="mt-1 bg-red-500/20 p-1 rounded-full">
-                      <X className="w-4 h-4 text-red-500" />
-                    </div>
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange-500" />
                     <span className="text-neutral-300">{item}</span>
                   </div>
                 ))}
@@ -162,29 +163,29 @@ export default function WirelessConnectLP() {
         <div className="container mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-16">
             <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight">モダンな歯科医院のための<br className="block md:hidden" />インフラ設計</h2>
-            <p className="text-neutral-400 text-sm md:text-base px-4 md:px-0">ITの専門知識は不要です。<br className="block md:hidden" />日常の診療に、魔法のような画像連携ワークフローをもたらします。</p>
+            <p className="text-neutral-400 text-sm md:text-base px-4 md:px-0">Nikonには、転送アプリが付いています。<br className="block md:hidden" />つなぐと、撮った写真が届きます。</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-orange-500/50 transition-colors group">
+            <div className="bg-neutral-950 border border-orange-500/40 p-8 rounded-3xl hover:border-orange-500/70 transition-colors group">
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-orange-400" />
+                <MonitorPlay className="w-6 h-6 text-orange-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">ゼロ遅延のデータ転送</h3>
+              <h3 className="text-xl font-bold mb-3">Nikonの転送アプリを同封</h3>
               <p className="text-neutral-400 leading-relaxed">
-                シャッターを切った瞬間、データは安全かつ高速にPCやiPadへ転送されます。患者様を待たせることはもうありません。
+                アプリの手順どおりにつなぐと、Nikonで撮った写真が届きます。チェアサイドのPCでも、iPadでも、同じ写真が見られます。
               </p>
             </div>
 
             {/* Feature 2 */}
             <div className="bg-neutral-950 border border-neutral-800 p-8 rounded-3xl hover:border-orange-500/50 transition-colors group">
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <MonitorPlay className="w-6 h-6 text-orange-400" />
+                <Zap className="w-6 h-6 text-orange-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3">使うのは純正アプリ</h3>
+              <h3 className="text-xl font-bold mb-3">撮った写真が、すぐ届く</h3>
               <p className="text-neutral-400 leading-relaxed">
-                写真の転送は、カメラメーカー純正のアプリで行います。Canon は EOS Utility、Nikon はトランスミッターユーティリティです。
+                シャッターを切ると、写真はアプリに届きます。チェアサイドのPCとiPadで、その場で見られます。
               </p>
             </div>
 
@@ -211,23 +212,23 @@ export default function WirelessConnectLP() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 text-xs font-semibold uppercase tracking-wider mb-2">
                 お渡しする内容
               </div>
-              <h2 className="text-2xl md:text-4xl font-bold">純正アプリで、院内のネットワークを整える。</h2>
+              <h2 className="text-2xl md:text-4xl font-bold">Nikonの転送アプリと、院内のネットワーク。</h2>
               <p className="text-neutral-400 text-base md:text-lg leading-relaxed">
-                撮影した写真の受け取りは、カメラメーカーの純正アプリに任せます。<br className="hidden md:block" />届かない、途切れる、というときの原因は、アプリよりも医院のネットワーク側にあることが多いです。
+                アプリの手順どおりにつなぐと、Nikonで撮った写真が届きます。<br className="hidden md:block" />チェアサイドのPCでも、iPadでも、同じ写真が見られます。
               </p>
               
               <ul className="space-y-4 pt-4">
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>Canon は EOS Utility、Nikon はトランスミッターユーティリティ</span>
+                  <span>Nikonのワイヤレス転送を助けるアプリを同封します。</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>実践からまとめた、ネットワーク最適化のマニュアル</span>
+                  <span>Canon は EOS Utility のままです。</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span>導入時のサポート</span>
+                  <span>ネットワークのマニュアルと、導入時のサポート</span>
                 </li>
               </ul>
             </div>
@@ -258,9 +259,9 @@ export default function WirelessConnectLP() {
 
       <section className="py-24 bg-neutral-950 border-t border-neutral-800">
         <div className="container mx-auto px-6 max-w-3xl">
-          <h2 className="text-2xl md:text-4xl font-bold mb-6 leading-tight">お渡しするのは、純正アプリの使い方と、ネットワークの整え方です。</h2>
+          <h2 className="text-2xl md:text-4xl font-bold mb-6 leading-tight">お渡しするのは、Nikonの転送アプリと、ネットワークの整え方です。</h2>
           <div className="space-y-4 text-neutral-400 text-base md:text-lg leading-relaxed">
-            <p>アプリ自体は、カメラメーカー純正のものを使います。Canon なら EOS Utility、Nikon ならトランスミッターユーティリティです。写真は、そのアプリからパソコンへ転送します。</p>
+            <p>Nikonのワイヤレス転送を助けるアプリを同封します。Canon は EOS Utility のままです。写真は、チェアサイドのPCとiPadで見られます。</p>
             <p>その上で、医院のネットワークを最適化するために、診療の現場で実践して学んだ内容をマニュアルとして体系化し、お送りします。導入のサポートもいたします。</p>
           </div>
         </div>
@@ -281,23 +282,9 @@ export default function WirelessConnectLP() {
             <h3 className="text-2xl font-bold text-white mb-6">システム構築パッケージ</h3>
 
             <div className="mb-8 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-5 text-left">
-              <p className="mb-3 text-sm font-bold tracking-wide text-amber-200">
-                念のための確認
+              <p className="text-sm font-bold leading-relaxed text-amber-100">
+                今回から、Nikonのワイヤレス転送を助けるアプリを同封します。つながると、撮った写真がアプリに届き、チェアサイドのPCでもiPadでも見られます。
               </p>
-              <ul className="space-y-3 text-sm leading-relaxed text-neutral-200">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
-                  <span>
-                    このマニュアル／サービスは、メーカーの<strong className="font-semibold text-white">純正データ転送アプリ</strong>の利用を補助するものです。
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
-                  <span>
-                    データ転送アプリ自体を、当方から提供するものではありません。
-                  </span>
-                </li>
-              </ul>
             </div>
             
             <a 
